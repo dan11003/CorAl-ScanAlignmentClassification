@@ -21,6 +21,8 @@
 #include <ctime>
 #include "pcl/common/centroid.h"
 #include "math.h"
+#include "pcl/filters/voxel_grid.h"
+#include "cmath"
 namespace alignment_checker{
 using std::cout;
 using std::cerr;
@@ -29,14 +31,13 @@ class ScanType
 {
 public:
 
-  ScanType();
 
-  ScanType(const pcl::PointCloud<pcl::PointXYZ>::Ptr &input);
 
+  ScanType(const pcl::PointCloud<pcl::PointXYZ>::Ptr &input, bool downsample=false );
 
   virtual void SetInputCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &input);
 
-  virtual double GetInformation(const double r=0.6);
+  virtual double CalculateInformation(const double r=0.5);
 
   void GetNeighboors(const pcl::PointCloud<pcl::PointXYZ>::Ptr &input, double r, std::vector<int> &idx ){}
 
@@ -52,13 +53,35 @@ public:
 
   void ExtractIndecies(const pcl::PointCloud<pcl::PointXYZ>::Ptr &input, std::vector<int> &indecies, pcl::PointCloud<pcl::PointXYZ>::Ptr &filtered);
 
+  pcl::PointCloud<pcl::PointXYZI>::Ptr GetScanWithInformation();
+
+  std::vector<double>& GetEntropy(){return entropy_;}
+
+  pcl::PointCloud<pcl::PointXYZ>::Ptr GetScan(){return cloud_;}
+
 
 
 protected:
 
+  ScanType();
+
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_;
 
   pcl::KdTreeFLANN<pcl::PointXYZ> kdtree_;
+
+  bool downsample_;
+
+  std::vector<double> entropy_; //range 0 to 1
+
+  std::vector<bool> valid_pnt_; // if entropy is calculated for the point
+
+  const double default_entropy_ = 0;
+
+  double average_entropy_ = 0;
+
+  pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_with_information_;
+
+
 
 
 };

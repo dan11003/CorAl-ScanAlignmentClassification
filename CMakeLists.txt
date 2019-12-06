@@ -58,6 +58,9 @@ add_definitions(${PCL_DEFINITIONS})
 set (${PROJECT_NAME}_LIB_SRCS
     src/alignment_checker/scan.cpp
     src/alignment_checker/scancomparsion.cpp
+    src/alignment_checker/alignmenttester.cpp
+    src/alignment_checker/utils.cpp
+    src/alignment_checker/viewer.cpp
     )
 
 add_library(${PROJECT_NAME} ${${PROJECT_NAME}_LIB_SRCS})
@@ -76,7 +79,10 @@ include_directories(
 #add_definitions(${PCL_DEFINITIONS})
 #link_directories(${PCL_LIBRARY_DIRS})
 
-add_executable(overlap src/test_alignment.cpp )
-target_link_libraries(overlap ${catkin_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR} ${PROJECT_NAME} ${PCL_LIBRARIES})
+add_executable(test_align src/test_alignment.cpp )
+target_link_libraries(test_align ${catkin_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR} ${PROJECT_NAME} ${PCL_LIBRARIES})
+
+add_executable(score_viewer src/score_viewer.cpp )
+target_link_libraries(score_viewer ${catkin_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR} ${PROJECT_NAME} ${PCL_LIBRARIES})
 
 #add_definitions(${PCL_DEFINITIONS})

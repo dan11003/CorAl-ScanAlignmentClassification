@@ -3,6 +3,6 @@ clouds_dir=$STORAGE_LOCATION/arla_pcds
 pose_est=$STORAGE_LOCATION/arla_pcds/offarla-2012_gt=0_submap=1_sizexy=300_Z=15_intrchR=8_compR=0_res=0.7_maxSensd=130_keyF=1_d=0.2_deg=100_alpha=0_dl=0_xyzir=0_mpsu=0_mnpfg=3kmnp1_sensorpose_est.txt
 cloud_prefix=cloud_
 output_dir=$clouds_dir
-rosrun alignment_checker overlap --cloud-dir $clouds_dir --pose-file-path $pose_est --cloud-prefix $cloud_prefix --output-dir $output_dir --ground-max-height 0 --segment-ground --radius 0.3
+rosrun alignment_checker score_viewer --cloud-dir $clouds_dir --pose-file-path $pose_est --cloud-prefix $cloud_prefix --output-dir $OUTPUT --ground-max-height 0 --segment-ground --radius 0.3
 
 

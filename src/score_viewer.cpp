@@ -45,19 +45,12 @@
 #include "pcl/common/transforms.h"
 #include "alignment_checker/alignmenttester.h"
 #include "alignment_checker/utils.h"
-#include "tf_conversions/tf_eigen.h"
+#include "alignment_checker/viewer.h"
 namespace po = boost::program_options;
-namespace ac=alignment_checker;
+namespace ac = alignment_checker;
 using std::cout;
 using std::endl;
 using std::string;
-
-
-//!
-//! \brief vectorToAffine3d
-//! \param v x y z ex yz ez
-//! \return
-//!
 
 
 
@@ -66,13 +59,12 @@ using std::string;
 int main(int argc, char **argv)
 {
 
-  std::vector<Eigen::Affine3d,Eigen::aligned_allocator<Eigen::Affine3d> > poses;
+
   string filepath, directory_clouds, output_dir;
   double ground_height, radius;
   bool segment_ground, visualize, identity;
-  bool small_error;
 
-  ros::init(argc, argv, "clustering_node");
+  ros::init(argc, argv, "score_viewer");
   ros::NodeHandle param("~");
   ros::Publisher cloud_pub;
   cloud_pub =param.advertise<pcl::PointCloud<pcl::PointXYZ>>("/points2", 1);
@@ -87,7 +79,6 @@ int main(int argc, char **argv)
       ("ground-max-height",po::value<double>(&ground_height)->default_value(0.25),"ground height to used for filter gorund")
       ("radius", po::value<double>(&radius)->default_value(0.5),"radius of a voxel")
       ("visualize","visualize pointclouds")
-      ("small-error","small error")
       ("identity","identity affinity")
       ("segment-ground","segment gorund at a certain hight");
 
@@ -106,16 +97,16 @@ int main(int argc, char **argv)
     exit(0);
   }
   segment_ground = vm.count("segment-ground");
-  visualize = vm.count("visualize");
-  identity = vm.count("identity");
-  small_error = vm.count("small-error");
+  std::vector<Eigen::Affine3d,Eigen::aligned_allocator<Eigen::Affine3d> > poses;
   ac::ReadPosesFromFile(filepath, poses);
 
   if(poses.size()==0){
     std::cerr<<"pose vector empty"<<std::endl;
     exit(0);
   }
+
   std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > clouds, filtered_clouds;
+
   ac::ReadCloudsFromFile(directory_clouds, cloud_prefix, clouds);
   if(poses.size()!=clouds.size()){
     std::cerr<<"Input data is of wrong size: clouds="<<clouds.size()<<", poses="<<poses.size()<<endl;
@@ -125,17 +116,13 @@ int main(int argc, char **argv)
     cout<<"Found "<<poses.size()<<" poses and point clouds"<<endl;
   }
 
+  cout<<"first outside: "<<clouds[0]->size()<<endl;
+  filtered_clouds = clouds;
 
-  filtered_clouds=clouds;
-  cout<<"output_dir: "<<output_dir<<endl;
-  alignment_checker::AlignmentTester test(filtered_clouds, poses);
-  if(small_error)
-    test.ReAlignScansSmallOffset();
-  else
-    test.ReAlignScansNoOffset();
+  ac::viewer(clouds, poses);
 
-  test.PerformAndSaveTest(output_dir);
-  cout<<"finished"<<endl;
+
+
 
 
   return 0;
