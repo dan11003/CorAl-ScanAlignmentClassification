@@ -46,6 +46,7 @@
 #include "alignment_checker/alignmenttester.h"
 #include "alignment_checker/utils.h"
 #include "alignment_checker/viewer.h"
+#include "alignment_checker/scan.h"
 namespace po = boost::program_options;
 namespace ac = alignment_checker;
 using std::cout;
@@ -63,10 +64,14 @@ int main(int argc, char **argv)
   string filepath, directory_clouds, output_dir;
   double ground_height, radius;
   bool segment_ground, visualize, identity;
-
+  double min_distance;
+  int index_first_scan;
   ros::init(argc, argv, "score_viewer");
   ros::NodeHandle param("~");
   ros::Publisher cloud_pub;
+  std::string method;
+  double max_swell, max_swell_distance;
+  double ent_reject_ratio;
   cloud_pub =param.advertise<pcl::PointCloud<pcl::PointXYZ>>("/points2", 1);
   po::options_description desc("Allowed options");
   std::string cloud_prefix;
@@ -76,8 +81,14 @@ int main(int argc, char **argv)
       ("cloud-dir", po::value<std::string>(&directory_clouds)->default_value(std::string("/home/daniel/ros/mapping_ws/src/graph_map/graph_map/scripts")),"directory of clouds")
       ("cloud-prefix",po::value<std::string>(&cloud_prefix)->default_value(std::string("cloud_")),"prefix of cloud names")
       ("output-dir",po::value<std::string>(&output_dir)->default_value(std::string("")),"output directory")
+      ("method",po::value<std::string>(&method)->default_value(std::string("entropy")),"method")
       ("ground-max-height",po::value<double>(&ground_height)->default_value(0.25),"ground height to used for filter gorund")
+      ("index-first-scan",po::value<int>(&index_first_scan)->default_value(1),"index of first scan")
       ("radius", po::value<double>(&radius)->default_value(0.5),"radius of a voxel")
+      ("max-swell", po::value<double>(&max_swell)->default_value(0.0),"max swell")
+      ("max-swell-distance", po::value<double>(&max_swell_distance)->default_value(50),"max swell distance")
+      ("min-distance", po::value<double>(&min_distance)->default_value(0.45),"min dinstance filtering")
+      ("ent-reject-ratio", po::value<double>(&ent_reject_ratio)->default_value(0.1),"ratio rejection entropy min")
       ("visualize","visualize pointclouds")
       ("identity","identity affinity")
       ("segment-ground","segment gorund at a certain hight");
@@ -106,8 +117,8 @@ int main(int argc, char **argv)
   }
 
   std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > clouds, filtered_clouds;
-
-  ac::ReadCloudsFromFile(directory_clouds, cloud_prefix, clouds);
+  cout<<"start index"<<index_first_scan<<endl;
+  ac::ReadCloudsFromFile(directory_clouds, cloud_prefix, clouds, index_first_scan);
   if(poses.size()!=clouds.size()){
     std::cerr<<"Input data is of wrong size: clouds="<<clouds.size()<<", poses="<<poses.size()<<endl;
     exit(0);
@@ -115,11 +126,19 @@ int main(int argc, char **argv)
   else{
     cout<<"Found "<<poses.size()<<" poses and point clouds"<<endl;
   }
+  pcl::PointCloud<pcl::PointXYZ> cl;
 
+
+  ac::FilterCloudsByDistance(clouds, poses, min_distance);
   cout<<"first outside: "<<clouds[0]->size()<<endl;
-  filtered_clouds = clouds;
-
-  ac::viewer(clouds, poses);
+  ac::SetScanLocations(clouds,poses);
+  ac::ScanType::max_swell = max_swell;
+  ac::ScanType::max_swell_dist = max_swell_distance;
+  ac::ScanComparsion::verbose = true;
+  ac::measurement_type type;
+  type = ac::string2mtype(method);
+  cout<<"USING METHOD "<<ac::mtype2string(type)<<endl;
+  ac::viewer(clouds, poses, radius, output_dir, type, ent_reject_ratio);
 
 
 

@@ -2,6 +2,30 @@
 
 namespace alignment_checker {
 
+void SetScanLocations(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > &clouds,  std::vector<Eigen::Affine3d,Eigen::aligned_allocator<Eigen::Affine3d> > &poses){
+  for(int i = 0 ; i<clouds.size() ; i++)
+    SetScanLocation(clouds[i], poses[i]);
+}
+void SetScanLocation(pcl::PointCloud<pcl::PointXYZ>::Ptr  &cloud,  Eigen::Affine3d &pose){
+  cloud->sensor_origin_ = Eigen::Vector4f(pose.translation()(0), pose.translation()(1), pose.translation()(2), 1);
+}
+
+void FilterCloudsByDistance(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > &clouds, std::vector<Eigen::Affine3d,Eigen::aligned_allocator<Eigen::Affine3d> > &poses, double radius){
+  float squaredradius = radius*radius;
+  for(int i=0;i<clouds.size();i++){
+    pcl::PointCloud<pcl::PointXYZ>::Ptr tmp(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::PointXYZ p_sensor;
+    p_sensor.x = poses[i].translation()(0);
+    p_sensor.y = poses[i].translation()(1);
+    p_sensor.z = poses[i].translation()(2);
+
+    for(auto j : clouds[i]->points){
+      if((j.x-p_sensor.x)*(j.x-p_sensor.x) + (j.y-p_sensor.y)*(j.y-p_sensor.y) + (j.z-p_sensor.z)*(j.z-p_sensor.z) > squaredradius)
+        tmp->push_back(j);
+    }
+    clouds[i] = tmp;
+  }
+}
 
 void ReadPosesFromFile(const std::string &filepath, std::vector<Eigen::Affine3d,Eigen::aligned_allocator<Eigen::Affine3d> > &poses){
 
@@ -9,6 +33,7 @@ void ReadPosesFromFile(const std::string &filepath, std::vector<Eigen::Affine3d,
   cout<<"Opening file: "<<filepath<<endl;
 
   string line;
+  int index =0;
   std::ifstream myfile (filepath);
   if (myfile.is_open()){
     while ( getline (myfile,line) ){
@@ -28,11 +53,11 @@ void ReadPosesFromFile(const std::string &filepath, std::vector<Eigen::Affine3d,
     exit(0);
   }
 }
-void ReadCloudsFromFile(const std::string directory, const std::string prefix, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > &clouds){
+void ReadCloudsFromFile(const std::string directory, const std::string prefix, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > &clouds, int start_index){
 
   std::string filepath=directory+"/"+prefix;
-  cout<<"Searching for point clouds at :"<<filepath<<std::endl;
-  int count=1;
+  int count = start_index;
+  cout<<"Searching for point clouds at :"<<filepath+std::to_string(count)+".pcd"<<std::endl;
 
   while(ros::ok()){
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);

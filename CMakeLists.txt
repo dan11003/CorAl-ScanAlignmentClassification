@@ -32,6 +32,7 @@ find_package(catkin REQUIRED
     tf
     genmsg
     tf_conversions
+    ndt_map
     )
 
 
@@ -45,7 +46,7 @@ endif()
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS geometry_msgs eigen_conversions pcl_ros roscpp rospy sensor_msgs std_msgs tf_conversions tf genmsg tf_conversions #cmake_modules
+  CATKIN_DEPENDS geometry_msgs eigen_conversions pcl_ros roscpp rospy sensor_msgs std_msgs tf_conversions tf genmsg tf_conversions ndt_map #cmake_modules
 )
 
 INCLUDE_DIRECTORIES ( $ENV{EIGEN3_INCLUDE_DIR} )
@@ -61,6 +62,7 @@ set (${PROJECT_NAME}_LIB_SRCS
     src/alignment_checker/alignmenttester.cpp
     src/alignment_checker/utils.cpp
     src/alignment_checker/viewer.cpp
+    src/alignment_checker/ndtScanComparsion.cpp ##uncomment if ndt libraries are not being used, this is only used for evaluation
     )
 
 add_library(${PROJECT_NAME} ${${PROJECT_NAME}_LIB_SRCS})
@@ -84,5 +86,8 @@ target_link_libraries(test_align ${catkin_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{E
 
 add_executable(score_viewer src/score_viewer.cpp )
 target_link_libraries(score_viewer ${catkin_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR} ${PROJECT_NAME} ${PCL_LIBRARIES})
+
+add_executable(function_surface src/function_surface.cpp )
+target_link_libraries(function_surface ${catkin_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR} ${PROJECT_NAME} ${PCL_LIBRARIES})
 
 #add_definitions(${PCL_DEFINITIONS})

@@ -27,19 +27,29 @@ namespace alignment_checker{
 using std::cout;
 using std::cerr;
 using std::endl;
+typedef enum measurement_type{entropy,entropy_median,determinant, ndtp2d,rel_ndtp2d, mme}m_type;
+
+  std::string mtype2string(m_type &type);
+
+  m_type string2mtype(std::string &type);
+
 class ScanType
 {
 public:
 
 
 
-  ScanType(const pcl::PointCloud<pcl::PointXYZ>::Ptr &input, bool downsample=false );
+  ScanType(const pcl::PointCloud<pcl::PointXYZ>::Ptr &input, m_type type);
 
   virtual void SetInputCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr &input);
 
-  virtual double CalculateInformation(const double r=0.5);
+  virtual void ComputeInformation(const double r=0.5, bool det_only = false, double d_factor = 0);
 
-  void GetNeighboors(const pcl::PointCloud<pcl::PointXYZ>::Ptr &input, double r, std::vector<int> &idx ){}
+  double GetInformation(){return tot_entropy_;}
+
+  virtual size_t GetInformationPointsetSize(){return entropy_pointset_size_;}
+
+  void GetNeighboors(const pcl::PointCloud<pcl::PointXYZ>::Ptr &input, double r, std::vector<int> &idx){}
 
   void GetNeighboors(const pcl::PointCloud<pcl::PointXYZ>::Ptr &input, double r, std::vector<int> &idx_input, std::vector<int> &idx_this );
 
@@ -49,17 +59,32 @@ public:
   //!
   virtual pcl::PointCloud<pcl::PointXYZ>::Ptr GetOverlap(const ScanType &scan){return NULL;}
 
+  void Update();
+
   void GetOverlap(const pcl::PointCloud<pcl::PointXYZ>::Ptr &input, pcl::PointCloud<pcl::PointXYZ>::Ptr &overlap_input, pcl::PointCloud<pcl::PointXYZ>::Ptr &overlap_src, double r=0.5);
 
   void ExtractIndecies(const pcl::PointCloud<pcl::PointXYZ>::Ptr &input, std::vector<int> &indecies, pcl::PointCloud<pcl::PointXYZ>::Ptr &filtered);
 
+  void FilterMinEntropyLimit(const double min_entropy_th);
+
   pcl::PointCloud<pcl::PointXYZI>::Ptr GetScanWithInformation();
 
-  std::vector<double>& GetEntropy(){return entropy_;}
+  std::vector<double> GetEntropy(bool valid_only = false);
+
+  std::vector<bool>& GetValidIndices(){return valid_pnt_;}
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr GetScan(){return cloud_;}
 
+  double FilterEntropyByIndex(std::vector<bool>& indicies);
 
+  pcl::PointCloud<pcl::PointXYZ>::Ptr GetLocalCloud(pcl::PointXYZ p, double radius);
+
+
+ static double median(std::vector<double> &scores);
+
+ static double mean(std::vector<double> &scores, size_t &count);
+
+ static double max_swell, max_swell_dist;
 
 protected:
 
@@ -69,17 +94,23 @@ protected:
 
   pcl::KdTreeFLANN<pcl::PointXYZ> kdtree_;
 
-  bool downsample_;
 
   std::vector<double> entropy_; //range 0 to 1
 
   std::vector<bool> valid_pnt_; // if entropy is calculated for the point
 
-  const double default_entropy_ = 0;
+  const double default_entropy_ = -100;
 
-  double average_entropy_ = 0;
+  double tot_entropy_ = 0;
+
+  size_t entropy_pointset_size_ = 0;
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_with_information_;
+
+  m_type type_;
+
+
+
 
 
 
