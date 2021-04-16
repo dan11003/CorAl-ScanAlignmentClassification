@@ -110,6 +110,10 @@ public:
     Publish("coral_src", *src, world_id_, t);
     response.quality=1;
     ac::ScanComparsion comp(src, target, radius_, downsample_, ac::entropy, rejection_);
+    bool status = false;
+    double aligned_merged = 0, aligned_sep = 0;
+    //comp.GetAlignmentQualityExtended(aligned, aligned_merged, aligned_sep);
+   // c
 
 
     return true;

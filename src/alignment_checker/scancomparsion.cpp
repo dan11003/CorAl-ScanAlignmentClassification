@@ -164,6 +164,7 @@ void ScanComparsion::CalculateOverlap(){
   tar_overlap_->clear();
   ScanTarget_->GetOverlap(src_, src_overlap_, tar_overlap_, radius_);
 
+
   src_overlap_->sensor_origin_ = center_;
   tar_overlap_->sensor_origin_ = center_;
 
