@@ -169,6 +169,18 @@ void FilterClouds(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > &clouds, std
   cout<<"of a total of "<<total<<" points, "<<removed<<" was removed"<<endl;
 }
 
+void PublishCloud(const std::string& topic, pcl::PointCloud<pcl::PointXYZ>& cld){
+    static std::map<std::string,ros::Publisher> pubs;
+    std::map<std::string, ros::Publisher>::iterator it = pubs.find(topic);
+    if (it == pubs.end()){
+        ros::NodeHandle nh("~");
+        pubs[topic] =  nh.advertise<pcl::PointCloud<pcl::PointXYZ>>(topic,100);
+        it = pubs.find(topic);
+    }
+    //cout<<"publish to "<<topic<<endl;
+
+    it->second.publish(cld);
+}
 
 
 }

@@ -11,7 +11,6 @@
 #include "eigen_conversions/eigen_msg.h"
 #include "tf_conversions/tf_eigen.h"
 namespace alignment_checker {
-
 using std::endl;
 using std::cout;
 using std::cerr;

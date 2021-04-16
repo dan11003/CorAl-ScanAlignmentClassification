@@ -33,6 +33,7 @@ find_package(catkin REQUIRED
     genmsg
     tf_conversions
     ndt_map
+    robust_mapping_custom_msgs
     )
 
 
@@ -46,7 +47,7 @@ endif()
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS geometry_msgs eigen_conversions pcl_ros roscpp rospy sensor_msgs std_msgs tf_conversions tf genmsg tf_conversions ndt_map #cmake_modules
+  CATKIN_DEPENDS geometry_msgs eigen_conversions pcl_ros roscpp rospy sensor_msgs std_msgs tf_conversions tf genmsg tf_conversions ndt_map robust_mapping_custom_msgs #cmake_modules
 )
 
 INCLUDE_DIRECTORIES ( $ENV{EIGEN3_INCLUDE_DIR} )
@@ -89,5 +90,8 @@ target_link_libraries(score_viewer ${catkin_LIBRARIES}  ${Boost_LIBRARIES}  $ENV
 
 add_executable(function_surface src/function_surface.cpp )
 target_link_libraries(function_surface ${catkin_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR} ${PROJECT_NAME} ${PCL_LIBRARIES})
+
+add_executable(CorAlServer src/CorAlServer.cpp )
+target_link_libraries(CorAlServer ${catkin_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR} ${PROJECT_NAME} ${PCL_LIBRARIES})
 
 #add_definitions(${PCL_DEFINITIONS})

@@ -209,7 +209,7 @@ void ScanType::ComputeInformation(const double radius, bool det_only, double d_f
     valid_pnt_.resize(cloud_->size(), false);
     pcl::PointXYZ p_origin (this->cloud_->sensor_origin_(0), this->cloud_->sensor_origin_(1), this->cloud_->sensor_origin_(2));
     //cout<<"origin: "<<p_origin<<endl;
-#pragma omp parallel num_threads(1)
+#pragma omp parallel num_threads(8)
     {
 #pragma omp for
       for(int i=0;i<cloud_->size();i++){

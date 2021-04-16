@@ -11,6 +11,9 @@
 #include "pcl/filters/radius_outlier_removal.h"
 #include "pcl/registration/transforms.h"
 #include "pcl/common/distances.h"
+#include "pcl_ros/point_cloud.h"
+#include "pcl_ros/publisher.h"
+
 using std::cout;
 using std::cerr;
 using std::endl;
@@ -36,6 +39,8 @@ void DownSampleCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr  &cloud, pcl::PointClou
 void FilterClouds(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > &clouds, std::vector< pcl::PointCloud<pcl::Normal>::Ptr > &normals);
 
 void FilterCloudsByDistance(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > &clouds, std::vector<Eigen::Affine3d,Eigen::aligned_allocator<Eigen::Affine3d> > &poses, double radius);
+
+void PublishCloud(const std::string& topic, pcl::PointCloud<pcl::PointXYZ>& cld);
 
 }
 #endif // IO_H

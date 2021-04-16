@@ -63,6 +63,7 @@
   <build_depend>tf</build_depend>
   <build_depend>genmsg</build_depend>
   <build_depend>tf_conversions</build_depend>
+  <build_depend>robust_mapping_custom_msgs</build_depend>
 
 
   <buildtool_depend>catkin</buildtool_depend>
@@ -82,6 +83,7 @@
   <exec_depend>tf</exec_depend>
   <exec_depend>genmsg</exec_depend>
   <exec_depend>tf_conversions</exec_depend>
+  <exec_depend>robust_mapping_custom_msgs</exec_depend>
 
 
 
