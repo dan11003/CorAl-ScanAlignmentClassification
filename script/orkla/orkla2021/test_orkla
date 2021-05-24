@@ -1,0 +1,27 @@
+dataset=orkla
+clouds_dir=/home/iliad/workspace/iliad_ws/src/graph_map/graph_map/data
+pose_est=$clouds_dir/sensor.txt
+cloud_prefix=cloud_
+output_dir=$clouds_dir/test_data/
+mkdir -p $output_dir
+output_file_name=${dataset}
+
+
+
+if pgrep -x "rviz" > /dev/null
+then
+    echo "Rviz already running"
+else
+    rosrun rviz rviz -d "$(rospack find alignment_checker)/rviz/alignment_origin.rviz"  &>/dev/null &
+
+fi
+
+radius=0.4
+
+
+
+rosrun alignment_checker test_align --cloud-dir $clouds_dir --pose-file-path $pose_est --cloud-prefix $cloud_prefix --output-dir $output_dir  --output-file-name ${output_file_name} --large-error --radius $radius --index-first-scan 0 --data-set $dataset --min-distance 0.8 --method entropy --rejection-ratio 0.1 --max-swell 2.5 --large-error --downsample
+
+
+
+

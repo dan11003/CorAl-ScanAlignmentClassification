@@ -27,6 +27,7 @@ ScanComparsion::ScanComparsion(const pcl::PointCloud<pcl::PointXYZ>::Ptr &src, c
     det_only_ = false;
   radius_ = radius;
   downsample_ = downsample;
+  assert(radius_>0.01 && radius_<1000);
   SetInput(src, target);
   // cout<<"center: "<<center_<<endl;
   CalculateOverlap();

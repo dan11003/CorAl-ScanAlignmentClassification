@@ -1,5 +1,5 @@
 
-clouds_dir=/home/daniel/ros/alignment_ws/src/robust_mapping_oru/robust_mapping/data
+clouds_dir=/home/iliad/workspace/iliad_ws/src/graph_map/graph_map/data
 pose_est=$clouds_dir/sensor.txt
 cloud_prefix=cloud_
 output_dir=$clouds_dir
@@ -12,7 +12,7 @@ else
 fi
 
 
-rosrun alignment_checker score_viewer --cloud-dir $clouds_dir --pose-file-path $pose_est --cloud-prefix $cloud_prefix --output-dir $output_dir  --method entropy --index-first-scan 0  --ent-reject-ratio 0.2   --radius 0.4  --max-swell 1
+rosrun alignment_checker score_viewer --cloud-dir $clouds_dir --pose-file-path $pose_est --cloud-prefix $cloud_prefix --output-dir $output_dir  --method entropy --index-first-scan 0  --ent-reject-ratio 0.1   --radius 0.4  --max-swell 2.5
 
 
 

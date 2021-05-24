@@ -60,6 +60,7 @@ void ReadCloudsFromFile(const std::string directory, const std::string prefix, s
   cout<<"Searching for point clouds at :"<<filepath+std::to_string(count)+".pcd"<<std::endl;
 
   while(ros::ok()){
+    cout<<"loading: "<<count<<endl;
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
     if(pcl::io::loadPCDFile<pcl::PointXYZ>(filepath+std::to_string(count++)+".pcd", *cloud) != -1 )
       clouds.push_back(cloud);
@@ -175,6 +176,20 @@ void PublishCloud(const std::string& topic, pcl::PointCloud<pcl::PointXYZ>& cld)
     if (it == pubs.end()){
         ros::NodeHandle nh("~");
         pubs[topic] =  nh.advertise<pcl::PointCloud<pcl::PointXYZ>>(topic,100);
+        it = pubs.find(topic);
+    }
+    //cout<<"publish to "<<topic<<endl;
+
+    it->second.publish(cld);
+}
+
+
+void PublishCloud(const std::string& topic, pcl::PointCloud<pcl::PointXYZI>& cld){
+    static std::map<std::string,ros::Publisher> pubs;
+    std::map<std::string, ros::Publisher>::iterator it = pubs.find(topic);
+    if (it == pubs.end()){
+        ros::NodeHandle nh("~");
+        pubs[topic] =  nh.advertise<pcl::PointCloud<pcl::PointXYZI>>(topic,100);
         it = pubs.find(topic);
     }
     //cout<<"publish to "<<topic<<endl;

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(alignment_checker)
 set (CMAKE_CXX_STANDARD 11)
-set(CMAKE_BUILD_TYPE release)
+set(CMAKE_BUILD_TYPE DEBUG)
 
 IF(CMAKE_SIZEOF_VOID_P EQUAL 4)
     SET(LIB_SUFFIX "")
@@ -36,6 +36,7 @@ find_package(catkin REQUIRED
     robust_mapping_custom_msgs
     )
 
+find_package(Armadillo REQUIRED)
 
 find_package(OpenMP REQUIRED)
 if(OPENMP_FOUND)
@@ -51,6 +52,8 @@ catkin_package(
 )
 
 INCLUDE_DIRECTORIES ( $ENV{EIGEN3_INCLUDE_DIR} )
+include_directories(${ARMADILLO_INCLUDE_DIRS})
+
 
 include_directories( include ${Boost_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS} )
 link_directories(${PCL_LIBRARY_DIRS})
@@ -65,6 +68,7 @@ set (${PROJECT_NAME}_LIB_SRCS
     src/alignment_checker/viewer.cpp
     src/alignment_checker/ndtScanComparsion.cpp ##uncomment if ndt libraries are not being used, this is only used for evaluation
     )
+set(MLPACK_SRCS ${MLPACK_SRCS} ${DIR_SRCS} PARENT_SCOPE)
 
 add_library(${PROJECT_NAME} ${${PROJECT_NAME}_LIB_SRCS})
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} pcl_common )
@@ -92,6 +96,6 @@ add_executable(function_surface src/function_surface.cpp )
 target_link_libraries(function_surface ${catkin_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR} ${PROJECT_NAME} ${PCL_LIBRARIES})
 
 add_executable(CorAlServer src/CorAlServer.cpp )
-target_link_libraries(CorAlServer ${catkin_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR} ${PROJECT_NAME} ${PCL_LIBRARIES})
+target_link_libraries(CorAlServer ${catkin_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR} ${PROJECT_NAME} ${PCL_LIBRARIES} mlpack ${ARMADILLO_LIBRARIES})
 
 #add_definitions(${PCL_DEFINITIONS})

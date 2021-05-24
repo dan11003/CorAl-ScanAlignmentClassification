@@ -42,5 +42,7 @@ void FilterCloudsByDistance(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > &c
 
 void PublishCloud(const std::string& topic, pcl::PointCloud<pcl::PointXYZ>& cld);
 
+void PublishCloud(const std::string& topic, pcl::PointCloud<pcl::PointXYZI>& cld);
+
 }
 #endif // IO_H

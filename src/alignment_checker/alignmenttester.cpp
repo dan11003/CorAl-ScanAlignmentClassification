@@ -50,6 +50,7 @@ void AlignmentTester::PerformAndSaveTest(const std::string &dir, const std::stri
       comp_aligned = boost::shared_ptr<ScanComparsion>(new NdtScanComparsion(clouds_[i+1], clouds_[i], radius_, downsample_, type_));
     }
     else {
+      cout<<"src: "<<clouds_error_[i+1]->size()<<", tar: "<<clouds_error_[i]->size()<<", rad: "<<radius_<<", downsample: "<<downsample_<<", ent: "<<rejection_ratio_<<endl;
       comp_error = boost::shared_ptr<ScanComparsion>(new ScanComparsion(clouds_error_[i+1], clouds_[i], radius_, downsample_, type_, rejection_ratio_));
       comp_aligned = boost::shared_ptr<ScanComparsion>(new ScanComparsion(clouds_[i+1], clouds_[i], radius_, downsample_, type_, rejection_ratio_));
     }
@@ -65,7 +66,7 @@ void AlignmentTester::PerformAndSaveTest(const std::string &dir, const std::stri
     //comp_error->StoreComparsionData(dir, "error"+std::to_string(i)+".csv");
     aligned_diff = aligned_merged - aligned_sep;
     misaligned_diff = error_merged - error_sep;
-    cout<<"scan: "<<i<<", diff aligned: "<<aligned_diff<<", diff misaligned: "<<misaligned_diff<<"offset: "<<offsets_[i+1](0)<<", "<<offsets_[i+1](1)<<", "<<offsets_[i+1](5)<<endl;
+    cout<<"scan: "<<i<<", diff aligned: "<<aligned_diff<<", diff misaligned: "<<misaligned_diff<<", offset: "<<offsets_[i+1](0)<<", "<<offsets_[i+1](1)<<", "<<offsets_[i+1](5)<<endl;
 
     Eigen::Matrix<double,6,1> o = offsets_[i+1];
 

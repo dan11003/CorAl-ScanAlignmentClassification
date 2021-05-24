@@ -72,7 +72,9 @@ void viewer::SetScans(){
   }
   else{
     //cout<<"Using "<<mtype2string(type_)<<endl;
+    cout<<"src: "<<src->size()<<", tar: "<<target->size()<<", rad: "<<radius_<<", downsample: "<<downsample_<<", ent: "<<ent_reject_ratio_<<", ac::ScanType::max_swell: "<<ScanType::max_swell<<", ac::ScanType::max_swell_dist: "<<ScanType::max_swell_dist<<endl;
     comp_ = bstScanComp(new ScanComparsion(src, target, radius_, downsample_,type_, ent_reject_ratio_));
+
     vis_.PlotClouds(comp_);
     vis_.PlotPoses(poses_[target_idx_],poses_[target_idx_+1]);
   }

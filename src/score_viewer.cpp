@@ -87,7 +87,7 @@ int main(int argc, char **argv)
       ("radius", po::value<double>(&radius)->default_value(0.5),"radius of a voxel")
       ("max-swell", po::value<double>(&max_swell)->default_value(0.0),"max swell")
       ("max-swell-distance", po::value<double>(&max_swell_distance)->default_value(50),"max swell distance")
-      ("min-distance", po::value<double>(&min_distance)->default_value(0.45),"min dinstance filtering")
+      ("min-distance", po::value<double>(&min_distance)->default_value(0.0),"min dinstance filtering")
       ("ent-reject-ratio", po::value<double>(&ent_reject_ratio)->default_value(0.1),"ratio rejection entropy min")
       ("visualize","visualize pointclouds")
       ("identity","identity affinity")
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
     std::cerr<<"File path empty"<<std::endl;
     exit(0);
   }
-  segment_ground = vm.count("segment-ground");
+
   std::vector<Eigen::Affine3d,Eigen::aligned_allocator<Eigen::Affine3d> > poses;
   ac::ReadPosesFromFile(filepath, poses);
 
