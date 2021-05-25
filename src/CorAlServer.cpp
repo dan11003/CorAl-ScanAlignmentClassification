@@ -278,12 +278,12 @@ public:
     bool aligned = (p_aligned >decision_th);
     cout<<"classify (merged,separate)=("<<aligned_merged<<","<<aligned_sep<<", diff="<<aligned_merged-aligned_sep<<endl;
     std::string s = aligned  ? "ALIGNED" : "NOT ALIGNED";
-    cout<<s<<", p( aligned) = "<<sp_aligned<<endl;
+    cout<<"p( aligned) = "<<s<<endl;
     response.quality = p_aligned;
     //cout<<"src: "<<src->size()<<", tar: "<<target->size()<<", rad: "<<radius_<<", downsample: "<<downsample_<<", ent: "<<rejection_<<", ac::ScanType::max_swell: "<<ac::ScanType::max_swell<<", ac::ScanType::max_swell_dist: "<<ac::ScanType::max_swell_dist<<endl;
     pcl::PointCloud<pcl::PointXYZI>::Ptr tmp  = comp.GetMergedDifferential();
     Publish("CorAl_diff", tmp, "/map", ros::Time::now());
-    if(! p_aligned>0.5 ){
+    if(! aligned){
       m.lock();
       misaligned.push_back(tmp);
       m.unlock();

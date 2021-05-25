@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(alignment_checker)
 set (CMAKE_CXX_STANDARD 11)
-set(CMAKE_BUILD_TYPE DEBUG)
+set(CMAKE_BUILD_TYPE release)
 
 IF(CMAKE_SIZEOF_VOID_P EQUAL 4)
     SET(LIB_SUFFIX "")
