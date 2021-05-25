@@ -108,8 +108,7 @@ public:
     cout<<"Training logistic classifier on :"<<idx_train_end+1<<" samples"<<endl;
     l = new mlpack::regression::LogisticRegression<arma::Mat<double>>(predictors, labels);
     cout<<"Training accuracy: "<<l->ComputeAccuracy(predictors, labels, decision_th)<<endl;
-    Load();
-    //Load();
+
     service = nh_.advertiseService(alignment_quality_service, &CorAlServer::CorAlService, this);
     timer_plot = nh_.createTimer(ros::Duration(Tplot), &CorAlServer::MissalignedCloudsVisualizer, this);
 
@@ -276,17 +275,17 @@ public:
 
     l->Classify(online_pred, p_response);
     double p_aligned = 1-p_response(0,0);
+    bool aligned = (p_aligned >decision_th);
     cout<<"classify (merged,separate)=("<<aligned_merged<<","<<aligned_sep<<", diff="<<aligned_merged-aligned_sep<<endl;
-    std::string s = (p_aligned >decision_th) ? "ALIGNED" : "NOT ALIGNED";
-    cout<<s<<", p( aligned) = "<<p_aligned<<endl;
+    std::string s = aligned  ? "ALIGNED" : "NOT ALIGNED";
+    cout<<s<<", p( aligned) = "<<sp_aligned<<endl;
     response.quality = p_aligned;
-    cout<<"src: "<<src->size()<<", tar: "<<target->size()<<", rad: "<<radius_<<", downsample: "<<downsample_<<", ent: "<<rejection_<<", ac::ScanType::max_swell: "<<ac::ScanType::max_swell<<", ac::ScanType::max_swell_dist: "<<ac::ScanType::max_swell_dist<<endl;
+    //cout<<"src: "<<src->size()<<", tar: "<<target->size()<<", rad: "<<radius_<<", downsample: "<<downsample_<<", ent: "<<rejection_<<", ac::ScanType::max_swell: "<<ac::ScanType::max_swell<<", ac::ScanType::max_swell_dist: "<<ac::ScanType::max_swell_dist<<endl;
     pcl::PointCloud<pcl::PointXYZI>::Ptr tmp  = comp.GetMergedDifferential();
     Publish("CorAl_diff", tmp, "/map", ros::Time::now());
-    if( p_aligned>0.5 && misaligned.empty() ){
+    if(! p_aligned>0.5 ){
       m.lock();
       misaligned.push_back(tmp);
-
       m.unlock();
     }
     return true;

@@ -20,7 +20,7 @@ radius=0.4
 
 
 
-rosrun alignment_checker test_align --cloud-dir $clouds_dir --pose-file-path $pose_est --cloud-prefix $cloud_prefix --output-dir $output_dir  --output-file-name ${output_file_name} --large-error --radius $radius --index-first-scan 0 --data-set $dataset --min-distance 0.8 --method entropy --rejection-ratio 0.1 --max-swell 2.5 --large-error --downsample
+rosrun alignment_checker test_align --cloud-dir $clouds_dir --pose-file-path $pose_est --cloud-prefix $cloud_prefix --output-dir $output_dir  --output-file-name ${output_file_name} --large-error --radius $radius --index-first-scan 0 --data-set $dataset --min-distance 0.8 --method entropy --rejection-ratio 0.1 --max-swell 2.5 --medium-error --downsample
 
 
 
