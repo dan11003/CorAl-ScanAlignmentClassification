@@ -7,7 +7,7 @@
     </group>
 
     <node pkg="alignment_checker" type="CorAlServer" name="CorAlServer" output="screen">
-
+       <param name="training_data_path" value="/home/iliad/workspace/iliad_ws/src/CorAl-ScanAlignmentClassification/data/orkla.txt"/>
     </node>
 
 </launch>

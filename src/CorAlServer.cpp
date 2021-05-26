@@ -59,6 +59,11 @@
 #include<mlpack/core.hpp>
 #include "ros/timer.h"
 #include "alignment_checker/scan.h"
+#include "string"
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+
 
 /** \brief A ROS node which implements scan matching based on ndt
  * \author Daniel adolfsson
@@ -85,7 +90,7 @@ public:
     std::string path;
     nh_.param<std::string>("alignment_quality_service", alignment_quality_service, "/alignment_quality_service");
     nh_.param<std::string>("world_frame", world_id_, "map");
-    nh_.param<std::string>("path", path, "/home/iliad/workspace/iliad_ws/src/graph_map/graph_map/data/test_data/orkla.txt");
+    nh_.param<std::string>("training_data_path", path, "");
     nh_.param<double>("resolution", radius_, 0.4);
     nh_.param<double>("max_swell_distance", max_swell_dist ,50);
     nh_.param<double>("max_swell", swell, 2.5);
@@ -98,7 +103,7 @@ public:
     nh_.param<bool>("visualize", visualize, true);
     ac::ScanType::max_swell = swell;
     ac::ScanType::max_swell_dist = max_swell_dist;
-
+    cout<<"Loading training data from: "<<path<<endl;
     LoadCsv(path);
     int idx_train_end = Table[1].size()-1;
 
