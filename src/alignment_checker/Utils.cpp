@@ -1,4 +1,4 @@
-#include "alignment_checker/utils.h"
+#include "alignment_checker/Utils.h"
 
 namespace alignment_checker {
 
@@ -67,6 +67,7 @@ void ReadCloudsFromFile(const std::string directory, const std::string prefix, s
       break;
   }
 }
+
 Eigen::Affine3d TransRotvectorToAffine3d(const std::vector<double> &v) {
   Eigen::Quaterniond q(v[6], v[3], v[4], v[5]);
   Eigen::Affine3d T;
@@ -74,12 +75,25 @@ Eigen::Affine3d TransRotvectorToAffine3d(const std::vector<double> &v) {
   T.translation()<<v[0], v[1], v[2];
   return T;
 }
+
+Eigen::Affine3d VectorToAffine3dxyez(const std::vector<double>& vek){
+  assert(vek.size()==3);
+  return VectorToAffine3dxyez(vek[0], vek[1], vek[2]);
+}
 Eigen::Affine3d VectorToAffine3d(const Eigen::Matrix<double, 6,1> &v) {
 
   return Eigen::Translation<double, 3>(v(0), v(1), v(2)) *
       Eigen::AngleAxis<double>(v(3), Eigen::Vector3d::UnitX()) *
       Eigen::AngleAxis<double>(v(4), Eigen::Vector3d::UnitY()) *
       Eigen::AngleAxis<double>(v(5), Eigen::Vector3d::UnitZ());
+}
+
+Eigen::Affine3d VectorToAffine3dxyez(double x, double y, double theta) {
+
+  return Eigen::Translation<double, 3>(x,y,0) *
+      Eigen::AngleAxis<double>(0, Eigen::Vector3d::UnitX()) *
+      Eigen::AngleAxis<double>(0, Eigen::Vector3d::UnitY()) *
+      Eigen::AngleAxis<double>(theta, Eigen::Vector3d::UnitZ());
 }
 
 void SegmentGround(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > &clouds, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > &filtered, double height){

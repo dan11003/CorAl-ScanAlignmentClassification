@@ -32,6 +32,10 @@ Eigen::Affine3d TransRotvectorToAffine3d(const std::vector<double> &v);
 
 Eigen::Affine3d VectorToAffine3d(const Eigen::Matrix<double, 6,1> &v);
 
+Eigen::Affine3d VectorToAffine3dxyez(double x, double y, double theta);
+
+Eigen::Affine3d VectorToAffine3dxyez(const std::vector<double>& vek);
+
 void SegmentGround(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > &clouds, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > &filtered, double height);
 
 void DownSampleCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr  &cloud, pcl::PointCloud<pcl::Normal>::Ptr  &normal,float voxelsize=0.1);
