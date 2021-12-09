@@ -9,7 +9,7 @@
 #include "geometry_msgs/PoseStamped.h"
 #include "eigen_conversions/eigen_msg.h"
 #include "tf_conversions/tf_eigen.h"
-
+#include <cv_bridge/cv_bridge.h>
 namespace CorAlignment {
 
 typedef std::pair<Eigen::Affine3d,ros::Time> poseStamped;
@@ -17,9 +17,11 @@ typedef std::pair<Eigen::Affine3d,ros::Time> poseStamped;
 class dataHandler
 {
 public:
-  dataHandler() {}
+  dataHandler():nh_("~") {}
 
   virtual std::shared_ptr<PoseScan> Next() = 0;
+protected:
+  ros::NodeHandle nh_;
 };
 
 class FiledataHandler: public dataHandler
@@ -38,12 +40,20 @@ public:
   std::shared_ptr<PoseScan> Next();
 
 protected:
+
+  void UnpackImage(sensor_msgs::ImageConstPtr& image_msg);
+
+  void UnpackPose(nav_msgs::Odometry::ConstPtr& odom_msg);
+
+
   rosbag::Bag bag_;
-  std::unique_ptr<rosbag::View> view_pose_,view_image_;
+  std::unique_ptr<rosbag::View> view_;
+  rosbag::View::iterator m_;
 
 
-  std::vector<sensor_msgs::Image> radar_stream_;
+  std::vector<cv::Mat> radar_stream_;
   std::vector<poseStamped> pose_stream_;
+  ros::Publisher pub_odom, pub_image;
 };
 
 typedef std::unique_ptr<dataHandler> dataHandler_U;
