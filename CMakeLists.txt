@@ -34,7 +34,7 @@ find_package(catkin REQUIRED
     cv_bridge
     tf_conversions
     #ndt_map
-    robust_mapping_custom_msgs
+    #robust_mapping_custom_msgs
     )
 
 
