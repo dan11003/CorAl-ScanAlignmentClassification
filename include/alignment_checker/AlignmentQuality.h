@@ -52,7 +52,11 @@ public:
     }
   };
 
-  AlignmentQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity()) : src_(src_), ref_(ref), par_(par), Toffset_(Toffset) {}
+  AlignmentQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity()) : par_(par), Toffset_(Toffset) {
+    src_ = src;
+    ref_ = ref;
+    cout<<"constructor"<<endl;
+  }
 
   virtual ~AlignmentQuality(){}
 
@@ -96,7 +100,7 @@ class p2dQuality: public AlignmentQuality
 {
 public:
 
-  p2dQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity()) : AlignmentQuality(src, ref, par, Toffset){}
+  p2dQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity()) : AlignmentQuality(src, ref, par, Toffset){cout<<"p2d quality"<<endl;}
 
   ~p2dQuality(){}
 
@@ -130,17 +134,17 @@ public:
 class AlignmentQualityFactory
 {
 public:
-  static AlignmentQuality_S CreateQualityType(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& pars, const Eigen::Affine3d& Toffset = Eigen::Affine3d::Identity()) {
+  static AlignmentQuality_S CreateQualityType(std::shared_ptr<PoseScan>& ref, std::shared_ptr<PoseScan>& src,  const AlignmentQuality::parameters& pars, const Eigen::Affine3d& Toffset = Eigen::Affine3d::Identity()) {
     AlignmentQuality_S quality = nullptr;
     cout<<"Create quality type"<<std::quoted(pars.method)<<endl;
     if(pars.method=="coral")
       quality = std::make_shared<CorAl>(CorAl(ref,src,pars,Toffset));
-    else if(pars.method=="p2d")
-      quality = std::make_shared<p2dQuality>(p2dQuality(ref,src,pars,Toffset));
+    else if(pars.method=="p2d"){
+      quality = AlignmentQuality_S(new p2dQuality(ref,src,pars,Toffset));
+    }
     else if(pars.method=="p2p")
       quality = std::make_shared<p2pQuality>(p2pQuality(ref,src,pars,Toffset));
     assert(quality != nullptr);
-    cout<<"return quality type"<<endl;
     return quality;
   }
 };

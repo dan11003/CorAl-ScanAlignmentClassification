@@ -49,7 +49,7 @@ void scanEvaluator::InputSanityCheck(){
   assert( par_.range_error >  0.0 );
   assert( par_.theta_range >= -DBL_EPSILON );
   assert( par_.theta_error >= 0.0 );
-  assert( par_.scan_spacing >= 0 );
+  assert( par_.scan_spacing >= 1 );
 }
 scanEvaluator::scanEvaluator( dataHandler_U& reader, const parameters& eval_par, const AlignmentQuality::parameters& quality_par): par_(eval_par), quality_par_(quality_par)
 {
@@ -61,15 +61,19 @@ scanEvaluator::scanEvaluator( dataHandler_U& reader, const parameters& eval_par,
   std::vector< std::shared_ptr<PoseScan> > prev_scans;
   int index = 0;
   for (std::shared_ptr<PoseScan> current = reader_->Next(); current!=nullptr; current = reader_->Next(), index++) {
-    if( prev_scans.size() == par_.scan_spacing)
+    if( prev_scans.size() == par_.scan_spacing )
     {
       for(auto && verr : vek_perturbation_){
         cout<<verr[0]<<", "<<verr[1]<<", "<<verr[2]<<endl;
         const Eigen::Affine3d Tperturbation = VectorToAffine3dxyez(verr);
+        cout<<endl<<prev_scans.back()->GetAffine().matrix()<<endl;
+        cout<<endl<<current->GetAffine().matrix()<<endl;
         AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(prev_scans.back(), current, quality_par_, Tperturbation);
         cout<<"get residuals"<<endl;
         std::vector<double> res = quality->GetResiduals();
         std::vector<double> score = quality->GetResiduals();
+        cout<<"res: "<<res<<endl;
+        quality = NULL;
         datapoints_.push_back(datapoint(index, res, verr, score));
       }
     }
@@ -78,6 +82,7 @@ scanEvaluator::scanEvaluator( dataHandler_U& reader, const parameters& eval_par,
       prev_scans.erase(prev_scans.begin());
     }
   }
+  cout<<"loop ended"<<endl;
 
   SaveEvaluation();
 

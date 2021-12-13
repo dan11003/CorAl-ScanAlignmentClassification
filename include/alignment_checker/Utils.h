@@ -46,5 +46,15 @@ void FilterCloudsByDistance(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > &c
 
 void PublishCloud(const std::string& topic, pcl::PointCloud<pcl::PointXYZ>& cld);
 
+template <typename T>
+std::ostream & operator << (std::ostream & os, const std::vector<T> & vec)
+{
+    for(auto elem : vec)
+    {
+        os<<elem<< " ";
+    }
+    return os;
+}
+
 }
 #endif // IO_H
