@@ -6,16 +6,21 @@ namespace CorAlignment {
 std::vector<double> p2dQuality::GetQualityMeasure(){
   return {0,0,0};
 }
+std::vector<double> p2pQuality::GetQualityMeasure(){
+  return {0,0,0};
+}
 std::vector<double> CorAl::GetQualityMeasure(){
   return {0,0,0};
 }
 
 
+
 p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset) : AlignmentQuality(src, ref, par, Toffset){
 
   //pcl::transform
-  std::shared_ptr<lidarscan> ref_pcd = std::dynamic_pointer_cast<lidarscan>(ref);
-  std::shared_ptr<lidarscan> src_pcd = std::dynamic_pointer_cast<lidarscan>(src);
+  std::shared_ptr<lidarscan> ref_pcd = std::shared_ptr<lidarscan>(std::dynamic_pointer_cast<lidarscan>(ref));
+  std::shared_ptr<lidarscan> src_pcd = std::shared_ptr<lidarscan>(std::dynamic_pointer_cast<lidarscan>(src));
+
 
   //Transform into "world" frame and than into frame of "ref"
   const Eigen::Affine3d Tsrc = src_pcd->GetAffine();

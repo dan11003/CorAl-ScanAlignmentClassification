@@ -18,6 +18,8 @@
 #include "pcl/common/transforms.h"
 #include "pcl/kdtree/flann.h"
 #include "pcl/kdtree/kdtree.h"
+#include "memory.h"
+
 
 namespace CorAlignment{
 using std::endl;

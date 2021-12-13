@@ -28,6 +28,9 @@ public:
   Eigen::Affine3d Test_, Tmot_;
 
   const Eigen::Affine3d& GetAffine() {return Test_;}
+
+  virtual ~PoseScan() {}
+
 };
 
 class radarscan: public PoseScan{
