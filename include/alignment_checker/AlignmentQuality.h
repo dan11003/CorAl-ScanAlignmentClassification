@@ -52,9 +52,12 @@ public:
 
   AlignmentQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity()) : src_(src_), ref_(ref), par_(par), Toffset_(Toffset) {}
 
+  virtual ~AlignmentQuality(){}
+
   virtual std::vector<double> GetResiduals() = 0;
 
   virtual std::vector<double> GetQualityMeasure() = 0;
+
   // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
 
   std::shared_ptr<PoseScan> src_, ref_;
@@ -73,6 +76,8 @@ public:
 
   p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity());
 
+  ~p2pQuality(){}
+
   std::vector<double> GetResiduals() {return {0,0,0}; }
 
   std::vector<double> GetQualityMeasure();
@@ -89,6 +94,8 @@ class p2dQuality: public AlignmentQuality
 public:
 
   p2dQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity());
+
+  ~p2dQuality(){}
 
   std::vector<double> GetResiduals(){return {0,0,0}; }
 
@@ -107,6 +114,8 @@ public:
 
   CorAl(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity())  : AlignmentQuality(src, ref, par, Toffset){}
 
+  ~CorAl(){}
+
   std::vector<double> GetResiduals(){ return {0,0,0}; }
 
   std::vector<double> GetQualityMeasure();
@@ -123,6 +132,8 @@ public:
       return std::make_unique<CorAl>(CorAl(ref,src,pars,Toffset));
     else if(pars.method=="p2d")
       return std::make_unique<p2dQuality>(p2dQuality(ref,src,pars,Toffset));
+    else if(pars.method=="p2p")
+      return std::make_unique<p2pQuality>(p2pQuality(ref,src,pars,Toffset));
     else return nullptr;
   }
 };

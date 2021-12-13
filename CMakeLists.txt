@@ -63,6 +63,7 @@ set (${PROJECT_NAME}_LIB_SRCS
     src/alignment_checker/ScanEvaluator.cpp
     src/alignment_checker/DataHandler.cpp
     src/alignment_checker/Utils.cpp
+    src/alignment_checker/ScanType.cpp
     #src/alignment_checker/scan.cpp
     #src/alignment_checker/scancomparsion.cpp
     #src/alignment_checker/alignmenttester.cpp

@@ -37,9 +37,12 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
     std::vector<float> pointRadiusSquaredDistance;
     std::vector<int> pointIdxRadiusSearch;
     const double radius = 1;
+    kdtree_.setSortedResults(true);
+
     if ( kdtree_.radiusSearch (p, radius, pointIdxRadiusSearch, pointRadiusSquaredDistance) > 0){
       for (int i=0;i<pointIdxRadiusSearch.size();i++) {
-        pcl::PointXYZ p = ref_cld->points[pointIdxRadiusSearch[i]];
+        pcl::PointXYZ p_ref = ref_cld->points[pointIdxRadiusSearch[0]];
+
         // Do whatever needs to be done :)
 
       }

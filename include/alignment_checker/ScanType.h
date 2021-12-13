@@ -17,6 +17,7 @@
 
 #include <pcl/point_cloud.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include "pcl/common/transforms.h"
 
 namespace CorAlignment{
 
