@@ -71,7 +71,7 @@ public:
 };
 typedef std::shared_ptr<AlignmentQuality> AlignmentQuality_S;
 
-/************** P2D ********************/
+/************** P2P ********************/
 
 class p2pQuality: public AlignmentQuality
 {

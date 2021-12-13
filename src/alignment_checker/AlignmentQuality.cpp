@@ -31,9 +31,10 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
   pcl::PointCloud<pcl::PointXYZ>::Ptr ref_cld = ref_pcd->GetCloudNoCopy();
 
   //Build kd tree for fast neighbor search
-  //kdtree_.setInputCloud(ref_cld); // ref cloud
+  kdtree_.setInputCloud(ref_cld); // ref cloud
 
-  //For all p in
+  //Calculate the sqaured distances for all 'p' in the point cloud
+  
   for(auto && p : src_cld->points){
     std::vector<float> pointRadiusSquaredDistance;
     std::vector<int> pointIdxRadiusSearch;
@@ -41,12 +42,14 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
     kdtree_.setSortedResults(true);
 
     if ( kdtree_.radiusSearch (p, radius, pointIdxRadiusSearch, pointRadiusSquaredDistance) > 0){
-      for (int i=0;i<pointIdxRadiusSearch.size();i++) {
-        pcl::PointXYZ p_ref = ref_cld->points[pointIdxRadiusSearch[0]];
+		residuals_.push_back(pointRadiusSquaredDistance[0]);
+		
+      //for (int i=0;i<pointIdxRadiusSearch.size();i++) {
+        //pcl::PointXYZ p_ref = ref_cld->points[pointIdxRadiusSearch[0]];
 
         // Do whatever needs to be done :)
 
-      }
+      //}
 
     }
   }
