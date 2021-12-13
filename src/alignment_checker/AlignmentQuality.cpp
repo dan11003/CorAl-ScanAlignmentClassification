@@ -30,7 +30,7 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
   pcl::PointCloud<pcl::PointXYZ>::Ptr ref_cld = ref_pcd->GetCloudNoCopy();
 
   //Build kd tree for fast neighbor search
-  //kdtree_.setInputCloud(ref_cld); // ref cloud
+  kdtree_.setInputCloud(ref_cld); // ref cloud
 
   //For all p in
   for(auto && p : src_cld->points){

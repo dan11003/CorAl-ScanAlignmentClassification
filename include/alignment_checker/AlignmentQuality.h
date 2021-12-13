@@ -68,7 +68,7 @@ public:
 
 };
 
-/************** P2D ********************/
+/************** P2P ********************/
 
 class p2pQuality: public AlignmentQuality
 {
