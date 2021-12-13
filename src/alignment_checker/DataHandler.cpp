@@ -71,4 +71,23 @@ std::shared_ptr<PoseScan> RadarRosbagHandler::Next(){
 
 }
 
+MockupHandler::MockupHandler(){
+  for(int i=1;i<=9;i+=step_resolution){
+    cloud.push_back(pcl::PointXYZ(i,i,i));
+  }
+
+}
+std::shared_ptr<PoseScan> MockupHandler::Next(){
+  cout<<"Mockup::Next()"<<endl;
+  if(step==5)
+    return nullptr;
+  else{
+    pcl::PointCloud<pcl::PointXYZ>::Ptr transformed(new pcl::PointCloud<pcl::PointXYZ>());
+    Eigen::Affine3d T = Eigen::Affine3d::Identity();
+    T.translation()<<(step++)*step_resolution, 0, 0;
+    pcl::transformPointCloud(cloud, *transformed, T.inverse()); //transform cloud into frame of T
+    return PoseScan_S(new lidarscan(transformed, T, Eigen::Affine3d::Identity()));
+ }
+}
+
 }

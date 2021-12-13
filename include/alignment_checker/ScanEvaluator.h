@@ -29,7 +29,6 @@ public:
   public:
     parameters() {}
 
-    std::string method;
     int scan_spacing = 1;
 
     // offset parameters
@@ -57,7 +56,6 @@ public:
       stringStream << "output_residual_prefix, "<<output_residual_prefix<<endl;
       stringStream << "eval_name, "<<eval_name<<endl;
       stringStream << "dataset, "<<std::boolalpha<<dataset<<endl;
-      stringStream << "method, "<<method<<endl;
       stringStream << "scan_spacing, "<<scan_spacing<<endl;
       stringStream << "range_error, "<<range_error<<endl;
       stringStream << "theta_range, "<<theta_range<<endl;
@@ -68,7 +66,7 @@ public:
 
 
   };
-  scanEvaluator( dataHandler_U& reader, const parameters& par, const AlignmentQuality::parameters& alignment_par);
+  scanEvaluator( dataHandler_U& reader, const parameters& eval_par, const AlignmentQuality::parameters& alignment_par);
 
   void CreatePerturbations();
 
@@ -81,6 +79,7 @@ private:
   void InputSanityCheck();
 
   parameters par_;
+  AlignmentQuality::parameters quality_par_;
   //dataHandler_U reader_;
   dataHandler_U reader_;
 

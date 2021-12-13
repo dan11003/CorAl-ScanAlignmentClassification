@@ -19,6 +19,8 @@
 #include "pcl/kdtree/flann.h"
 #include "pcl/kdtree/kdtree.h"
 #include "memory.h"
+#include <iomanip>
+
 
 
 namespace CorAlignment{
@@ -39,13 +41,13 @@ public:
   public:
     parameters() {}
     std::string method;
-    double resolution;
+    double radius;
 
     std::string ToString(){
       std::ostringstream stringStream;
       //stringStream << "OdometryKeyframeFuser::Parameters"<<endl;
       stringStream << "method, "<<method<<endl;
-      stringStream << "resolution, "<<resolution<<endl;
+      stringStream << "radius, "<<radius<<endl;
       return stringStream.str();
     }
   };
@@ -67,6 +69,7 @@ public:
   std::vector<double> residuals_;
 
 };
+typedef std::shared_ptr<AlignmentQuality> AlignmentQuality_S;
 
 /************** P2P ********************/
 
@@ -127,14 +130,18 @@ public:
 class AlignmentQualityFactory
 {
 public:
-  static std::unique_ptr<AlignmentQuality> CreateQualityType(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& pars, const Eigen::Affine3d& Toffset = Eigen::Affine3d::Identity()) {
+  static AlignmentQuality_S CreateQualityType(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& pars, const Eigen::Affine3d& Toffset = Eigen::Affine3d::Identity()) {
+    AlignmentQuality_S quality = nullptr;
+    cout<<"Create quality type"<<std::quoted(pars.method)<<endl;
     if(pars.method=="coral")
-      return std::make_unique<CorAl>(CorAl(ref,src,pars,Toffset));
+      quality = std::make_shared<CorAl>(CorAl(ref,src,pars,Toffset));
     else if(pars.method=="p2d")
-      return std::make_unique<p2dQuality>(p2dQuality(ref,src,pars,Toffset));
+      quality = std::make_shared<p2dQuality>(p2dQuality(ref,src,pars,Toffset));
     else if(pars.method=="p2p")
-      return std::make_unique<p2pQuality>(p2pQuality(ref,src,pars,Toffset));
-    else return nullptr;
+      quality = std::make_shared<p2pQuality>(p2pQuality(ref,src,pars,Toffset));
+    assert(quality != nullptr);
+    cout<<"return quality type"<<endl;
+    return quality;
   }
 };
 
