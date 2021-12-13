@@ -46,18 +46,23 @@ void RadarRosbagHandler::UnpackPose(nav_msgs::Odometry::ConstPtr& odom_msg){
 std::shared_ptr<PoseScan> RadarRosbagHandler::Next(){
 
 
-  while(m_++!=view_->end() && ros::ok()){
+  while(m_!=view_->end() && ros::ok()){
 
-    sensor_msgs::ImageConstPtr image_msg = m_->instantiate<sensor_msgs::Image>();
+    sensor_msgs::ImageConstPtr image_msg  = m_->instantiate<sensor_msgs::Image>();
     nav_msgs::Odometry::ConstPtr odom_msg = m_->instantiate<nav_msgs::Odometry>();
     if(image_msg  != NULL)
       UnpackImage(image_msg);
     else if(odom_msg != NULL)
       UnpackPose(odom_msg);
 
+    if(radar_stream_.size()>3)
+      radar_stream_.erase(radar_stream_.begin());
+    if(pose_stream_.size()>3)
+      pose_stream_.erase(pose_stream_.begin());
+
     cout<<"poses: "<<pose_stream_.size()<<endl;
     cout<<"images: "<<radar_stream_.size()<<endl;
-    cout<<std::distance(view_->begin(), m_)<<endl;
+    cout<<std::distance(view_->begin(), m_)<<"/"<<view_->size()<<endl;
     // Need to make sure image and pose are synced in time here. Actually they are except perhaps for the begining or the end, just discard until they are synced.
 
     m_++;

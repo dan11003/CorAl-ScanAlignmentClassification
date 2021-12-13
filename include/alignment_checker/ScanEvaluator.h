@@ -47,7 +47,24 @@ public:
     std::string output_eval_file = "eval.txt";
     std::string output_residual_prefix = "residuals_";
     std::string eval_name ="noname";
-    std::string dataset ="";
+    std::string dataset = "", sequence = "";
+
+    std::string ToString(){
+      std::ostringstream stringStream;
+      stringStream << "output_directory, "<<output_directory<<endl;
+      stringStream << "output_meta_file, "<<output_meta_file<<endl;
+      stringStream << "output_eval_file, "<<output_eval_file<<endl;
+      stringStream << "output_residual_prefix, "<<output_residual_prefix<<endl;
+      stringStream << "eval_name, "<<eval_name<<endl;
+      stringStream << "dataset, "<<std::boolalpha<<dataset<<endl;
+      stringStream << "method, "<<method<<endl;
+      stringStream << "scan_spacing, "<<scan_spacing<<endl;
+      stringStream << "range_error, "<<range_error<<endl;
+      stringStream << "theta_range, "<<theta_range<<endl;
+      stringStream << "offset_rotation_steps, "<<offset_rotation_steps<<endl;
+      stringStream << "theta_error, "<<theta_error<<endl;
+      return stringStream.str();
+    }
 
 
   };

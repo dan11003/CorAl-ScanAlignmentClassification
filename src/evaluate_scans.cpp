@@ -63,7 +63,7 @@ using namespace CorAlignment;
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "clustering_node");
+  ros::init(argc, argv, "evaluate");
 
   // Input output
   std::string filepath, directory_clouds, cloud_prefix;
@@ -74,6 +74,7 @@ int main(int argc, char **argv)
   std::string method, dataset;
 
   scanEvaluator::parameters evalPars;
+  AlignmentQuality::parameters qualityPars;
 
 
   po::options_description desc("Allowed options");
@@ -83,14 +84,15 @@ int main(int argc, char **argv)
       ("cloud-dir", po::value<std::string>(&directory_clouds)->default_value(std::string("/home/daniel/ros/mapping_ws/src/graph_map/graph_map/scripts")),"directory of clouds")
       ("cloud-prefix",po::value<std::string>(&cloud_prefix)->default_value(std::string("cloud_")),"prefix of cloud names")
       ("output-dir",po::value<std::string>(&evalPars.output_directory)->default_value(std::string("cloud_")),"output directory")
-      ("output-eval-metafile",po::value<std::string>(&evalPars.output_meta_file)->default_value(std::string("")),"output meta file name")
-      ("output-eval-file",po::value<std::string>(&evalPars.output_eval_file)->default_value(std::string("")),"output file name")
+      ("output-eval-metafile",po::value<std::string>(&evalPars.output_meta_file)->default_value(std::string("params.txt")),"output meta file name")
+      ("output-eval-file",po::value<std::string>(&evalPars.output_eval_file)->default_value(std::string("eval.txt")),"output file name")
       ("method",po::value<std::string>(&evalPars.method)->default_value(std::string("entropy")),"evaluation method")
-    //("eval-yaml",po::value<std::string>(&eval_yaml)->default_value(std::string("")),"yaml file")
+      //("eval-yaml",po::value<std::string>(&eval_yaml)->default_value(std::string("")),"yaml file")
       ("eval-name",po::value<std::string>(&evalPars.eval_name)->default_value(std::string("eval")),"evaluation method")
       ("data-set",po::value<std::string>(&evalPars.dataset)->default_value(std::string("dataset")),"filename")
+      ("sequence",po::value<std::string>(&evalPars.sequence)->default_value(std::string("")),"filename")
       ("index-first-scan",po::value<int>(&index_first_scan)->default_value(0),"index of first scan");
-      //("radius", po::value<double>(&radius)->default_value(0.5),"radius of a voxel");
+  //("radius", po::value<double>(&radius)->default_value(0.5),"radius of a voxel");
 
 
   //Boolean parameres are read through notifiers
@@ -109,8 +111,10 @@ int main(int argc, char **argv)
   }
 
 
+  cout<<"Evaluation"<<endl;
+  cout<<evalPars.ToString()<<endl;
+  cout<<qualityPars.ToString()<<endl;
 
-  AlignmentQuality::parameters qualityPars;
   dataHandler_U fileHandler = std::make_unique<RadarRosbagHandler>(filepath);
   scanEvaluator eval(fileHandler, evalPars, qualityPars);
   cout<<"finished"<<endl;

@@ -15,8 +15,14 @@
 #include <opencv2/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include "alignment_checker/ScanType.h"
+#include "pcl/common/transforms.h"
+#include "pcl/kdtree/flann.h"
+#include "pcl/kdtree/kdtree.h"
 
 namespace CorAlignment{
+using std::endl;
+using std::cout;
+using std::cerr;
 
 
 ///////////// BASE /////////////////
@@ -32,6 +38,14 @@ public:
     parameters() {}
     std::string method;
     double resolution;
+
+    std::string ToString(){
+      std::ostringstream stringStream;
+      //stringStream << "OdometryKeyframeFuser::Parameters"<<endl;
+      stringStream << "method, "<<method<<endl;
+      stringStream << "resolution, "<<resolution<<endl;
+      return stringStream.str();
+    }
   };
 
   AlignmentQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity()) : src_(src_), ref_(ref), par_(par), Toffset_(Toffset) {}
@@ -44,9 +58,27 @@ public:
   std::shared_ptr<PoseScan> src_, ref_;
   AlignmentQuality::parameters par_;
   const Eigen::Affine3d Toffset_;
+  std::vector<double> quality_;
+  std::vector<double> residuals_;
 
 };
 
+/************** P2D ********************/
+
+class p2pQuality: public AlignmentQuality
+{
+public:
+
+  p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity());
+
+  std::vector<double> GetResiduals() {return {0,0,0}; }
+
+  std::vector<double> GetQualityMeasure();
+
+protected:
+  pcl::KdTreeFLANN<pcl::PointXYZ> kdtree_;
+  // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
+};
 
 /************** P2D ********************/
 
@@ -54,15 +86,12 @@ class p2dQuality: public AlignmentQuality
 {
 public:
 
-  p2dQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity()) : AlignmentQuality(src, ref, par, Toffset){}
+  p2dQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity());
 
   std::vector<double> GetResiduals(){return {0,0,0}; }
 
   std::vector<double> GetQualityMeasure();
   // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
-
-  std::shared_ptr<PoseScan> src_, ref_;
-
 };
 /************** P2D ********************/
 
@@ -80,11 +109,6 @@ public:
 
   std::vector<double> GetQualityMeasure();
   // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
-
-  std::shared_ptr<PoseScan> src_, ref_;
-
-
-
 };
 
 

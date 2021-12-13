@@ -1,3 +1,4 @@
+
 #include "alignment_checker/scan.h"
 namespace alignment_checker{
 
