@@ -16,6 +16,7 @@ std::vector<double> CorAl::GetQualityMeasure(){
 
 
 p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset) : AlignmentQuality(src, ref, par, Toffset){
+  cout<<"create p2p quality"<<endl;
 
   //pcl::transform
   std::shared_ptr<lidarscan> ref_pcd = std::shared_ptr<lidarscan>(std::dynamic_pointer_cast<lidarscan>(ref));
@@ -49,6 +50,7 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
 
     }
   }
+
 
 }
 

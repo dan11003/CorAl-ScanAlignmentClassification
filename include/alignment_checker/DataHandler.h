@@ -56,7 +56,22 @@ protected:
   ros::Publisher pub_odom, pub_image;
 };
 
+
+class MockupHandler: public dataHandler
+{
+public:
+  MockupHandler();
+
+  std::shared_ptr<PoseScan> Next();
+private:
+  int step = 1;
+  const int step_resolution = 2;
+  pcl::PointCloud<pcl::PointXYZ> cloud;
+};
+
+
 typedef std::unique_ptr<dataHandler> dataHandler_U;
+
 
 
 }
