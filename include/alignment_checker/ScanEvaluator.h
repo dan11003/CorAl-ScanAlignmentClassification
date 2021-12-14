@@ -25,7 +25,7 @@ public:
   }
   std::string ToString(){
     std::stringstream ss;
-    ss<<index_<<","<<ref_id_<<","<<src_id_<<","<<distance_<<","<<score_[0]<<","<<score_[1]<<","<<score_[2]<<","<<aligned()<<","<<perturbation_[0]<<","<<perturbation_[1]<<","<<perturbation_[2]<<std::endl;
+    ss<<index_<<","<<ref_id_<<","<<src_id_<<","<<distance_<<","<<score_[0]<<","<<score_[1]<<","<<score_[2]<<","<<aligned()<<","<<perturbation_[0]<<","<<perturbation_[1]<<","<<perturbation_[2];
     return ss.str();
 
   }
