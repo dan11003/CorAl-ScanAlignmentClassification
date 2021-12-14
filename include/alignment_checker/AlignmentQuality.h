@@ -46,8 +46,8 @@ public:
     std::string ToString(){
       std::ostringstream stringStream;
       //stringStream << "OdometryKeyframeFuser::Parameters"<<endl;
-      stringStream << "method, "<<method<<endl;
-      stringStream << "radius, "<<radius<<endl;
+      stringStream << "method,"<<method<<endl;
+      stringStream << "radius,"<<radius<<endl;
       return stringStream.str();
     }
   };
@@ -55,8 +55,9 @@ public:
   AlignmentQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity()) : par_(par), Toffset_(Toffset) {
     src_ = src;
     ref_ = ref;
-    cout<<"constructor"<<endl;
   }
+
+  void Visualize();
 
   virtual ~AlignmentQuality(){}
 
@@ -71,6 +72,8 @@ public:
   const Eigen::Affine3d Toffset_;
   std::vector<double> quality_;
   std::vector<double> residuals_;
+
+
 
 };
 typedef std::shared_ptr<AlignmentQuality> AlignmentQuality_S;
@@ -152,7 +155,17 @@ public:
   }
 };
 
+class AlignmentQualityPlot
+{
+public:
+  AlignmentQualityPlot() {}
 
+
+  //Modify to poseScan instead of MapNormalPtr
+  //static void PublishMap(const std::string& topic, MapNormalPtr map, Eigen::Affine3d& T, const std::string& frame_id, const int value=0);
+
+  //static std::map<std::string, ros::Publisher> pubs;
+};
 
 
 

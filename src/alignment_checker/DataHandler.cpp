@@ -79,7 +79,7 @@ MockupHandler::MockupHandler(){
 }
 std::shared_ptr<PoseScan> MockupHandler::Next(){
   cout<<"Mockup::Next()"<<endl;
-  if(step==5)
+  if(step==100)
     return nullptr;
   else{
     pcl::PointCloud<pcl::PointXYZ>::Ptr transformed(new pcl::PointCloud<pcl::PointXYZ>());

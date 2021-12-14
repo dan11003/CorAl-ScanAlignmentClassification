@@ -64,12 +64,14 @@ scanEvaluator::scanEvaluator( dataHandler_U& reader, const parameters& eval_par,
       for(auto && verr : vek_perturbation_){
         cout<<verr[0]<<", "<<verr[1]<<", "<<verr[2]<<endl;
         const Eigen::Affine3d Tperturbation = VectorToAffine3dxyez(verr);
-        cout<<endl<<prev_scans.back()->GetAffine().matrix()<<endl;
-        cout<<endl<<current->GetAffine().matrix()<<endl;
+        //cout<<endl<<prev_scans.back()->GetAffine().matrix()<<endl;
+        //cout<<endl<<current->GetAffine().matrix()<<endl;
         AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(prev_scans.back(), current, quality_par_, Tperturbation);
+        //AlignmentQualityPlot::PublishPoseScan("/src", current);
+        //AlignmentQualityPlot::PublishPoseScan("/ref", prev_scans.back());
         std::vector<double> res = quality->GetResiduals();
         std::vector<double> quality_measure = quality->GetQualityMeasure();
-        cout<<"quality: "<<quality_measure<<endl;
+        //cout<<"quality: "<<quality_measure<<endl;
         quality = NULL;
         datapoints_.push_back(datapoint(index, res, verr, quality_measure, prev_scans.back(), current));
       }
@@ -79,7 +81,7 @@ scanEvaluator::scanEvaluator( dataHandler_U& reader, const parameters& eval_par,
       prev_scans.erase(prev_scans.begin());
     }
   }
-  cout<<"loop ended"<<endl;
+
 
   SaveEvaluation();
 

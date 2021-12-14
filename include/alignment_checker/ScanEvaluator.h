@@ -20,7 +20,7 @@ public:
   }
   static std::string HeaderToString(){
     std::stringstream ss;
-    ss<<"index, ref_id, src_id, distance, score1, score2, score3, aligned, error x, error y, error theta";
+    ss<<"index,ref_id,src_id,distance,score1,score2,score3,aligned,error x,error y,error theta";
     return ss.str();
   }
   std::string ToString(){
