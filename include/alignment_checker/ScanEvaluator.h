@@ -4,6 +4,8 @@
 #include "stdio.h"
 #include "vector"
 #include "alignment_checker/Utils.h"
+#include <sstream>      // std::stringstream
+
 
 namespace CorAlignment {
 using namespace alignment_checker;
@@ -11,12 +13,28 @@ using namespace alignment_checker;
 class datapoint
 {
 public:
-  datapoint(const int index, const std::vector<double>& residuals,const std::vector<double>& perturbation, const std::vector<double>& score) : residuals_(residuals), perturbation_(perturbation), score_(score) {}
+  datapoint(const int index, const std::vector<double>& residuals,const std::vector<double>& perturbation, const std::vector<double>& score, std::shared_ptr<PoseScan>& ref, std::shared_ptr<PoseScan>& src) : residuals_(residuals), perturbation_(perturbation), score_(score), index_(index) {
+    distance_ = (ref->GetAffine().translation()-src->GetAffine().translation()).norm();
+    src_id_ = src->pose_id;
+    ref_id_ = ref->pose_id;
+  }
+  static std::string HeaderToString(){
+    std::stringstream ss;
+    ss<<"index, ref_id, src_id, distance, score1, score2, score3, aligned, error x, error y, error theta";
+    return ss.str();
+  }
+  std::string ToString(){
+    std::stringstream ss;
+    ss<<index_<<","<<ref_id_<<","<<src_id_<<","<<distance_<<","<<score_[0]<<","<<score_[1]<<","<<score_[2]<<","<<aligned()<<","<<perturbation_[0]<<","<<perturbation_[1]<<","<<perturbation_[2]<<std::endl;
+    return ss.str();
 
+  }
+
+  double distance_;
   std::vector<double> residuals_;
   std::vector<double> perturbation_={0,0,0};
   std::vector<double> score_={0,0,0};
-  int index;
+  int index_, ref_id_, src_id_;
   bool  aligned();
 };
 class scanEvaluator
