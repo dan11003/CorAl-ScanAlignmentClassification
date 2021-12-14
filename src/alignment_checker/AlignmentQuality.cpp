@@ -9,13 +9,16 @@ std::vector<double> p2dQuality::GetQualityMeasure(){
 std::vector<double> p2pQuality::GetQualityMeasure(){
 	
 	//Calculate the mean of all the residuals
-	int residuals_size_ = residuals_.size();
-	double means_ = 0;
-	for(int i=0; i<residuals_size_; i++){
-		means_ += residuals_[i]; 
+  int residuals_size = residuals_.size();
+  if(residuals_size  == 0)
+    return {0, 0, 0};
+
+  double means = 0;
+  for(int i=0; i<residuals_size; i++){
+    means += residuals_[i];
 	}
-	means_ = means_/double(residuals_size_);
-  return {means_};	
+  means = means/double(residuals_size);
+  return {means, 0, 0};
 }
 std::vector<double> CorAl::GetQualityMeasure(){
   return {0,0,0};
@@ -33,10 +36,16 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
 
   //Transform into "world" frame and than into frame of "ref"
   const Eigen::Affine3d Tsrc = src_pcd->GetAffine();
-  const Eigen::Affine3d Ttar = src_pcd->GetAffine();
-  const Eigen::Affine3d Tchange = Ttar.inverse()*Tsrc*Toffset;
+  const Eigen::Affine3d Tref = ref_pcd->GetAffine();
+  const Eigen::Affine3d Tchange = Tref.inverse()*Tsrc*Toffset;
+  cout<<"change\n"<<Tchange.matrix()<<endl;
   pcl::PointCloud<pcl::PointXYZ>::Ptr src_cld = src_pcd->GetCloudCopy(Tchange);//get cloud and also change reference frame to ref
   pcl::PointCloud<pcl::PointXYZ>::Ptr ref_cld = ref_pcd->GetCloudNoCopy();
+  cout<<"src: "<<src_cld->size()<<", ref: "<<ref_cld->size()<<endl;
+  for(auto && p : src_cld->points)
+    cout<<"src: "<<p.getArray3fMap().transpose()<<endl;
+  for(auto && p : ref_cld->points)
+    cout<<"ref: "<<p.getArray3fMap().transpose()<<endl;
 
   //Build kd tree for fast neighbor search
   kdtree_.setInputCloud(ref_cld); // ref cloud
@@ -46,21 +55,14 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
   for(auto && p : src_cld->points){
     std::vector<float> pointRadiusSquaredDistance;
     std::vector<int> pointIdxRadiusSearch;
-    const double radius = 1;
+    const double radius = par_.radius;
     kdtree_.setSortedResults(true);
 
     if ( kdtree_.radiusSearch (p, radius, pointIdxRadiusSearch, pointRadiusSquaredDistance) > 0){
 		residuals_.push_back(pointRadiusSquaredDistance[0]);
-		
-      //for (int i=0;i<pointIdxRadiusSearch.size();i++) {
-        //pcl::PointXYZ p_ref = ref_cld->points[pointIdxRadiusSearch[0]];
-
-        
-
-      //}
-
     }
   }
+  cout<<"residuals: "<<residuals_.size()<<endl;
 
 
 }

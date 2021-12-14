@@ -67,11 +67,11 @@ scanEvaluator::scanEvaluator( dataHandler_U& reader, const parameters& eval_par,
         cout<<endl<<prev_scans.back()->GetAffine().matrix()<<endl;
         cout<<endl<<current->GetAffine().matrix()<<endl;
         AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(prev_scans.back(), current, quality_par_, Tperturbation);
-
         std::vector<double> res = quality->GetResiduals();
-        std::vector<double> score = quality->GetResiduals();
+        std::vector<double> quality_measure = quality->GetQualityMeasure();
+        cout<<"quality: "<<quality_measure<<endl;
         quality = NULL;
-        datapoints_.push_back(datapoint(index, res, verr, score, prev_scans.back(), current));
+        datapoints_.push_back(datapoint(index, res, verr, quality_measure, prev_scans.back(), current));
       }
     }
     prev_scans.push_back(current);
