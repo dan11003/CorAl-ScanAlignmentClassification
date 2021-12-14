@@ -9,12 +9,12 @@ std::vector<double> p2dQuality::GetQualityMeasure(){
 std::vector<double> p2pQuality::GetQualityMeasure(){
 	
 	//Calculate the mean of all the residuals
-	residuals_size_ = residuals_.size();
-	const double means_ = 0;
+	int residuals_size_ = residuals_.size();
+	double means_ = 0;
 	for(int i=0; i<residuals_size_; i++){
 		means_ += residuals_[i]; 
 	}
-	means_ = means_/residuals_size;
+	means_ = means_/double(residuals_size_);
   return {means_};	
 }
 std::vector<double> CorAl::GetQualityMeasure(){
