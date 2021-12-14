@@ -25,8 +25,12 @@ if args.directory:
 if args.filename:
     print("filename %s" % args.filename)
 
-file_path=args.directory+"/"+args.filename
-output_directory = args.directory+"/output"
+file_path=os.path.join(args.directory, args.filename)
+
+output_directory=os.path.join(args.directory, "output")
+print(output_directory)
+exit
+#output_directory = args.directory+"/output"
 
 col_names=['score1','score2','score3']
 df = pd.read_csv(file_path)

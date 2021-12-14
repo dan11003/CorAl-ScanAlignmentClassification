@@ -5,10 +5,10 @@ import seaborn as sns
 import pandas as pd
 from sklearn import metrics
 import os
-def PrintConfusionMatric(cnf_matrix, path):
+def PrintConfusionMatric(cnf_matrix, directory):
 
-    if not os.path.exists(path):
-        os.mkdir(path)
+    if not os.path.exists(directory):
+        os.mkdir(directory)
 
     class_names=[0,1] # name  of classes
     fig, ax = plt.subplots()
@@ -22,18 +22,23 @@ def PrintConfusionMatric(cnf_matrix, path):
     plt.title('Confusion matrix', y=1.1)
     plt.ylabel('Actual label')
     plt.xlabel('Predicted label')
+    path = os.path.join(directory,"confusion")
+    plt.savefig(path+".png")
+    plt.savefig(path+".pdf", bbox_inches='tight')
     plt.show()
-    plt.savefig(path+"confusion.png")
     return None
 
-def PrintROC(logreg,X_test,y_test,path):
-    if not os.path.exists(path):
-        os.mkdir(path)
+def PrintROC(logreg,X_test,y_test,directory):
+    if not os.path.exists(directory):
+        os.mkdir(directory)
     y_pred_proba = logreg.predict_proba(X_test)[::,1]
     fpr, tpr, _ = metrics.roc_curve(y_test,  y_pred_proba)
     auc = metrics.roc_auc_score(y_test, y_pred_proba)
     plt.plot(fpr,tpr,label="data 1, auc="+str(auc))
     plt.legend(loc=4)
+
+    path = os.path.join(directory,"ROC")
+    plt.savefig(path+".png")
+    plt.savefig(path+".pdf", bbox_inches='tight')
     plt.show()
-    plt.savefig(path+"ROC.png")
     return None
