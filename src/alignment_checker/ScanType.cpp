@@ -1,7 +1,7 @@
 #include "alignment_checker/ScanType.h"
 namespace CorAlignment {
 
-
+int PoseScan::pose_count = 1;
 lidarscan::lidarscan(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmot ) : PoseScan(T,Tmot), cloud_(cloud){
 
 }

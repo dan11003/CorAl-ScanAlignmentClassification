@@ -5,7 +5,7 @@ bool datapoint::aligned(){
   double sum = 0;
   for(auto && e : perturbation_)
     sum+=fabs(e);
-  return sum >0.0001;
+  return sum < 0.0001;
 
 }
 void scanEvaluator::CreatePerturbations()
@@ -27,18 +27,15 @@ void scanEvaluator::CreatePerturbations()
 void scanEvaluator::SaveEvaluation(){
   std::ofstream ofs_meta, ofs_eval;
   ofs_meta.open(par_.output_directory+std::string("/")+par_.output_meta_file);
-  ofs_meta <<"evaluation name, method, radius, scan spacing, theta range, offset rotation steps, theta error, range error"; //, scan index,
-  ofs_meta<<par_.eval_name<<", "<<quality_par_.method<<", "<<std::to_string(quality_par_.radius)<<", "<<std::to_string(par_.scan_spacing)<<", "<<std::to_string(par_.theta_range)
-         <<", "<<par_.offset_rotation_steps<<", "<<std::to_string(par_.theta_error)<<std::to_string(par_.range_error)<<endl;
+  ofs_meta <<"evaluation name, method, radius, scan spacing, theta range, offset rotation steps, theta error, range error"<<std::endl; //, scan index,
+  ofs_meta<<par_.eval_name<<","<<quality_par_.method<<","<<std::to_string(quality_par_.radius)<<","<<std::to_string(par_.scan_spacing)<<","<<std::to_string(par_.theta_range)
+         <<","<<par_.offset_rotation_steps<<","<<std::to_string(par_.theta_error)<<std::to_string(par_.range_error)<<endl;
 
+  assert(!datapoints_.empty());
   ofs_eval.open(par_.output_directory+std::string("/")+par_.output_eval_file);
-  int i = 0;
-  for(auto&& d : datapoints_){
-    if(i++==0)
-      ofs_eval<<"index, score1, score2, score3, aligned, error x, error y, error theta"<<std::endl;
-    else
-      ofs_eval<<d.index<<", "<<d.score_[0]<<", "<<d.score_[1]<<", "<<d.score_[2]<<", "<<d.aligned()<<", "<<d.perturbation_[0]<<", "<<d.perturbation_[1]<<", "<<d.perturbation_[2]<<", "<<std::endl;
-  }
+  ofs_eval << datapoint::HeaderToString()<<endl;;
+  for(auto&& d : datapoints_)
+    ofs_eval<<d.ToString()<<std::endl;
 
 }
 void scanEvaluator::InputSanityCheck(){
@@ -60,21 +57,21 @@ scanEvaluator::scanEvaluator( dataHandler_U& reader, const parameters& eval_par,
 
   std::vector< std::shared_ptr<PoseScan> > prev_scans;
   int index = 0;
-  for (std::shared_ptr<PoseScan> current = reader_->Next(); current!=nullptr; current = reader_->Next(), index++) {
+  for (std::shared_ptr<PoseScan> current = reader_->Next(); current!=nullptr; current = reader_->Next()) {
     if( prev_scans.size() == par_.scan_spacing )
     {
+      index++;
       for(auto && verr : vek_perturbation_){
         cout<<verr[0]<<", "<<verr[1]<<", "<<verr[2]<<endl;
         const Eigen::Affine3d Tperturbation = VectorToAffine3dxyez(verr);
         cout<<endl<<prev_scans.back()->GetAffine().matrix()<<endl;
         cout<<endl<<current->GetAffine().matrix()<<endl;
         AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(prev_scans.back(), current, quality_par_, Tperturbation);
-        cout<<"get residuals"<<endl;
+
         std::vector<double> res = quality->GetResiduals();
         std::vector<double> score = quality->GetResiduals();
-        cout<<"res: "<<res<<endl;
         quality = NULL;
-        datapoints_.push_back(datapoint(index, res, verr, score));
+        datapoints_.push_back(datapoint(index, res, verr, score, prev_scans.back(), current));
       }
     }
     prev_scans.push_back(current);

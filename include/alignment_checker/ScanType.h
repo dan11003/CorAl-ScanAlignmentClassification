@@ -25,12 +25,16 @@ namespace CorAlignment{
 class PoseScan
 {
 public:
-  PoseScan(const Eigen::Affine3d& T, const Eigen::Affine3d& Tmot) : Test_(T), Tmot_(Tmot){}
+  PoseScan(const Eigen::Affine3d& T, const Eigen::Affine3d& Tmot) : Test_(T), Tmot_(Tmot),pose_id(pose_count++){}
   Eigen::Affine3d Test_, Tmot_;
 
   const Eigen::Affine3d& GetAffine() {return Test_;}
 
   virtual ~PoseScan() {}
+
+  static int pose_count;
+
+  const int pose_id;
 
 };
 
