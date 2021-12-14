@@ -85,7 +85,10 @@ public:
 
   ~p2pQuality(){}
 
-  std::vector<double> GetResiduals() {return {0,0,0}; }
+  std::vector<double> GetResiduals() {
+	  return residuals_;
+	  //return {0,0,0}; 
+	  }
 
   std::vector<double> GetQualityMeasure();
 
