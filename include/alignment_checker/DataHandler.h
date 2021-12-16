@@ -41,7 +41,7 @@
 **/
 
 
-//#include "rosbag/bag.h"
+#include "rosbag/bag.h"
 #include "rosbag/view.h"
 #include "alignment_checker/Utils.h"
 #include "nav_msgs/Odometry.h"
