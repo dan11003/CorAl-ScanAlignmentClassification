@@ -21,6 +21,10 @@
 #include "memory.h"
 #include <iomanip>
 
+// ROS tf
+#include "tf/transform_broadcaster.h"
+#include "tf_conversions/tf_eigen.h"
+
 
 
 namespace CorAlignment{
@@ -162,7 +166,7 @@ public:
 
 
   //Modify to poseScan instead of MapNormalPtr
-  //static void PublishMap(const std::string& topic, MapNormalPtr map, Eigen::Affine3d& T, const std::string& frame_id, const int value=0);
+  static void PublishPoseScan(const std::string& topic, std::shared_ptr<PoseScan>& p_scan, const Eigen::Affine3d& T, const std::string& frame_id, const int value=0);
 
   //static std::map<std::string, ros::Publisher> pubs;
 };

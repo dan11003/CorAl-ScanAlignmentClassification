@@ -68,6 +68,35 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
 
 
 }
+
+
+ void AlignmentQualityPlot::PublishPoseScan(const std::string& topic, std::shared_ptr<PoseScan>& p_scan, const Eigen::Affine3d& T, const std::string& frame_id, const int value){
+
+  if(p_scan == NULL)
+    return;
+
+  //Extract point cloud from PoseScan
+  std::shared_ptr<lidarscan> l_scan = std::shared_ptr<lidarscan>(std::dynamic_pointer_cast<lidarscan>(p_scan));
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_scan = l_scan->GetCloudNoCopy();
+  
+  //Publish point cloud
+  ros::NodeHandle nh;
+  ros::Publisher cld_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZ>>(topic, 1000); //Should be changed to XYZI
+  ros::Time t = ros::Time::now();
+  cld_pub.publish(*cloud_scan);
+
+  // Publish the corresponding reference frame
+  static tf::TransformBroadcaster Tbr;
+  tf::Transform Tf;
+  std::vector<tf::StampedTransform> trans_vek;
+  tf::transformEigenToTF(T, Tf);
+  trans_vek.push_back(tf::StampedTransform(Tf, t, "/world", frame_id));
+  Tbr.sendTransform(trans_vek);
+
+
+
+}
+
 /*
 void MapPointNormal::PublishMap(const std::string& topic, MapNormalPtr map, Eigen::Affine3d& T, const std::string& frame_id, const int value){
   if(map==NULL)
