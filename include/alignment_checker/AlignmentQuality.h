@@ -20,6 +20,7 @@
 #include "pcl/kdtree/kdtree.h"
 #include "memory.h"
 #include <iomanip>
+#include "radar_mapping/n_scan_normal.h"
 
 
 
@@ -41,6 +42,7 @@ public:
   public:
     parameters() {}
     std::string method;
+    scan_type scantype;
     double radius;
 
     std::string ToString(){
@@ -55,6 +57,7 @@ public:
   AlignmentQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity()) : par_(par), Toffset_(Toffset) {
     src_ = src;
     ref_ = ref;
+    quality_ = {0,0,0};
   }
 
   void Visualize();
@@ -89,14 +92,14 @@ public:
   ~p2pQuality(){}
 
   std::vector<double> GetResiduals() {
-	  return residuals_;
-	  //return {0,0,0}; 
-	  }
+    return residuals_;
+    //return {0,0,0};
+  }
 
   std::vector<double> GetQualityMeasure();
 
 protected:
-  pcl::KdTreeFLANN<pcl::PointXYZ> kdtree_;
+  pcl::KdTreeFLANN<pcl::PointXYZI> kdtree_;
   // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
 };
 
@@ -135,6 +138,24 @@ public:
   // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
 };
 
+class CFEARQuality: public AlignmentQuality
+{
+public:
+
+  CFEARQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity());
+
+  ~CFEARQuality(){}
+
+  std::vector<double> GetResiduals(){ return {0,0,0}; }
+
+  std::vector<double> GetQualityMeasure(){return {0,0,0};}
+
+
+  // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
+};
+
+
+
 
 
 class AlignmentQualityFactory
@@ -142,14 +163,20 @@ class AlignmentQualityFactory
 public:
   static AlignmentQuality_S CreateQualityType(std::shared_ptr<PoseScan>& ref, std::shared_ptr<PoseScan>& src,  const AlignmentQuality::parameters& pars, const Eigen::Affine3d& Toffset = Eigen::Affine3d::Identity()) {
     AlignmentQuality_S quality = nullptr;
-    cout<<"Create quality type"<<std::quoted(pars.method)<<endl;
-    if(pars.method=="coral")
-      quality = std::make_shared<CorAl>(CorAl(ref,src,pars,Toffset));
-    else if(pars.method=="p2d"){
-      quality = AlignmentQuality_S(new p2dQuality(ref,src,pars,Toffset));
+
+    // CFEAR FEATURES + ANY SCORE (P2P/P2L/P2D)
+    if(std::dynamic_pointer_cast<CFEARFeatures>(ref)!=nullptr && std::dynamic_pointer_cast<CFEARFeatures>(src)!=nullptr){
+      quality = std::make_shared<CFEARQuality>(CFEARQuality(ref,src,pars,Toffset));
+    }// RAW LIDAR (P2P/P2D/CORAL)
+    else if(std::dynamic_pointer_cast<RawLidar>(ref)!=nullptr && std::dynamic_pointer_cast<RawLidar>(src)!=nullptr){
+      if(pars.method=="coral")
+        quality = std::make_shared<CorAl>(CorAl(ref,src,pars,Toffset));
+      else if(pars.method=="P2D")
+        quality = AlignmentQuality_S(new p2dQuality(ref,src,pars,Toffset));
+      else if(pars.method=="P2P")
+        quality = AlignmentQuality_S(new p2pQuality(ref,src,pars,Toffset));
     }
-    else if(pars.method=="p2p")
-      quality = std::make_shared<p2pQuality>(p2pQuality(ref,src,pars,Toffset));
+
     assert(quality != nullptr);
     return quality;
   }

@@ -11,26 +11,24 @@ std::shared_ptr<PoseScan> FiledataHandler::Next(){
 }
 
 
-RadarRosbagHandler::RadarRosbagHandler(const std::string& rosbag_path, const std::string& radar_topic, const std::string& gt_topic){
+RadarRosbagHandler::RadarRosbagHandler(const std::string& rosbag_path, const PoseScan::Parameters& scanPars, const std::string& radar_topic, const std::string& gt_topic): scanPars_(scanPars){
 
   bag_.open(rosbag_path, rosbag::bagmode::Read);
-  //std::vector<std::string> topics = ;
   view_= std::make_unique<rosbag::View>(bag_, rosbag::TopicQuery({radar_topic,gt_topic}));
-  m_ = view_->begin();
-  pub_odom = nh_.advertise<nav_msgs::Odometry>("/gt", 1000);
   pub_image = nh_.advertise<sensor_msgs::Image>("/Navtech/Polar", 1000);
+  pub_odom = nh_.advertise<nav_msgs::Odometry>("/gt", 1000);
+
+  m_ = view_->begin();
 
 }
 void RadarRosbagHandler::UnpackImage(sensor_msgs::ImageConstPtr& image_msg){
-  sensor_msgs::Image img = *image_msg;
 
-  cv_bridge::CvImagePtr cv_polar_image;
-  cv_polar_image = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::TYPE_8UC1);
+  cv_bridge::CvImagePtr cv_polar_image = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::TYPE_8UC1);
+  assert(cv_polar_image != NULL);
   cv_polar_image->header.stamp =  image_msg->header.stamp;
-  radar_stream_.push_back(cv_polar_image->image);
-
+  radar_stream_.push_back(cv_polar_image);
   cout<<"image timestamp: "<<cv_polar_image->header.stamp.toSec()<<", size: "<<cv_polar_image->image.cols<<", "<<cv_polar_image->image.rows<<endl;
-  pub_image.publish(img);
+  pub_image.publish(*image_msg);
 }
 void RadarRosbagHandler::UnpackPose(nav_msgs::Odometry::ConstPtr& odom_msg){
   nav_msgs::Odometry msg_odom = *odom_msg;
@@ -64,16 +62,34 @@ std::shared_ptr<PoseScan> RadarRosbagHandler::Next(){
     cout<<"images: "<<radar_stream_.size()<<endl;
     cout<<std::distance(view_->begin(), m_)<<"/"<<view_->size()<<endl;
     // Need to make sure image and pose are synced in time here. Actually they are except perhaps for the begining or the end, just discard until they are synced.
-
-    m_++;
+    if(radar_stream_.size()<3 || pose_stream_.size()<3){
+      m_++;
+      continue;
+    }
+    else{
+      m_++;
+      break;
+    }
   }
-  return nullptr;
+  //At this point, the time stamps of
+  //"pose_stream_[i].second" and
+  //"radar_stream_[i]->header.stamp" must be the exact same < 0.00001.
+
+  const Eigen::Affine3d Tmotion = pose_stream_.front().first.inverse()*pose_stream_.back().first; // this must be scaled down by 1/2
+
+  if(scanPars_.scan_type == rawradar)
+    return PoseScan_S(new RawRadar(radar_stream_[1], pose_stream_[1].first, Tmotion));
+  else if(scanPars_.scan_type == kstrong)
+    return PoseScan_S(new kstrongRadar(radar_stream_[1], pose_stream_[1].first, Tmotion, scanPars_.kstrong, scanPars_.z_min, scanPars_.range_res, scanPars_.range_min));
+  else return nullptr;
 
 }
 
 MockupHandler::MockupHandler(){
   for(int i=1;i<=9;i+=step_resolution){
-    cloud.push_back(pcl::PointXYZ(i,i,i));
+    pcl::PointXYZI p;
+    p.x = i; p.y = i; p.z = i; p.intensity = 100;
+    cloud.push_back(p);
   }
 
 }
@@ -82,12 +98,12 @@ std::shared_ptr<PoseScan> MockupHandler::Next(){
   if(step==100)
     return nullptr;
   else{
-    pcl::PointCloud<pcl::PointXYZ>::Ptr transformed(new pcl::PointCloud<pcl::PointXYZ>());
+    pcl::PointCloud<pcl::PointXYZI>::Ptr transformed(new pcl::PointCloud<pcl::PointXYZI>());
     Eigen::Affine3d T = Eigen::Affine3d::Identity();
     T.translation()<<(step++)*step_resolution, 0, 0;
     pcl::transformPointCloud(cloud, *transformed, T.inverse()); //transform cloud into frame of T
-    return PoseScan_S(new lidarscan(transformed, T, Eigen::Affine3d::Identity()));
- }
+    return PoseScan_S(new RawLidar(transformed, T, Eigen::Affine3d::Identity()));
+  }
 }
 
 }

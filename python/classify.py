@@ -50,7 +50,6 @@ print(cnf_matrix)
 print(y_pred)
 print(y_test)
 
-
 PrintConfusionMatric(cnf_matrix, output_directory)
 PrintROC(logreg, X_test, y_test, output_directory)
 

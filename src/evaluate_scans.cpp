@@ -49,6 +49,7 @@
 #include "alignment_checker/DataHandler.h"
 #include "alignment_checker/ScanEvaluator.h"
 #include "alignment_checker/AlignmentQuality.h"
+#include "alignment_checker/ScanType.h"
 #include "memory"
 
 namespace po = boost::program_options;
@@ -69,12 +70,14 @@ int main(int argc, char **argv)
   std::string filepath, directory_clouds, cloud_prefix;
   int index_first_scan;
   std::string output_dir, output_file_name;
+  std::string scantype;
 
   //Method
   std::string method, dataset;
 
   scanEvaluator::parameters evalPars;
   AlignmentQuality::parameters qualityPars;
+  PoseScan::Parameters scanPars;
   bool test;
 
 
@@ -88,6 +91,9 @@ int main(int argc, char **argv)
       ("output-eval-metafile",po::value<std::string>(&evalPars.output_meta_file)->default_value(std::string("params.txt")),"output meta file name")
       ("output-eval-file",po::value<std::string>(&evalPars.output_eval_file)->default_value(std::string("eval.txt")),"output file name")
       ("method",po::value<std::string>(&qualityPars.method)->default_value(std::string("")),"evaluation method")
+      ("scan-type",po::value<std::string>(&scantype)->default_value(std::string("kstrong")),"evaluation method")
+      ("kstrong",po::value<int>(&scanPars.kstrong)->default_value(12),"")
+      ("zmin",po::value<double>(&scanPars.z_min)->default_value(60),"")
       //("eval-yaml",po::value<std::string>(&eval_yaml)->default_value(std::string("")),"yaml file")
       ("eval-name",po::value<std::string>(&evalPars.eval_name)->default_value(std::string("eval")),"evaluation method")
       ("data-set",po::value<std::string>(&evalPars.dataset)->default_value(std::string("dataset")),"filename")
@@ -111,10 +117,12 @@ int main(int argc, char **argv)
     std::cout << desc << "\n";
     return 0;
   }
+  scanPars.scan_type = Str2Scan(scantype);
 
   cout<<"----------------\nEvaluation\n----------------"<<endl;
   cout<<evalPars.ToString()<<endl;
   cout<<qualityPars.ToString()<<endl;
+  cout<<scanPars.ToString()<<endl;
   dataHandler_U fileHandler = nullptr;
 
   if(vm.count("run-test"))
@@ -123,7 +131,8 @@ int main(int argc, char **argv)
     fileHandler = std::make_unique<MockupHandler>();
   }
   else
-    fileHandler = std::make_unique<RadarRosbagHandler>(filepath);
+    fileHandler = std::make_unique<RadarRosbagHandler>(filepath, scanPars);
+
 
   scanEvaluator eval(fileHandler, evalPars, qualityPars);
   cout<<"----------------\nFinished\n----------------"<<endl;

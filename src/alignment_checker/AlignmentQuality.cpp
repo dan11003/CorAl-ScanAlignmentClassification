@@ -7,8 +7,8 @@ std::vector<double> p2dQuality::GetQualityMeasure(){
   return {0,0,0};
 }
 std::vector<double> p2pQuality::GetQualityMeasure(){
-	
-	//Calculate the mean of all the residuals
+
+  //Calculate the mean of all the residuals
   int residuals_size = residuals_.size();
   if(residuals_size  == 0)
     return {0, 0, 0};
@@ -16,7 +16,7 @@ std::vector<double> p2pQuality::GetQualityMeasure(){
   double means = 0;
   for(int i=0; i<residuals_size; i++){
     means += residuals_[i];
-	}
+  }
   means = means/double(residuals_size);
   return {means, 0, 0};
 }
@@ -32,8 +32,9 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
 
 
   //pcl::transform
-  std::shared_ptr<lidarscan> ref_pcd = std::shared_ptr<lidarscan>(std::dynamic_pointer_cast<lidarscan>(ref));
-  std::shared_ptr<lidarscan> src_pcd = std::shared_ptr<lidarscan>(std::dynamic_pointer_cast<lidarscan>(src));
+
+  auto ref_pcd =  std::dynamic_pointer_cast<RawLidar>(ref);
+  auto src_pcd = std::dynamic_pointer_cast<RawLidar>(src);
 
 
   //Transform into "world" frame and than into frame of "ref"
@@ -41,8 +42,8 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
   const Eigen::Affine3d Tref = ref_pcd->GetAffine();
   const Eigen::Affine3d Tchange = Tref.inverse()*Tsrc*Toffset;
   //cout<<"change\n"<<Tchange.matrix()<<endl;
-  pcl::PointCloud<pcl::PointXYZ>::Ptr src_cld = src_pcd->GetCloudCopy(Tchange);//get cloud and also change reference frame to ref
-  pcl::PointCloud<pcl::PointXYZ>::Ptr ref_cld = ref_pcd->GetCloudNoCopy();
+  pcl::PointCloud<pcl::PointXYZI>::Ptr src_cld = src_pcd->GetCloudCopy(Tchange);//get cloud and also change reference frame to ref
+  pcl::PointCloud<pcl::PointXYZI>::Ptr ref_cld = ref_pcd->GetCloudNoCopy();
   //cout<<"src: "<<src_cld->size()<<", ref: "<<ref_cld->size()<<endl;
   /*for(auto && p : src_cld->points)
     cout<<"src: "<<p.getArray3fMap().transpose()<<endl;
@@ -61,7 +62,7 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
     kdtree_.setSortedResults(true);
 
     if ( kdtree_.radiusSearch (p, radius, pointIdxRadiusSearch, pointRadiusSquaredDistance) > 0){
-		residuals_.push_back(pointRadiusSquaredDistance[0]);
+      residuals_.push_back(pointRadiusSquaredDistance[0]);
     }
   }
   //cout<<"residuals: "<<residuals_.size()<<endl;
@@ -89,6 +90,19 @@ void MapPointNormal::PublishMap(const std::string& topic, MapNormalPtr map, Eige
   visualization_msgs::MarkerArray marr = Cells2Markers(cells, ros::Time::now(), frame_id, value);
   it->second.publish(marr);
 }*/
+
+CFEARQuality::CFEARQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset)  : AlignmentQuality(src, ref, par, Toffset){
+  auto CFEAR_src = std::dynamic_pointer_cast<CFEARFeatures>(src);
+  auto CFEAR_ref = std::dynamic_pointer_cast<CFEARFeatures>(ref);
+  assert(CFEAR_src!=NULL && CFEAR_ref!=NULL);
+  radar_mapping::n_scan_normal_reg reg(radar_mapping::Str2Cost(par.method), radar_mapping::losstype::None, 0);
+  std::vector<radar_mapping::MapNormalPtr> feature_vek = {CFEAR_ref->CFEARFeatures_, CFEAR_src->CFEARFeatures_};
+  std::vector<Eigen::Affine3d> Tvek = {CFEAR_ref->GetAffine(),CFEAR_src->GetAffine()};
+  reg.GetCost(feature_vek, Tvek, quality_.front(), residuals_);
+  cout<<"CFEAR Feature cost: "<<quality_.front()<<endl;
+
+
+}
 
 }
 

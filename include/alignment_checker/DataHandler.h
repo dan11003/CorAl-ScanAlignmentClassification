@@ -14,6 +14,7 @@ namespace CorAlignment {
 
 typedef std::pair<Eigen::Affine3d,ros::Time> poseStamped;
 
+
 class dataHandler
 {
 public:
@@ -35,7 +36,7 @@ public:
 class RadarRosbagHandler: public dataHandler
 {
 public:
-  RadarRosbagHandler(const std::string& rosbag_path, const std::string& radar_topic = "/Navtech/Polar", const std::string& gt_topic = "/gt");
+  RadarRosbagHandler(const std::string& rosbag_path, const PoseScan::Parameters& scanPars, const std::string& radar_topic = "/Navtech/Polar", const std::string& gt_topic = "/gt");
 
   std::shared_ptr<PoseScan> Next();
 
@@ -45,13 +46,14 @@ protected:
 
   void UnpackPose(nav_msgs::Odometry::ConstPtr& odom_msg);
 
+  const PoseScan::Parameters scanPars_;
 
   rosbag::Bag bag_;
   std::unique_ptr<rosbag::View> view_;
   rosbag::View::iterator m_;
 
 
-  std::vector<cv::Mat> radar_stream_;
+  std::vector<cv_bridge::CvImagePtr> radar_stream_;
   std::vector<poseStamped> pose_stream_;
   ros::Publisher pub_odom, pub_image;
 };
@@ -66,7 +68,7 @@ public:
 private:
   int step = 1;
   const int step_resolution = 2;
-  pcl::PointCloud<pcl::PointXYZ> cloud;
+  pcl::PointCloud<pcl::PointXYZI> cloud;
 };
 
 

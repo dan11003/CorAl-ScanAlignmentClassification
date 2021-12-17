@@ -57,7 +57,7 @@ scanEvaluator::scanEvaluator( dataHandler_U& reader, const parameters& eval_par,
 
   std::vector< std::shared_ptr<PoseScan> > prev_scans;
   int index = 0;
-  for (std::shared_ptr<PoseScan> current = reader_->Next(); current!=nullptr; current = reader_->Next()) {
+  for (std::shared_ptr<PoseScan> current = reader_->Next(); current!=nullptr && ros::ok(); current = reader_->Next()) {
     if( prev_scans.size() == par_.scan_spacing )
     {
       index++;
