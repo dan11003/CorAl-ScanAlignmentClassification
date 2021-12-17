@@ -77,12 +77,12 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
     return;
 
   //Extract point cloud from PoseScan
-  std::shared_ptr<lidarscan> l_scan = std::shared_ptr<lidarscan>(std::dynamic_pointer_cast<lidarscan>(p_scan));
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_scan = l_scan->GetCloudNoCopy();
+  std::shared_ptr<RawLidar> l_scan = std::dynamic_pointer_cast<RawLidar>(p_scan);
+  pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_scan = l_scan->GetCloudNoCopy();
   
   //Publish point cloud
   ros::NodeHandle nh;
-  ros::Publisher cld_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZ>>(topic, 1000); //Should be changed to XYZI
+  ros::Publisher cld_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZI>>(topic, 1000); //Should be changed to XYZI
   ros::Time t = ros::Time::now();
   cld_pub.publish(*cloud_scan);
 
@@ -126,9 +126,9 @@ CFEARQuality::CFEARQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseSc
   assert(CFEAR_src!=NULL && CFEAR_ref!=NULL);
   radar_mapping::n_scan_normal_reg reg(radar_mapping::Str2Cost(par.method), radar_mapping::losstype::None, 0);
   std::vector<radar_mapping::MapNormalPtr> feature_vek = {CFEAR_ref->CFEARFeatures_, CFEAR_src->CFEARFeatures_};
-  std::vector<Eigen::Affine3d> Tvek = {CFEAR_ref->GetAffine(),CFEAR_src->GetAffine()};
+  std::vector<Eigen::Affine3d> Tvek = {CFEAR_ref->GetAffine(),CFEAR_src->GetAffine()*Toffset};
   reg.GetCost(feature_vek, Tvek, quality_.front(), residuals_);
-  cout<<"CFEAR Feature cost: "<<quality_.front()<<endl;
+  cout<<"CFEAR Feature cost: "<<quality_.front()<<", residuals: "<<residuals_.size()<<", normalized"<<quality_.front()/(residuals_.size()+0.0001)<<endl;
 
 
 }

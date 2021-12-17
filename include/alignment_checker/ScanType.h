@@ -30,7 +30,7 @@ using std::endl;
 using std::cout;
 using std::cerr;
 
-typedef enum ScanType{none, rawlidar, rawradar, kstrong, cen2018}scan_type;
+typedef enum ScanType{none, rawlidar, rawradar, kstrong, cfear, cen2018}scan_type;
 
 std::string Scan2str(const scan_type& val);
 
@@ -70,7 +70,7 @@ public:
 
 
   };
-  PoseScan(const Eigen::Affine3d& T, const Eigen::Affine3d& Tmot) : Test_(T), Tmot_(Tmot), pose_id(pose_count++){}
+  PoseScan(const Eigen::Affine3d& T, const Eigen::Affine3d& Tmot) : Test_(T), Tmot_(Tmot), pose_id(pose_count++){cout<<"Created posescan"<<endl;}
   Eigen::Affine3d Test_, Tmot_;
 
   const Eigen::Affine3d& GetAffine() {return Test_;}

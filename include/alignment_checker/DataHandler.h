@@ -88,8 +88,8 @@ protected:
   const PoseScan::Parameters scanPars_;
 
   rosbag::Bag bag_;
-  std::unique_ptr<rosbag::View> view_;
-  rosbag::View::iterator m_;
+  std::unique_ptr<rosbag::View> view_image_, view_pose_;
+  rosbag::View::iterator m_image_, m_pose_;
 
 
   std::vector<cv_bridge::CvImagePtr> radar_stream_;

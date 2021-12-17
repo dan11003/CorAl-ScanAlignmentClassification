@@ -9,6 +9,7 @@ std::string Scan2str(const scan_type& val){
   case rawradar: return "rawradar";
   case kstrong: return "kstrong";
   case cen2018: return "cen2018";
+  case cfear: return "cfear";
   default: return "none";
   }
 }
@@ -23,6 +24,8 @@ scan_type Str2Scan(const std::string& val){
     return scan_type::cen2018;
   else if (val=="none")
     return scan_type::none;
+  else if (val=="cfear")
+    return scan_type::cfear;
 }
 
 
