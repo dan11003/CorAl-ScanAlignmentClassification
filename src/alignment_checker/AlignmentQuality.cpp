@@ -54,7 +54,7 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
   kdtree_.setInputCloud(ref_cld); // ref cloud
 
   //Calculate the sqaured distances for all 'p' in the point cloud
-  
+
   for(auto && p : src_cld->points){
     std::vector<float> pointRadiusSquaredDistance;
     std::vector<int> pointIdxRadiusSearch;
@@ -71,7 +71,7 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
 }
 
 
- void AlignmentQualityPlot::PublishPoseScan(const std::string& topic, std::shared_ptr<PoseScan>& p_scan, const Eigen::Affine3d& T, const std::string& frame_id, const int value){
+void AlignmentQualityPlot::PublishPoseScan(const std::string& topic, std::shared_ptr<PoseScan>& p_scan, const Eigen::Affine3d& T, const std::string& frame_id, const int value){
 
   if(p_scan == NULL)
     return;
@@ -79,7 +79,7 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
   //Extract point cloud from PoseScan
   std::shared_ptr<RawLidar> l_scan = std::dynamic_pointer_cast<RawLidar>(p_scan);
   pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_scan = l_scan->GetCloudNoCopy();
-  
+
   //Publish point cloud
   ros::NodeHandle nh;
   ros::Publisher cld_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZI>>(topic, 1000); //Should be changed to XYZI
@@ -124,11 +124,85 @@ CFEARQuality::CFEARQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseSc
   auto CFEAR_src = std::dynamic_pointer_cast<CFEARFeatures>(src);
   auto CFEAR_ref = std::dynamic_pointer_cast<CFEARFeatures>(ref);
   assert(CFEAR_src!=NULL && CFEAR_ref!=NULL);
-  radar_mapping::n_scan_normal_reg reg(radar_mapping::Str2Cost(par.method), radar_mapping::losstype::None, 0);
+  radar_mapping::costmetric pnt_cost = radar_mapping::Str2Cost(par.method);
+  if(pnt_cost==radar_mapping::costmetric::P2L)
+    cout<<"P2L cost";
+  else if(pnt_cost==radar_mapping::costmetric::P2D)
+    cout<<"P2D cost";
+  else
+    cout<<"P2P cost";
+
+  radar_mapping::n_scan_normal_reg reg(pnt_cost, radar_mapping::losstype::None, 0);
   std::vector<radar_mapping::MapNormalPtr> feature_vek = {CFEAR_ref->CFEARFeatures_, CFEAR_src->CFEARFeatures_};
   std::vector<Eigen::Affine3d> Tvek = {CFEAR_ref->GetAffine(),CFEAR_src->GetAffine()*Toffset};
+  radar_mapping::MapPointNormal::PublishMap("scan1", feature_vek[0], Tvek[0], "world", 1 );
+  radar_mapping::MapPointNormal::PublishMap("scan2", feature_vek[1], Tvek[1], "world", -1);
   reg.GetCost(feature_vek, Tvek, quality_.front(), residuals_);
   cout<<"CFEAR Feature cost: "<<quality_.front()<<", residuals: "<<residuals_.size()<<", normalized"<<quality_.front()/(residuals_.size()+0.0001)<<endl;
+}
+
+void CorAlRadarQuality::GetNearby(const pcl::PointXY& query, Eigen::MatrixXd& nearby_src, Eigen::MatrixXd& nearby_ref, Eigen::MatrixXd& merged){
+  std::vector<int> pointIdxRadiusSearch_src, pointIdxRadiusSearch_ref;
+  std::vector<float> pointRadiusSquaredDistance_src, pointRadiusSquaredDistance_ref;
+  int nr_nearby_src = kd_src.radiusSearch(query, par_.radius, pointIdxRadiusSearch_src, pointRadiusSquaredDistance_src);
+  int nr_nearby_ref = kd_ref.radiusSearch(query, par_.radius, pointIdxRadiusSearch_ref, pointRadiusSquaredDistance_ref);
+  nearby_src.resize(2,nr_nearby_src);
+  nearby_ref.resize(2,nr_nearby_ref);
+  merged.resize(2,nr_nearby_ref + nr_nearby_src);
+  int tot = 0;
+  for(std::size_t i = 0; i < pointIdxRadiusSearch_src.size (); i++){
+    nearby_src(0,i) = src_pcd->points[pointIdxRadiusSearch_src[i]].x;
+    nearby_src(1,i) = src_pcd->points[pointIdxRadiusSearch_src[i]].y;
+    merged.block<2,1>(0,tot++) = nearby_src.block<2,1>(0,i);
+  }
+  for(std::size_t i = 0; i < pointIdxRadiusSearch_ref.size (); i++){
+    nearby_ref(0,i) = src_pcd->points[pointIdxRadiusSearch_ref[i]].x;
+    nearby_ref(1,i) = ref_pcd->points[pointIdxRadiusSearch_ref[i]].y;
+    merged.block<2,1>(0,tot++) = nearby_ref.block<2,1>(0,i);
+  }
+
+
+}
+bool CorAlRadarQuality::Covariance(Eigen::MatrixXd& x, Eigen::Matrix2d& cov){ //mean already subtracted from x
+  Eigen::Matrix2d covSum = x.transpose()*x;
+  float n = x.rows();
+  cov = covSum*1.0/(n-1.0);
+  Eigen::JacobiSVD<Eigen::Matrix2d> svd(cov.block<2,2>(0,0));
+  double cond = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
+  //cout<<"cond "<<cond<<endl;
+  return cond < 100000;
+}
+CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset)  : AlignmentQuality(src, ref, par, Toffset)
+{
+  ref_pcd = ac::pcl3dto2d(ref->GetCloudCopy(ref->GetAffine()), ref_i);
+  src_pcd = ac::pcl3dto2d(src->GetCloudCopy(src->GetAffine()*Toffset), src_i);
+  kd_src.setInputCloud(src_pcd);
+  kd_ref.setInputCloud(ref_pcd);
+
+  sep_res_.resize(src_pcd->size() + ref_pcd->size(), 0);
+  sep_valid.resize(src_pcd->size() +ref_pcd->size(), false);
+  joint_res_.resize(src_pcd->size() + ref_pcd->size(), 0);
+
+
+  int pnt = 0;
+  for (auto && searchPoint : src_pcd->points){
+    Eigen::MatrixXd msrc, mref, mmerged;
+    GetNearby(searchPoint, msrc, mref, mmerged);
+    cout<<"before subtract: "<< msrc<<endl;
+    cout<<"mean: "<<msrc.rowwise().mean()<<endl;
+    msrc -= msrc.rowwise().mean(); // I think this sould subtract mean
+    mmerged -= mmerged.rowwise().mean();
+    cout<<"after subtract: "<< msrc<<endl;
+    Eigen::Matrix2d Csrc, Cmerged;
+    bool success_src = Covariance(msrc,Csrc);
+    bool success_merged = Covariance(msrc,Cmerged);
+    if(success_src && success_merged){
+
+
+    }
+
+  }
+
 
 
 }

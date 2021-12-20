@@ -44,7 +44,8 @@ void FilterClouds(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > &clouds, std
 
 void FilterCloudsByDistance(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > &clouds, std::vector<Eigen::Affine3d,Eigen::aligned_allocator<Eigen::Affine3d> > &poses, double radius);
 
-void PublishCloud(const std::string& topic, pcl::PointCloud<pcl::PointXYZ>& cld);
+pcl::PointCloud<pcl::PointXY>::Ptr pcl3dto2d(const pcl::PointCloud<pcl::PointXYZI>::Ptr& input, std::vector<double>& intensity);
+
 
 template <typename T>
 std::ostream & operator << (std::ostream & os, const std::vector<T> & vec)

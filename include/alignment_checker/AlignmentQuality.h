@@ -25,6 +25,7 @@
 // ROS tf
 #include "tf/transform_broadcaster.h"
 #include "tf_conversions/tf_eigen.h"
+#include "alignment_checker/Utils.h"
 
 
 
@@ -32,6 +33,7 @@ namespace CorAlignment{
 using std::endl;
 using std::cout;
 using std::cerr;
+namespace ac = alignment_checker;
 
 
 ///////////// BASE /////////////////
@@ -157,6 +159,43 @@ public:
 
   // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
 };
+
+class CorAlRadarQuality: public AlignmentQuality
+{
+public:
+
+  CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity());
+
+  ~CorAlRadarQuality(){}
+
+  std::vector<double> GetResiduals(){ return {0,0,0}; }
+
+  std::vector<double> GetQualityMeasure(){return {0,0,0};}
+
+protected:
+
+  void GetNearby(const pcl::PointXY& query, Eigen::MatrixXd& nearby_src, Eigen::MatrixXd& nearby_ref, Eigen::MatrixXd& merged);
+
+  bool Covariance(Eigen::MatrixXd& x, Eigen::Matrix2d& cov);
+
+  pcl::PointCloud<pcl::PointXY>::Ptr ref_pcd, src_pcd;
+  std::vector<double> ref_i, src_i ;
+  pcl::KdTreeFLANN<pcl::PointXY> kd_src, kd_ref;
+
+  std::vector<double> sep_res_;
+  std::vector<bool> sep_valid;
+
+  std::vector<double> joint_res_;
+
+
+
+
+
+  // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
+};
+
+
+
 
 
 

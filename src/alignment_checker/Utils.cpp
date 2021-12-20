@@ -197,4 +197,20 @@ void PublishCloud(const std::string& topic, pcl::PointCloud<pcl::PointXYZ>& cld)
 }
 
 
+pcl::PointCloud<pcl::PointXY>::Ptr pcl3dto2d(const pcl::PointCloud<pcl::PointXYZI>::Ptr& input, std::vector<double>& intensity){
+  pcl::PointCloud<pcl::PointXY>::Ptr output = pcl::PointCloud<pcl::PointXY>::Ptr(new pcl::PointCloud<pcl::PointXY>());
+  output->resize(input->size());
+  intensity.resize(input->size());
+  assert(input !=NULL);
+  int index = 0;
+  for (auto && p : input->points) {
+    output->points[index].x = p.x;
+    output->points[index].y = p.y;
+    intensity[index++] = p.intensity;
+  }
+  return output;
+}
+
+
+
 }
