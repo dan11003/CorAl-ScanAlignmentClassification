@@ -92,7 +92,7 @@ std::shared_ptr<PoseScan> RadarRosbagHandler::Next(){
     //const Eigen::Affine3d Tmotion = pose_stream_.front().first.inverse()*pose_stream_.back(); //This is more correct but wrong scaling
     const Eigen::Affine3d Tmotion = pose_stream_[1].first.inverse()*pose_stream_.back().first; //not very good but okay
 
-    usleep(1000*100);
+    usleep(1000*200);
     if(scanPars_.scan_type == rawradar)
       return PoseScan_S(new RawRadar(radar_stream_[1], pose_stream_[1].first, Tmotion));
     else if(scanPars_.scan_type == kstrong)

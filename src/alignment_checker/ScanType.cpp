@@ -33,8 +33,9 @@ pcl::PointCloud<pcl::PointXYZI>::Ptr PoseScan::GetCloudCopy(const Eigen::Affine3
   pcl::PointCloud<pcl::PointXYZI>::Ptr transformed( new pcl::PointCloud<pcl::PointXYZI>());
   pcl::transformPointCloud(*cloud_, *transformed, T);
   return transformed;
-
 }
+
+
 
 kstrongRadar::kstrongRadar(cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmot, int kstrong, double z_min, double range_res, double min_distance) : RawRadar(polar, T, Tmot){
 assert(polar !=NULL);

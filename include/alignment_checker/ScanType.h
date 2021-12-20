@@ -22,6 +22,7 @@
 //radar_mapping
 #include "radar_mapping/radar_filters.h"
 #include "radar_mapping/pointnormal.h"
+#include "pcl/point_types.h"
 
 
 namespace CorAlignment{
@@ -117,6 +118,7 @@ public:
 };
 
 typedef std::shared_ptr<PoseScan> PoseScan_S;
+
 
 }
 
