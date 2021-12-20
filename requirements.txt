@@ -2,3 +2,9 @@
 pytest
 sklearn
 seaborn
+
+Ceres solver (see: https://brucknem.github.io/posts/install-ceres-solver/)
+octomap_mapping (clone: https://github.com/OctoMap/octomap_mapping.git) 
+octomap_msgs (clone: https://github.com/OctoMap/octomap_msgs.git)
+octomap_ros (clone: https://github.com/OctoMap/octomap_ros.git)
+(Optional, ros version dependant): $ sudo apt-get install ros-noetic-octomap

@@ -1,7 +1,7 @@
 #include "alignment_checker/AlignmentQuality.h"
 namespace CorAlignment {
 
-
+std::map<std::string, ros::Publisher> AlignmentQualityPlot::pubs = std::map<std::string, ros::Publisher>();
 
 std::vector<double> p2dQuality::GetQualityMeasure(){
   return {0,0,0};
@@ -81,10 +81,23 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
   pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_scan = l_scan->GetCloudNoCopy();
   
   //Publish point cloud
-  ros::NodeHandle nh;
-  ros::Publisher cld_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZI>>(topic, 1000); //Should be changed to XYZI
+  std::map<std::string, ros::Publisher>::iterator it = AlignmentQualityPlot::pubs.find(topic);
+  if(it == pubs.end()){
+    ros::NodeHandle nh("~");
+    pubs[topic] = nh.advertise<pcl::PointCloud<pcl::PointXYZI>>(topic,1000);
+    it = AlignmentQualityPlot::pubs.find(topic);
+  }
+  ros::Time t = ros::Time::now();
+  pcl_conversions::toPCL(t, cloud_scan->header.stamp);
+  cloud_scan->header.frame_id = frame_id;
+  //cout << cloud_scan->size() << endl;
+  pubs[topic].publish(*cloud_scan);
+
+  /*ros::NodeHandle nh;
+  ros::Publisher cld_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZI>>(topic, 1000);
   ros::Time t = ros::Time::now();
   cld_pub.publish(*cloud_scan);
+  */
 
   // Publish the corresponding reference frame
   static tf::TransformBroadcaster Tbr;

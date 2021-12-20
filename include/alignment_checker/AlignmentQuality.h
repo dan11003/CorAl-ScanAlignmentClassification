@@ -191,11 +191,9 @@ class AlignmentQualityPlot
 public:
   AlignmentQualityPlot() {}
 
-
-  //Modify to poseScan instead of MapNormalPtr
   static void PublishPoseScan(const std::string& topic, std::shared_ptr<PoseScan>& p_scan, const Eigen::Affine3d& T, const std::string& frame_id, const int value=0);
-
-  //static std::map<std::string, ros::Publisher> pubs;
+  static std::map<std::string, ros::Publisher> pubs;
+  
 };
 
 

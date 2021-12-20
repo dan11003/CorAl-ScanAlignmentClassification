@@ -68,7 +68,7 @@ scanEvaluator::scanEvaluator( dataHandler_U& reader, const parameters& eval_par,
         //cout<<endl<<current->GetAffine().matrix()<<endl;
         AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(prev_scans.back(), current, quality_par_, Tperturbation);
         cout<<"computed score"<<endl;
-        //AlignmentQualityPlot::PublishPoseScan("/src", current, current->GetAffine(),"/lidar");
+        AlignmentQualityPlot::PublishPoseScan("/src", current, current->GetAffine(),"lidar");
         //AlignmentQualityPlot::PublishPoseScan("/ref", prev_scans.back());
         std::vector<double> res = quality->GetResiduals();
         std::vector<double> quality_measure = quality->GetQualityMeasure();

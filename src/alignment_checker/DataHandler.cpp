@@ -114,6 +114,7 @@ std::shared_ptr<PoseScan> RadarRosbagHandler::Next(){
   }
   std::shared_ptr<PoseScan> MockupHandler::Next(){
     cout<<"Mockup::Next()"<<endl;
+     usleep(1000*1000);
     if(step==100)
       return nullptr;
     else{

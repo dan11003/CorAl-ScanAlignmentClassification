@@ -1,9 +1,9 @@
 
 BAG_BASE_DIR="${BAG_LOCATION}/oxford-eval-sequences/"
-SEQUENCE="MOCKUP_SEQ"
+SEQUENCE="RADAR_OXFORD"
 BAG_FILE_PATH="${BAG_BASE_DIR}/${SEQUENCE}/radar/${SEQUENCE}.bag"
 current_date=`date '+%Y-%m-%d_%H:%M'`
-EVAL_NAME="TEST_MOCKUP_${current_date}"
+EVAL_NAME="TEST_${current_date}"
 OUTPUT_EVAL_PATH="${BAG_LOCATION}/CoralRadarEval/${EVAL_NAME}"
 mkdir -p ${OUTPUT_EVAL_PATH}
 
