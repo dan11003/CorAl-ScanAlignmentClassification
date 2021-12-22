@@ -90,9 +90,9 @@ include_directories(
 add_executable(evaluate_scans src/evaluate_scans.cpp )
 target_link_libraries(evaluate_scans ${catkin_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR} ${PROJECT_NAME} ${PCL_LIBRARIES})
 
-#catkin_install_python(PROGRAMS python/alignment_service.py
-#  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-#)
+catkin_install_python(PROGRAMS python/alignment_service.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 
 #add_executable(test_align src/test_alignment.cpp )

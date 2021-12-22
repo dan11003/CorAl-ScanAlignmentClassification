@@ -64,15 +64,16 @@ public:
     src_ = src;
     ref_ = ref;
     quality_ = {0,0,0};
+    residuals_ = {0,0,0};
   }
 
   void Visualize();
 
   virtual ~AlignmentQuality(){}
 
-  virtual std::vector<double> GetResiduals() = 0;
+  virtual std::vector<double> GetResiduals() {return residuals_;}
 
-  virtual std::vector<double> GetQualityMeasure() = 0;
+  virtual std::vector<double> GetQualityMeasure(){return quality_;}
 
   // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
 
@@ -121,7 +122,6 @@ public:
 
   std::vector<double> GetResiduals(){return {0,0,0}; }
 
-  std::vector<double> GetQualityMeasure();
   // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
 };
 /************** P2D ********************/
@@ -139,8 +139,6 @@ public:
   ~CorAl(){}
 
   std::vector<double> GetResiduals(){ return {0,0,0}; }
-
-  std::vector<double> GetQualityMeasure();
   // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
 };
 
@@ -151,11 +149,6 @@ public:
   CFEARQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity());
 
   ~CFEARQuality(){}
-
-  std::vector<double> GetResiduals(){ return {0,0,0}; }
-
-  std::vector<double> GetQualityMeasure(){return {0,0,0};}
-
 
   // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
 };
@@ -168,9 +161,7 @@ public:
 
   ~CorAlRadarQuality(){}
 
-  std::vector<double> GetResiduals(){ return {0,0,0}; }
-
-  std::vector<double> GetQualityMeasure(){return {0,0,0};}
+  std::vector<double> GetQualityMeasure(){return {sep_, joint_, 0};}
 
 protected:
 

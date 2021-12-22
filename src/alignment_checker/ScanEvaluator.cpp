@@ -1,9 +1,9 @@
 #include "alignment_checker/ScanEvaluator.h"
 namespace CorAlignment {
 
-bool datapoint::aligned(){
+bool datapoint::aligned(const std::vector<double>& perturbation){
   double sum = 0;
-  for(auto && e : perturbation_)
+  for(auto && e : perturbation)
     sum+=fabs(e);
   return sum < 0.0001;
 
@@ -48,8 +48,9 @@ void scanEvaluator::InputSanityCheck(){
   assert( par_.theta_error >= 0.0 );
   assert( par_.scan_spacing >= 1 );
 }
-scanEvaluator::scanEvaluator( dataHandler_U& reader, const parameters& eval_par, const AlignmentQuality::parameters& quality_par): par_(eval_par), quality_par_(quality_par)
+scanEvaluator::scanEvaluator( dataHandler_U& reader, const parameters& eval_par, const AlignmentQuality::parameters& quality_par): par_(eval_par), quality_par_(quality_par), nh_("~")
 {
+  pub_train_data = nh_.advertise<std_msgs::Float64MultiArray>("/coral_training",1000);
   reader_ = std::move( reader);
   InputSanityCheck();
   CreatePerturbations();
@@ -74,7 +75,14 @@ scanEvaluator::scanEvaluator( dataHandler_U& reader, const parameters& eval_par,
         AlignmentQualityPlot::PublishPoseScan("/ref", prev_scans.back(), prev_scans.back()->GetAffine(),"/ref_link");
         std::vector<double> res = quality->GetResiduals();
         std::vector<double> quality_measure = quality->GetQualityMeasure();
-        //cout<<"quality: "<<quality_measure<<endl;
+        std_msgs::Float64MultiArray training_data;
+        training_data.data = {((double)datapoint::aligned(verr)), quality_measure[0], quality_measure[1], quality_measure[2]};
+        cout<<"publish: "<<training_data.data<<endl;
+        pub_train_data.publish(training_data);
+
+
+        //cout<<"quality: "<<quality_measures<<endl;
+
         quality = NULL;
         datapoints_.push_back(datapoint(index, res, verr, quality_measure, prev_scans.back(), current));
       }

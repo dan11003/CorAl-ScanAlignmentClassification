@@ -6,7 +6,10 @@
 #include "alignment_checker/Utils.h"
 #include <sstream>      // std::stringstream
 
+#include "std_msgs/MultiArrayLayout.h"
+#include "std_msgs/MultiArrayDimension.h"
 
+#include "std_msgs/Int32MultiArray.h"
 namespace CorAlignment {
 using namespace alignment_checker;
 
@@ -35,7 +38,10 @@ public:
   std::vector<double> perturbation_={0,0,0};
   std::vector<double> score_={0,0,0};
   int index_, ref_id_, src_id_;
-  bool  aligned();
+  bool aligned(){return datapoint::aligned(perturbation_);}
+
+  static bool aligned(const std::vector<double>& perturbation);
+
 };
 class scanEvaluator
 {
@@ -106,6 +112,8 @@ private:
 
   std::vector< std::vector<double> > vek_perturbation_;
   std::vector<datapoint> datapoints_;
+  ros::Publisher pub_train_data;
+  ros::NodeHandle nh_;
 
 };
 

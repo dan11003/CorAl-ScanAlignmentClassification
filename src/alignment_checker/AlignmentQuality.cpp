@@ -3,9 +3,7 @@ namespace CorAlignment {
 
 std::map<std::string, ros::Publisher> AlignmentQualityPlot::pubs = std::map<std::string, ros::Publisher>();
 
-std::vector<double> p2dQuality::GetQualityMeasure(){
-  return {0,0,0};
-}
+
 std::vector<double> p2pQuality::GetQualityMeasure(){
 
   //Calculate the mean of all the residuals
@@ -20,11 +18,6 @@ std::vector<double> p2pQuality::GetQualityMeasure(){
   means = means/double(residuals_size);
   return {means, 0, 0};
 }
-
-std::vector<double> CorAl::GetQualityMeasure(){
-  return {0,0,0};
-}
-
 
 
 
@@ -118,8 +111,10 @@ CFEARQuality::CFEARQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseSc
   std::vector<Eigen::Affine3d> Tvek = {CFEAR_ref->GetAffine(),CFEAR_src->GetAffine()*Toffset};
   radar_mapping::MapPointNormal::PublishMap("scan1", feature_vek[0], Tvek[0], "world", 1 );
   radar_mapping::MapPointNormal::PublishMap("scan2", feature_vek[1], Tvek[1], "world", -1);
-  reg.GetCost(feature_vek, Tvek, quality_.front(), residuals_);
-  cout<<"CFEAR Feature cost: "<<quality_.front()<<", residuals: "<<residuals_.size()<<", normalized"<<quality_.front()/(residuals_.size()+0.0001)<<endl;
+  double score = 0;
+  reg.GetCost(feature_vek, Tvek, score, residuals_);
+  quality_ = {score, (double)residuals_.size(), score/residuals_.size()};
+  //cout<<"CFEAR Feature cost: "<<quality_.front()<<", residuals: "<<residuals_.size()<<", normalized"<<quality_.front()/(residuals_.size()+0.0001)<<endl;
 }
 
 void CorAlRadarQuality::GetNearby(const pcl::PointXY& query, Eigen::MatrixXd& nearby_src, Eigen::MatrixXd& nearby_ref, Eigen::MatrixXd& merged){
@@ -248,6 +243,7 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
   }
   diff_ = joint_ - sep_;
   cout<<"joint: "<<joint_<<", sep: "<<sep_<<", diff_"<<diff_<<", N: "<<count_valid<<endl;
+  quality_ = {joint_, sep_, 0.0};
 
   // Create merged point cloud
   merged_entropy = pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>());

@@ -2,6 +2,7 @@
 pytest
 sklearn
 seaborn
+rospkg
 
 Ceres solver (see: https://brucknem.github.io/posts/install-ceres-solver/)
 octomap_mapping (clone: https://github.com/OctoMap/octomap_mapping.git) 
