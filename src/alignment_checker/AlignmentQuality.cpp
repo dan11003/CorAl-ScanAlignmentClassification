@@ -1,7 +1,7 @@
 #include "alignment_checker/AlignmentQuality.h"
 namespace CorAlignment {
 
-
+std::map<std::string, ros::Publisher> AlignmentQualityPlot::pubs = std::map<std::string, ros::Publisher>();
 
 std::vector<double> p2dQuality::GetQualityMeasure(){
   return {0,0,0};
@@ -69,24 +69,19 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
 
 
 }
-void PublishCloud(const std::string& topic, pcl::PointCloud<pcl::PointXYZI>::Ptr& p_scan, const Eigen::Affine3d& T, const std::string& frame_id, const int value=0){
+void AlignmentQualityPlot::PublishCloud(const std::string& topic, pcl::PointCloud<pcl::PointXYZI>::Ptr& cld_plot, const Eigen::Affine3d& T, const std::string& frame_id, const int value){
 
-}
-
-void AlignmentQualityPlot::PublishPoseScan(const std::string& topic, std::shared_ptr<PoseScan>& p_scan, const Eigen::Affine3d& T, const std::string& frame_id, const int value){
-
-  if(p_scan == NULL)
-    return;
-
-  //Extract point cloud from PoseScan
-  std::shared_ptr<RawLidar> l_scan = std::dynamic_pointer_cast<RawLidar>(p_scan);
-  pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_scan = l_scan->GetCloudNoCopy();
-
-  //Publish point cloud
-  ros::NodeHandle nh;
-  ros::Publisher cld_pub = nh.advertise<pcl::PointCloud<pcl::PointXYZI>>(topic, 1000); //Should be changed to XYZI
+  std::map<std::string, ros::Publisher>::iterator it = AlignmentQualityPlot::pubs.find(topic);
+  if(it == pubs.end()){
+    ros::NodeHandle nh("~");
+    pubs[topic] = nh.advertise<pcl::PointCloud<pcl::PointXYZI>>(topic,1000);
+    it = AlignmentQualityPlot::pubs.find(topic);
+  }
   ros::Time t = ros::Time::now();
-  cld_pub.publish(*cloud_scan);
+  pcl_conversions::toPCL(t, cld_plot->header.stamp);
+  cld_plot->header.frame_id = frame_id;
+  pubs[topic].publish(*cld_plot);
+
 
   // Publish the corresponding reference frame
   static tf::TransformBroadcaster Tbr;
@@ -95,32 +90,16 @@ void AlignmentQualityPlot::PublishPoseScan(const std::string& topic, std::shared
   tf::transformEigenToTF(T, Tf);
   trans_vek.push_back(tf::StampedTransform(Tf, t, "/world", frame_id));
   Tbr.sendTransform(trans_vek);
-
-
-
 }
 
-/*
-void MapPointNormal::PublishMap(const std::string& topic, MapNormalPtr map, Eigen::Affine3d& T, const std::string& frame_id, const int value){
-  if(map==NULL)
+void AlignmentQualityPlot::PublishPoseScan(const std::string& topic, std::shared_ptr<PoseScan>& scan_plot, const Eigen::Affine3d& T, const std::string& frame_id, const int value){
+
+  if(scan_plot == NULL)
     return;
 
-  std::map<std::string, ros::Publisher>::iterator it = MapPointNormal::pubs.find(topic);
-  if (it == pubs.end()){
-    ros::NodeHandle nh("~");
-    pubs[topic] =  nh.advertise<visualization_msgs::MarkerArray>(topic,100);
-    it = MapPointNormal::pubs.find(topic);
-  }
-  //cout<<"publish to "<<topic<<endl;
-  visualization_msgs::Marker m = DefaultMarker(ros::Time::now(), frame_id);
-  m.action = visualization_msgs::Marker::DELETEALL;
-  visualization_msgs::MarkerArray marr_delete;
-  marr_delete.markers.push_back(m);
-  it->second.publish(marr_delete);
-  std::vector<cell> cells = map->TransformCells(T);
-  visualization_msgs::MarkerArray marr = Cells2Markers(cells, ros::Time::now(), frame_id, value);
-  it->second.publish(marr);
-}*/
+  pcl::PointCloud<pcl::PointXYZI>::Ptr cld_plot = scan_plot->GetCloudNoCopy(); //Extract point cloud from PoseScan
+  PublishCloud(topic,cld_plot,T,frame_id,value);
+}
 
 CFEARQuality::CFEARQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset)  : AlignmentQuality(src, ref, par, Toffset){
   auto CFEAR_src = std::dynamic_pointer_cast<CFEARFeatures>(src);
@@ -148,28 +127,31 @@ void CorAlRadarQuality::GetNearby(const pcl::PointXY& query, Eigen::MatrixXd& ne
   std::vector<float> pointRadiusSquaredDistance_src, pointRadiusSquaredDistance_ref;
   int nr_nearby_src = kd_src.radiusSearch(query, par_.radius, pointIdxRadiusSearch_src, pointRadiusSquaredDistance_src);
   int nr_nearby_ref = kd_ref.radiusSearch(query, par_.radius, pointIdxRadiusSearch_ref, pointRadiusSquaredDistance_ref);
-  nearby_src.resize(2,nr_nearby_src);
-  nearby_ref.resize(2,nr_nearby_ref);
-  merged.resize(2,nr_nearby_ref + nr_nearby_src);
+  nearby_src.resize(nr_nearby_src,2);
+  nearby_ref.resize(nr_nearby_ref,2);
+  merged.resize(nr_nearby_ref + nr_nearby_src,2);
   int tot = 0;
   for(std::size_t i = 0; i < pointIdxRadiusSearch_src.size (); i++){
-    nearby_src(0,i) = src_pcd->points[pointIdxRadiusSearch_src[i]].x;
-    nearby_src(1,i) = src_pcd->points[pointIdxRadiusSearch_src[i]].y;
-    merged.block<2,1>(0,tot++) = nearby_src.block<2,1>(0,i);
+    nearby_src(i,0) = src_pcd->points[pointIdxRadiusSearch_src[i]].x;
+    nearby_src(i,1) = src_pcd->points[pointIdxRadiusSearch_src[i]].y;
+    merged.block<1,2>(tot++,0) = nearby_src.block<1,2>(i,0);
   }
   for(std::size_t i = 0; i < pointIdxRadiusSearch_ref.size (); i++){
-    nearby_ref(0,i) = src_pcd->points[pointIdxRadiusSearch_ref[i]].x;
-    nearby_ref(1,i) = ref_pcd->points[pointIdxRadiusSearch_ref[i]].y;
-    merged.block<2,1>(0,tot++) = nearby_ref.block<2,1>(0,i);
+    nearby_ref(i,0) = ref_pcd->points[pointIdxRadiusSearch_ref[i]].x;
+    nearby_ref(i,1) = ref_pcd->points[pointIdxRadiusSearch_ref[i]].y;
+    merged.block<1,2>(tot++,0) = nearby_ref.block<1,2>(i,0);
   }
 
 
 }
 bool CorAlRadarQuality::Covariance(Eigen::MatrixXd& x, Eigen::Matrix2d& cov){ //mean already subtracted from x
   //Compute and subtract mean
-  cout<<"before subtract: "<< x<<endl;
-  cout<<"mean: "<<x.rowwise().mean()<<endl;
-  x -= x.rowwise().mean(); // I think this sould subtract mean
+  //cout<<"before subtract: "<< x<<endl;
+  //cout<<"mean: "<<x.rowwise().mean().transpose()<<endl;
+  Eigen::MatrixXd mean = x.colwise().mean();
+
+  for(int i=0;i<x.rows();i++) // subtract mean
+    x.block<1,2>(i,0) = x.block<1,2>(i,0) - mean;
 
   Eigen::Matrix2d covSum = x.transpose()*x;
   float n = x.rows();
@@ -192,7 +174,7 @@ bool CorAlRadarQuality::ComputeEntropy(const Eigen::Matrix2d& cov_sep, const Eig
   const double sep_entropy =  1.0/2.0*log(2.0*M_PI*exp(1.0)*det_s+0.00000001);
   const double joint_entropy = 1.0/2.0*log(2.0*M_PI*exp(1.0)*det_j+0.00000001);
 
-  if( isnan(sep_res_[index]) || isnan(joint_res_[index]) )
+  if( isnan(sep_entropy) || isnan(joint_entropy) )
     return false;
   else{
     sep_res_[index] = sep_entropy;
@@ -202,14 +184,18 @@ bool CorAlRadarQuality::ComputeEntropy(const Eigen::Matrix2d& cov_sep, const Eig
 }
 CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset)  : AlignmentQuality(src, ref, par, Toffset)
 {
+  cout<<"CorAl Quality"<<endl;
   ref_pcd_entropy = ref->GetCloudCopy(ref->GetAffine());
   src_pcd_entropy = src->GetCloudCopy(src->GetAffine()*Toffset);
+  assert(ref_pcd_entropy != NULL && src_pcd_entropy !=NULL);
+
 
   src_pcd = ac::pcl3dto2d(src_pcd_entropy, src_i);
   ref_pcd = ac::pcl3dto2d(ref_pcd_entropy, ref_i);
   kd_src.setInputCloud(src_pcd);
   kd_ref.setInputCloud(ref_pcd);
   const int merged_size = src_pcd->size() + ref_pcd->size();
+  assert(src_pcd->size() > 0 && ref_pcd->size());
 
   sep_res_.resize(merged_size, 100.0);
   sep_valid.resize(merged_size, false);
@@ -220,19 +206,23 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
   int index = 0;
   for (auto && searchPoint : src_pcd->points){
     Eigen::MatrixXd msrc, mref, mjoint;
+    //cout<<"get nearby"<<endl;
     GetNearby(searchPoint, msrc, mref, mjoint);
-    if(mref.cols() < overlap_req_)
+    //cout<<"got nearby"<<endl;
+    if(mref.cols() < overlap_req_){
+      index++;
       continue;
+    }
 
     Eigen::Matrix2d sep_cov, joint_cov;
     if( Covariance(msrc,sep_cov) && Covariance(mjoint,joint_cov) ){
       if( ComputeEntropy(sep_cov,joint_cov,index) ){
+
         sep_valid[index] = true;
         diff_res_[index] = joint_res_[index] - sep_res_[index];
         joint_ += joint_res_[index]; sep_ += sep_res_[index];
         count_valid++;
       }
-
     }
     index++;
   }
@@ -257,6 +247,7 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
     joint_ /=count_valid;
   }
   diff_ = joint_ - sep_;
+  cout<<"joint: "<<joint_<<", sep: "<<sep_<<", diff_"<<diff_<<", N: "<<count_valid<<endl;
 
   // Create merged point cloud
   merged_entropy = pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>());
@@ -273,6 +264,9 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
   for (auto && p : merged_entropy->points)  // asign entropy
     p.intensity = joint_res_[index]; // set intensity
 
+  AlignmentQualityPlot::PublishCloud("/coral_src",    src_pcd_entropy, Eigen::Affine3d::Identity(), "coral_world");
+  AlignmentQualityPlot::PublishCloud("/coral_ref",    ref_pcd_entropy, Eigen::Affine3d::Identity(), "coral_world");
+  AlignmentQualityPlot::PublishCloud("/coral_merged", merged_entropy,  Eigen::Affine3d::Identity(), "coral_world");
 }
 
 }

@@ -54,6 +54,9 @@ public:
     // Ideally, theta_range is 360 deg and theta_range -> infinity, however we can approximate this by looking at a 1/4 of the full sweep e.g. in offset_rotation_steps=2steps
     double range_error = 0.5;
     double theta_range = 2*M_PI/4.0;
+    double frame_delay = 0.0;
+
+
     int offset_rotation_steps = 2;
 
     //For inducing rotation error

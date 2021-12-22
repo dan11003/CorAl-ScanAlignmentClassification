@@ -220,7 +220,7 @@ public:
       quality = std::make_shared<CFEARQuality>(CFEARQuality(ref,src,pars,Toffset));
     }// RAW LIDAR (P2P/P2D/CORAL)
     else if(std::dynamic_pointer_cast<RawLidar>(ref)!=nullptr && std::dynamic_pointer_cast<RawLidar>(src)!=nullptr){
-      if(pars.method=="coral")
+      if(pars.method=="Coral")
         quality = std::make_shared<CorAl>(CorAl(ref,src,pars,Toffset));
       else if(pars.method=="P2D")
         quality = AlignmentQuality_S(new p2dQuality(ref,src,pars,Toffset));
@@ -228,7 +228,8 @@ public:
         quality = AlignmentQuality_S(new p2pQuality(ref,src,pars,Toffset));
     }
     else if(std::dynamic_pointer_cast<kstrongRadar>(ref)!=nullptr && std::dynamic_pointer_cast<kstrongRadar>(src)!=nullptr){
-      quality = std::make_shared<CorAlRadarQuality>(CorAlRadarQuality(ref,src,pars,Toffset));
+      if(pars.method=="Coral")
+        quality = std::make_shared<CorAlRadarQuality>(CorAlRadarQuality(ref,src,pars,Toffset));
     }// RAW LIDAR (P2P/P2D/CORAL)
 
     assert(quality != nullptr);
@@ -241,13 +242,13 @@ class AlignmentQualityPlot
 public:
   AlignmentQualityPlot() {}
 
+  static void PublishPoseScan(const std::string& topic, std::shared_ptr<PoseScan>& scan_plot, const Eigen::Affine3d& T, const std::string& frame_id, const int value=0);
 
-  //Modify to poseScan instead of MapNormalPtr
-  static void PublishPoseScan(const std::string& topic, std::shared_ptr<PoseScan>& p_scan, const Eigen::Affine3d& T, const std::string& frame_id, const int value=0);
+  static void PublishCloud(const std::string& topic, pcl::PointCloud<pcl::PointXYZI>::Ptr& cld_plot, const Eigen::Affine3d& T, const std::string& frame_id, const int value = 0);
 
-  static void PublishCloud(const std::string& topic, pcl::PointCloud<pcl::PointXYZI>& p_scan, const Eigen::Affine3d& T, const std::string& frame_id, const int value=0);
+  static std::map<std::string, ros::Publisher> pubs;
+  
 
-  //static std::map<std::string, ros::Publisher> pubs;
 };
 
 

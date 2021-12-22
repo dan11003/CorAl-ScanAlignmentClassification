@@ -70,6 +70,7 @@ public:
     double resolution = 3;
 
 
+
   };
   PoseScan(const Eigen::Affine3d& T, const Eigen::Affine3d& Tmot) : Test_(T), Tmot_(Tmot), pose_id(pose_count++){cout<<"Created posescan"<<endl;}
   Eigen::Affine3d Test_, Tmot_;
