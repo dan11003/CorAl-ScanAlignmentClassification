@@ -178,14 +178,22 @@ protected:
 
   bool Covariance(Eigen::MatrixXd& x, Eigen::Matrix2d& cov);
 
+  bool ComputeEntropy(const Eigen::Matrix2d& cov_sep, const Eigen::Matrix2d& cov_joint, int index);
+
   pcl::PointCloud<pcl::PointXY>::Ptr ref_pcd, src_pcd;
   std::vector<double> ref_i, src_i ;
   pcl::KdTreeFLANN<pcl::PointXY> kd_src, kd_ref;
 
-  std::vector<double> sep_res_;
-  std::vector<bool> sep_valid;
+  std::vector<double> sep_res_; // length ref + src
+  std::vector<bool> sep_valid; // length  ref + src
+  std::vector<double> joint_res_; // length ref + src
+  std::vector<double> diff_res_; // length ref + src
+  double sep_ = 0, joint_ = 0, diff_ = 0;
+  int count_valid = 0;
 
-  std::vector<double> joint_res_;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr ref_pcd_entropy, src_pcd_entropy, merged_entropy;
+
+  int overlap_req_ = 1;
 
 
 
@@ -219,6 +227,9 @@ public:
       else if(pars.method=="P2P")
         quality = AlignmentQuality_S(new p2pQuality(ref,src,pars,Toffset));
     }
+    else if(std::dynamic_pointer_cast<kstrongRadar>(ref)!=nullptr && std::dynamic_pointer_cast<kstrongRadar>(src)!=nullptr){
+      quality = std::make_shared<CorAlRadarQuality>(CorAlRadarQuality(ref,src,pars,Toffset));
+    }// RAW LIDAR (P2P/P2D/CORAL)
 
     assert(quality != nullptr);
     return quality;
@@ -233,6 +244,8 @@ public:
 
   //Modify to poseScan instead of MapNormalPtr
   static void PublishPoseScan(const std::string& topic, std::shared_ptr<PoseScan>& p_scan, const Eigen::Affine3d& T, const std::string& frame_id, const int value=0);
+
+  static void PublishCloud(const std::string& topic, pcl::PointCloud<pcl::PointXYZI>& p_scan, const Eigen::Affine3d& T, const std::string& frame_id, const int value=0);
 
   //static std::map<std::string, ros::Publisher> pubs;
 };

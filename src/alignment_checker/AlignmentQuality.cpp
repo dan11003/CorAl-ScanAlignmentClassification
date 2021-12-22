@@ -69,7 +69,9 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
 
 
 }
+void PublishCloud(const std::string& topic, pcl::PointCloud<pcl::PointXYZI>::Ptr& p_scan, const Eigen::Affine3d& T, const std::string& frame_id, const int value=0){
 
+}
 
 void AlignmentQualityPlot::PublishPoseScan(const std::string& topic, std::shared_ptr<PoseScan>& p_scan, const Eigen::Affine3d& T, const std::string& frame_id, const int value){
 
@@ -164,46 +166,112 @@ void CorAlRadarQuality::GetNearby(const pcl::PointXY& query, Eigen::MatrixXd& ne
 
 }
 bool CorAlRadarQuality::Covariance(Eigen::MatrixXd& x, Eigen::Matrix2d& cov){ //mean already subtracted from x
+  //Compute and subtract mean
+  cout<<"before subtract: "<< x<<endl;
+  cout<<"mean: "<<x.rowwise().mean()<<endl;
+  x -= x.rowwise().mean(); // I think this sould subtract mean
+
   Eigen::Matrix2d covSum = x.transpose()*x;
   float n = x.rows();
   cov = covSum*1.0/(n-1.0);
   Eigen::JacobiSVD<Eigen::Matrix2d> svd(cov.block<2,2>(0,0));
   double cond = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
   //cout<<"cond "<<cond<<endl;
+
   return cond < 100000;
+}
+bool CorAlRadarQuality::ComputeEntropy(const Eigen::Matrix2d& cov_sep, const Eigen::Matrix2d& cov_joint, int index){
+
+
+
+  double det_j = cov_joint.determinant();
+  double det_s = cov_sep.determinant();
+  if(isnanl(det_s) || isnanl(det_j))
+    return false;
+
+  const double sep_entropy =  1.0/2.0*log(2.0*M_PI*exp(1.0)*det_s+0.00000001);
+  const double joint_entropy = 1.0/2.0*log(2.0*M_PI*exp(1.0)*det_j+0.00000001);
+
+  if( isnan(sep_res_[index]) || isnan(joint_res_[index]) )
+    return false;
+  else{
+    sep_res_[index] = sep_entropy;
+    joint_res_[index] = joint_entropy;
+    return true;
+  }
 }
 CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset)  : AlignmentQuality(src, ref, par, Toffset)
 {
-  ref_pcd = ac::pcl3dto2d(ref->GetCloudCopy(ref->GetAffine()), ref_i);
-  src_pcd = ac::pcl3dto2d(src->GetCloudCopy(src->GetAffine()*Toffset), src_i);
+  ref_pcd_entropy = ref->GetCloudCopy(ref->GetAffine());
+  src_pcd_entropy = src->GetCloudCopy(src->GetAffine()*Toffset);
+
+  src_pcd = ac::pcl3dto2d(src_pcd_entropy, src_i);
+  ref_pcd = ac::pcl3dto2d(ref_pcd_entropy, ref_i);
   kd_src.setInputCloud(src_pcd);
   kd_ref.setInputCloud(ref_pcd);
+  const int merged_size = src_pcd->size() + ref_pcd->size();
 
-  sep_res_.resize(src_pcd->size() + ref_pcd->size(), 0);
-  sep_valid.resize(src_pcd->size() +ref_pcd->size(), false);
-  joint_res_.resize(src_pcd->size() + ref_pcd->size(), 0);
+  sep_res_.resize(merged_size, 100.0);
+  sep_valid.resize(merged_size, false);
+  joint_res_.resize(merged_size, 100.0);
+  diff_res_.resize(merged_size, 100.0);
 
 
-  int pnt = 0;
+  int index = 0;
   for (auto && searchPoint : src_pcd->points){
-    Eigen::MatrixXd msrc, mref, mmerged;
-    GetNearby(searchPoint, msrc, mref, mmerged);
-    cout<<"before subtract: "<< msrc<<endl;
-    cout<<"mean: "<<msrc.rowwise().mean()<<endl;
-    msrc -= msrc.rowwise().mean(); // I think this sould subtract mean
-    mmerged -= mmerged.rowwise().mean();
-    cout<<"after subtract: "<< msrc<<endl;
-    Eigen::Matrix2d Csrc, Cmerged;
-    bool success_src = Covariance(msrc,Csrc);
-    bool success_merged = Covariance(msrc,Cmerged);
-    if(success_src && success_merged){
+    Eigen::MatrixXd msrc, mref, mjoint;
+    GetNearby(searchPoint, msrc, mref, mjoint);
+    if(mref.cols() < overlap_req_)
+      continue;
 
+    Eigen::Matrix2d sep_cov, joint_cov;
+    if( Covariance(msrc,sep_cov) && Covariance(mjoint,joint_cov) ){
+      if( ComputeEntropy(sep_cov,joint_cov,index) ){
+        sep_valid[index] = true;
+        diff_res_[index] = joint_res_[index] - sep_res_[index];
+        joint_ += joint_res_[index]; sep_ += sep_res_[index];
+        count_valid++;
+      }
 
     }
-
+    index++;
   }
+  for (auto && searchPoint : ref_pcd->points){
+    Eigen::MatrixXd msrc, mref, mjoint;
+    GetNearby(searchPoint, msrc, mref, mjoint);
+    if(msrc.cols() < overlap_req_)
+      continue;
+    Eigen::Matrix2d sep_cov, joint_cov;
+    if( Covariance(mref,sep_cov) && Covariance(mjoint,joint_cov) ){
+      if( ComputeEntropy(sep_cov,joint_cov,index) ){
+        sep_valid[index] = true;
+        diff_res_[index] = joint_res_[index] - sep_res_[index];
+        joint_ += joint_res_[index]; sep_ += sep_res_[index];
+        count_valid++;
+      }
+    }
+    index++;
+  }
+  if(count_valid > 0){
+    sep_ /=count_valid;
+    joint_ /=count_valid;
+  }
+  diff_ = joint_ - sep_;
 
+  // Create merged point cloud
+  merged_entropy = pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>());
+  *merged_entropy += *src_pcd_entropy;
+  *merged_entropy += *ref_pcd_entropy;
 
+  //Assign entrpy values
+  index = 0;
+  for (auto && p : src_pcd_entropy->points)  // asign entropy
+    p.intensity = sep_res_[index]; // set intensity
+  for (auto && p : ref_pcd_entropy->points)  // asign entropy
+    p.intensity = sep_res_[index++]; // set intensity
+
+  for (auto && p : merged_entropy->points)  // asign entropy
+    p.intensity = joint_res_[index]; // set intensity
 
 }
 
