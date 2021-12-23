@@ -66,6 +66,9 @@ public:
     std::string eval_name ="noname";
     std::string dataset = "", sequence = "";
 
+    //Visualization
+    bool visualize = true;
+
     std::string ToString(){
       std::ostringstream stringStream;
       stringStream << "output_directory, "<<output_directory<<endl;

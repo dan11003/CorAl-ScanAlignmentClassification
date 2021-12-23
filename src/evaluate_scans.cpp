@@ -104,7 +104,8 @@ int main(int argc, char **argv)
       ("theta-range",po::value<double>(&evalPars.theta_range)->default_value(2*M_PI),"Misalignment error - position")
       ("offset-rotation-steps",po::value<int>(&evalPars.offset_rotation_steps)->default_value(4),"Misalignment error - position")
       ("theta-error",po::value<double>(&evalPars.theta_error)->default_value(0.0),"Misalignment error - angular")
-      ("index-first-scan",po::value<int>(&index_first_scan)->default_value(0),"index of first scan");
+      ("index-first-scan",po::value<int>(&index_first_scan)->default_value(0),"index of first scan")
+      ("visualization",po::value<bool>(&evalPars.visualize)->default_value(true),"flag indicating whether the visualization should be enabled");
 
 
   //Boolean parameres are read through notifiers
