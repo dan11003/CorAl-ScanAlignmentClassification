@@ -42,6 +42,18 @@ y_test=y_train
 
 #print(X_train)
 #print(y_train)
+data=np.array(y_train)
+misaligned = np.count_nonzero(data==0)
+aligned = np.count_nonzero(data==1)
+ratio = misaligned/aligned
+w= {0:1, 1:ratio}
+print("datapoints - aligned="+str(aligned)+", misaligned="+str(misaligned))
+print("ratio: "+str(ratio)+", w="+str(w) )
+
+#print("aligned: "+str(aligned))
+#print("misaligned: "+str(aligned))
+
+exit
 logreg = LogisticRegression()
 logreg.fit(X_train,y_train)
 y_pred=logreg.predict(X_test)
