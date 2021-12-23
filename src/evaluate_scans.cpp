@@ -106,7 +106,7 @@ int main(int argc, char **argv)
       ("theta-error",po::value<double>(&evalPars.theta_error)->default_value(0.0),"Misalignment error - angular")
       ("index-first-scan",po::value<int>(&index_first_scan)->default_value(0),"index of first scan")
       ("visualization",po::value<bool>(&evalPars.visualize)->default_value(true),"flag indicating whether the visualization should be enabled")
-      ("rosbag-offset",po::value<int>(&rosbag_offset)->default_value(500),"Misalignment error - angular")
+      ("rosbag-offset",po::value<int>(&rosbag_offset)->default_value(0),"Misalignment error - angular")
       ("frame-delay",po::value<double>(&evalPars.frame_delay)->default_value(0),"Misalignment error - angular");
 
 

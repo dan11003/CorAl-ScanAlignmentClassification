@@ -46,9 +46,11 @@ logreg = LogisticRegression()
 logreg.fit(X_train,y_train)
 y_pred=logreg.predict(X_test)
 cnf_matrix = metrics.confusion_matrix(y_test, y_pred)
+cnf_matrix = cnf_matrix /cnf_matrix.astype(float).sum(axis=1)
+
 print(cnf_matrix)
-print(y_pred)
-print(y_test)
+#print(y_pred)
+#print(y_test)
 
 PrintConfusionMatric(cnf_matrix, output_directory)
 PrintROC(logreg, X_test, y_test, output_directory)

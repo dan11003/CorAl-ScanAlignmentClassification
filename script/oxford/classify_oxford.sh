@@ -1,6 +1,6 @@
 
 BAG_BASE_DIR="${BAG_LOCATION}/oxford-eval-sequences/"
-SEQUENCE="2019-01-10-11-46-21-radar-oxford-10k"
+SEQUENCE="2019-01-10-12-32-52-radar-oxford-10k"
 BAG_FILE_PATH="${BAG_BASE_DIR}/${SEQUENCE}/radar/${SEQUENCE}.bag"
 current_date=`date '+%Y-%m-%d_%H:%M'`
 EVAL_NAME="PROTOTYPE_eval_${current_date}"
