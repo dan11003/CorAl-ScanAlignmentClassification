@@ -79,7 +79,7 @@ def thread_task(lock, table, name, bag_location, bag_file_path):
         method = table[1][local_index-1]
         param_str = name + ' launched test ' + str(local_index) + ' with ' + method + ' and ' + str(range_error) 
         print(param_str)
-        launch_str = 'rosrun alignment_checker evaluate_scans --input-file-path ' + bag_file_path + ' --output-dir ' + output_eval_path + ' --eval-name ' + eval_name + ' --sequence ' + sequence + ' --method ' + method + ' --range-error ' + str(range_error) + ' --run-test --radius 0.2 --offset-rotation-steps 1 --visualization false __name:=Test_' + str(local_index)
+        launch_str = 'rosrun alignment_checker evaluate_scans --input-file-path ' + bag_file_path + ' --output-dir ' + output_eval_path + ' --eval-name ' + eval_name + ' --sequence ' + sequence + ' --method ' + method + ' --range-error ' + str(range_error) + ' --scan-type cfear --rosbag-offset 200 --frame-delay 0.0 --visualization false __name:=Test_' + str(local_index)
         os.system(launch_str)
         
         # Append line to file with these parameters
@@ -111,7 +111,7 @@ if __name__ == '__main__' :
     # Get rosbag base dir and others
     bag_location = os.getenv('BAG_LOCATION')
     bag_base_dir = bag_location + '/oxford-eval-sequences'
-    sequence = 'RADAR_OXFORD'
+    sequence = '2019-01-10-12-32-52-radar-oxford-10k'
     bag_file_path = bag_base_dir + '/' + sequence + '/radar/' + sequence + '.bag'
 
     # Mutex
