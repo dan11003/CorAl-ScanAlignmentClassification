@@ -1,9 +1,9 @@
 #include "alignment_checker/ScanEvaluator.h"
 namespace CorAlignment {
 
-bool datapoint::aligned(){
+bool datapoint::aligned(const std::vector<double>& perturbation){
   double sum = 0;
-  for(auto && e : perturbation_)
+  for(auto && e : perturbation)
     sum+=fabs(e);
   return sum < 0.0001;
 
@@ -48,8 +48,9 @@ void scanEvaluator::InputSanityCheck(){
   assert( par_.theta_error >= 0.0 );
   assert( par_.scan_spacing >= 1 );
 }
-scanEvaluator::scanEvaluator( dataHandler_U& reader, const parameters& eval_par, const AlignmentQuality::parameters& quality_par): par_(eval_par), quality_par_(quality_par)
+scanEvaluator::scanEvaluator( dataHandler_U& reader, const parameters& eval_par, const AlignmentQuality::parameters& quality_par): par_(eval_par), quality_par_(quality_par), nh_("~")
 {
+  pub_train_data = nh_.advertise<std_msgs::Float64MultiArray>("/coral_training",1000);
   reader_ = std::move( reader);
   InputSanityCheck();
   CreatePerturbations();
@@ -57,23 +58,33 @@ scanEvaluator::scanEvaluator( dataHandler_U& reader, const parameters& eval_par,
 
   std::vector< std::shared_ptr<PoseScan> > prev_scans;
   int index = 0;
+  ros::Rate rate(1.0/(0.000000001+par_.frame_delay));
   for (std::shared_ptr<PoseScan> current = reader_->Next(); current!=nullptr && ros::ok(); current = reader_->Next()) {
     if( prev_scans.size() == par_.scan_spacing )
     {
       index++;
       for(auto && verr : vek_perturbation_){
+        rate.sleep();
         cout<<verr[0]<<", "<<verr[1]<<", "<<verr[2]<<endl;
         const Eigen::Affine3d Tperturbation = VectorToAffine3dxyez(verr);
         //cout<<endl<<prev_scans.back()->GetAffine().matrix()<<endl;
         //cout<<endl<<current->GetAffine().matrix()<<endl;
         AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(prev_scans.back(), current, quality_par_, Tperturbation);
         cout<<"computed score"<<endl;
-        if(eval_par.visualize)
-          AlignmentQualityPlot::PublishPoseScan("/src", current, current->GetAffine(),"lidar");
-        //AlignmentQualityPlot::PublishPoseScan("/ref", prev_scans.back());
+        if(eval_par.visualize){
+          AlignmentQualityPlot::PublishPoseScan("/src", current, current->GetAffine()*Tperturbation,"/src_link");
+          AlignmentQualityPlot::PublishPoseScan("/ref", prev_scans.back(), prev_scans.back()->GetAffine(),"/ref_link");
+        }
         std::vector<double> res = quality->GetResiduals();
         std::vector<double> quality_measure = quality->GetQualityMeasure();
-        //cout<<"quality: "<<quality_measure<<endl;
+        std_msgs::Float64MultiArray training_data;
+        training_data.data = {((double)datapoint::aligned(verr)), quality_measure[0], quality_measure[1], quality_measure[2]};
+        cout<<"publish: "<<training_data.data<<endl;
+        pub_train_data.publish(training_data);
+
+
+        //cout<<"quality: "<<quality_measures<<endl;
+
         quality = NULL;
         datapoints_.push_back(datapoint(index, res, verr, quality_measure, prev_scans.back(), current));
       }

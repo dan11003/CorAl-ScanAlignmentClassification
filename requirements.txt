@@ -2,6 +2,7 @@
 pytest
 sklearn
 seaborn
+rospkg
 
 robust_mapping (from our GitLab source, branch: develop_cfearjournal)
 Ceres solver (see: https://brucknem.github.io/posts/install-ceres-solver/)

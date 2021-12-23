@@ -11,14 +11,14 @@ std::shared_ptr<PoseScan> FiledataHandler::Next(){
 }
 
 
-RadarRosbagHandler::RadarRosbagHandler(const std::string& rosbag_path, const PoseScan::Parameters& scanPars, const std::string& radar_topic, const std::string& gt_topic): scanPars_(scanPars){
+RadarRosbagHandler::RadarRosbagHandler(const std::string& rosbag_path, const PoseScan::Parameters& scanPars, const int rosbag_offset,  const std::string& radar_topic, const std::string& gt_topic): scanPars_(scanPars){
   cout<<"Loading bag file: "<<rosbag_path<<endl;
   bag_.open(rosbag_path, rosbag::bagmode::Read);
   view_image_ = std::make_unique<rosbag::View>(bag_, rosbag::TopicQuery({radar_topic}));
   view_pose_  = std::make_unique<rosbag::View>(bag_, rosbag::TopicQuery({gt_topic}));
   assert(view_image_->size() >0 && view_pose_->size() > 0 );
-  m_image_ = view_image_->begin();
-  m_pose_ = view_pose_->begin();
+  m_image_ = std::next(view_image_->begin(),rosbag_offset);
+  m_pose_ = std::next(view_pose_->begin(),rosbag_offset);
   cout<<"images: "<<m_image_->size()<<", poses:"<<m_pose_->size()<<endl;
 
   pub_image = nh_.advertise<sensor_msgs::Image>("/Navtech/Polar", 1000);
@@ -92,7 +92,7 @@ std::shared_ptr<PoseScan> RadarRosbagHandler::Next(){
     //const Eigen::Affine3d Tmotion = pose_stream_.front().first.inverse()*pose_stream_.back(); //This is more correct but wrong scaling
     const Eigen::Affine3d Tmotion = pose_stream_[1].first.inverse()*pose_stream_.back().first; //not very good but okay
 
-    usleep(1000*200);
+    //usleep(1000*200);
     if(scanPars_.scan_type == rawradar)
       return PoseScan_S(new RawRadar(radar_stream_[1], pose_stream_[1].first, Tmotion));
     else if(scanPars_.scan_type == kstrong)

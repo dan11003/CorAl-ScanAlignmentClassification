@@ -5,6 +5,13 @@ import seaborn as sns
 import pandas as pd
 from sklearn import metrics
 import os
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn import preprocessing
+from sklearn.model_selection import train_test_split
+import seaborn as sns
+import argparse
+
 def PrintConfusionMatric(cnf_matrix, directory):
 
     if not os.path.exists(directory):
@@ -42,3 +49,26 @@ def PrintROC(logreg,X_test,y_test,directory):
     plt.savefig(path+".pdf", bbox_inches='tight')
     plt.show()
     return None
+
+def TrainClassifier(df):
+    col_names=['score1','score2','score3']
+    #df = pd.read_csv(file_path)
+    X = df[col_names]
+    y = df.aligned
+
+
+    #print(X_train)
+    #print(y_train)
+    logreg = LogisticRegression()
+    logreg.fit(X,y)
+    y_pred=logreg.predict(X)
+    accuracy = metrics.balanced_accuracy_score(y,y_pred)
+    #print("accuracy: "+str(accuracy))
+    return accuracy
+    #cnf_matrix = metrics.confusion_matrix(y, y_pred)
+    #print(cnf_matrix)
+    #print(y_pred)
+    #print(y)
+
+    #PrintConfusionMatric(cnf_matrix, output_directory)
+    #PrintROC(logreg, X_test, y_test, output_directory)

@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 
   // Input output
   std::string filepath, directory_clouds, cloud_prefix;
-  int index_first_scan;
+  int index_first_scan, rosbag_offset;
   std::string output_dir, output_file_name;
   std::string scantype;
 
@@ -105,7 +105,9 @@ int main(int argc, char **argv)
       ("offset-rotation-steps",po::value<int>(&evalPars.offset_rotation_steps)->default_value(4),"Misalignment error - position")
       ("theta-error",po::value<double>(&evalPars.theta_error)->default_value(0.0),"Misalignment error - angular")
       ("index-first-scan",po::value<int>(&index_first_scan)->default_value(0),"index of first scan")
-      ("visualization",po::value<bool>(&evalPars.visualize)->default_value(true),"flag indicating whether the visualization should be enabled");
+      ("visualization",po::value<bool>(&evalPars.visualize)->default_value(true),"flag indicating whether the visualization should be enabled")
+      ("rosbag-offset",po::value<int>(&rosbag_offset)->default_value(500),"Misalignment error - angular")
+      ("frame-delay",po::value<double>(&evalPars.frame_delay)->default_value(0),"Misalignment error - angular");
 
 
   //Boolean parameres are read through notifiers
@@ -132,7 +134,7 @@ int main(int argc, char **argv)
     fileHandler = std::make_unique<MockupHandler>();
   }
   else
-    fileHandler = std::make_unique<RadarRosbagHandler>(filepath, scanPars);
+    fileHandler = std::make_unique<RadarRosbagHandler>(filepath, scanPars, rosbag_offset);
 
 
   scanEvaluator eval(fileHandler, evalPars, qualityPars);

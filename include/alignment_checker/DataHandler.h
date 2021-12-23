@@ -75,7 +75,7 @@ public:
 class RadarRosbagHandler: public dataHandler
 {
 public:
-  RadarRosbagHandler(const std::string& rosbag_path, const PoseScan::Parameters& scanPars, const std::string& radar_topic = "/Navtech/Polar", const std::string& gt_topic = "/gt");
+  RadarRosbagHandler(const std::string& rosbag_path, const PoseScan::Parameters& scanPars, const int rosbag_offset= 0, const std::string& radar_topic = "/Navtech/Polar", const std::string& gt_topic = "/gt");
 
   std::shared_ptr<PoseScan> Next();
 

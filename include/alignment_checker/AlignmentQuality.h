@@ -64,15 +64,16 @@ public:
     src_ = src;
     ref_ = ref;
     quality_ = {0,0,0};
+    residuals_ = {0,0,0};
   }
 
   void Visualize();
 
   virtual ~AlignmentQuality(){}
 
-  virtual std::vector<double> GetResiduals() = 0;
+  virtual std::vector<double> GetResiduals() {return residuals_;}
 
-  virtual std::vector<double> GetQualityMeasure() = 0;
+  virtual std::vector<double> GetQualityMeasure(){return quality_;}
 
   // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
 
@@ -121,7 +122,6 @@ public:
 
   std::vector<double> GetResiduals(){return {0,0,0}; }
 
-  std::vector<double> GetQualityMeasure();
   // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
 };
 /************** P2D ********************/
@@ -139,8 +139,6 @@ public:
   ~CorAl(){}
 
   std::vector<double> GetResiduals(){ return {0,0,0}; }
-
-  std::vector<double> GetQualityMeasure();
   // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
 };
 
@@ -151,11 +149,6 @@ public:
   CFEARQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity());
 
   ~CFEARQuality(){}
-
-  std::vector<double> GetResiduals(){ return {0,0,0}; }
-
-  std::vector<double> GetQualityMeasure(){return {0,0,0};}
-
 
   // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
 };
@@ -168,9 +161,7 @@ public:
 
   ~CorAlRadarQuality(){}
 
-  std::vector<double> GetResiduals(){ return {0,0,0}; }
-
-  std::vector<double> GetQualityMeasure(){return {0,0,0};}
+  std::vector<double> GetQualityMeasure(){return {sep_, joint_, 0};}
 
 protected:
 
@@ -178,14 +169,22 @@ protected:
 
   bool Covariance(Eigen::MatrixXd& x, Eigen::Matrix2d& cov);
 
+  bool ComputeEntropy(const Eigen::Matrix2d& cov_sep, const Eigen::Matrix2d& cov_joint, int index);
+
   pcl::PointCloud<pcl::PointXY>::Ptr ref_pcd, src_pcd;
   std::vector<double> ref_i, src_i ;
   pcl::KdTreeFLANN<pcl::PointXY> kd_src, kd_ref;
 
-  std::vector<double> sep_res_;
-  std::vector<bool> sep_valid;
+  std::vector<double> sep_res_; // length ref + src
+  std::vector<bool> sep_valid; // length  ref + src
+  std::vector<double> joint_res_; // length ref + src
+  std::vector<double> diff_res_; // length ref + src
+  double sep_ = 0, joint_ = 0, diff_ = 0;
+  int count_valid = 0;
 
-  std::vector<double> joint_res_;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr ref_pcd_entropy, src_pcd_entropy, merged_entropy;
+
+  int overlap_req_ = 1;
 
 
 
@@ -212,13 +211,17 @@ public:
       quality = std::make_shared<CFEARQuality>(CFEARQuality(ref,src,pars,Toffset));
     }// RAW LIDAR (P2P/P2D/CORAL)
     else if(std::dynamic_pointer_cast<RawLidar>(ref)!=nullptr && std::dynamic_pointer_cast<RawLidar>(src)!=nullptr){
-      if(pars.method=="coral")
+      if(pars.method=="Coral")
         quality = std::make_shared<CorAl>(CorAl(ref,src,pars,Toffset));
       else if(pars.method=="P2D")
         quality = AlignmentQuality_S(new p2dQuality(ref,src,pars,Toffset));
       else if(pars.method=="P2P")
         quality = AlignmentQuality_S(new p2pQuality(ref,src,pars,Toffset));
     }
+    else if(std::dynamic_pointer_cast<kstrongRadar>(ref)!=nullptr && std::dynamic_pointer_cast<kstrongRadar>(src)!=nullptr){
+      if(pars.method=="Coral")
+        quality = std::make_shared<CorAlRadarQuality>(CorAlRadarQuality(ref,src,pars,Toffset));
+    }// RAW LIDAR (P2P/P2D/CORAL)
 
     assert(quality != nullptr);
     return quality;
@@ -230,9 +233,13 @@ class AlignmentQualityPlot
 public:
   AlignmentQualityPlot() {}
 
-  static void PublishPoseScan(const std::string& topic, std::shared_ptr<PoseScan>& p_scan, const Eigen::Affine3d& T, const std::string& frame_id, const int value=0);
+  static void PublishPoseScan(const std::string& topic, std::shared_ptr<PoseScan>& scan_plot, const Eigen::Affine3d& T, const std::string& frame_id, const int value=0);
+
+  static void PublishCloud(const std::string& topic, pcl::PointCloud<pcl::PointXYZI>::Ptr& cld_plot, const Eigen::Affine3d& T, const std::string& frame_id, const int value = 0);
+
   static std::map<std::string, ros::Publisher> pubs;
   
+
 };
 
 

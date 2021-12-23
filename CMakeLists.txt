@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(alignment_checker)
 set (CMAKE_CXX_STANDARD 14)
-set(CMAKE_BUILD_TYPE debug)
+set(CMAKE_BUILD_TYPE release)
 
 IF(CMAKE_SIZEOF_VOID_P EQUAL 4)
     SET(LIB_SUFFIX "")
@@ -89,6 +89,11 @@ include_directories(
 #link_directories(${PCL_LIBRARY_DIRS})
 add_executable(evaluate_scans src/evaluate_scans.cpp )
 target_link_libraries(evaluate_scans ${catkin_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR} ${PROJECT_NAME} ${PCL_LIBRARIES})
+
+catkin_install_python(PROGRAMS python/alignment_service.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
 
 #add_executable(test_align src/test_alignment.cpp )
 #target_link_libraries(test_align ${catkin_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR} ${PROJECT_NAME} ${PCL_LIBRARIES})

@@ -184,16 +184,16 @@ void FilterClouds(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > &clouds, std
 }
 
 void PublishCloud(const std::string& topic, pcl::PointCloud<pcl::PointXYZ>& cld){
-    static std::map<std::string,ros::Publisher> pubs;
-    std::map<std::string, ros::Publisher>::iterator it = pubs.find(topic);
-    if (it == pubs.end()){
-        ros::NodeHandle nh("~");
-        pubs[topic] =  nh.advertise<pcl::PointCloud<pcl::PointXYZ>>(topic,100);
-        it = pubs.find(topic);
-    }
-    //cout<<"publish to "<<topic<<endl;
+  static std::map<std::string,ros::Publisher> pubs;
+  std::map<std::string, ros::Publisher>::iterator it = pubs.find(topic);
+  if (it == pubs.end()){
+    ros::NodeHandle nh("~");
+    pubs[topic] =  nh.advertise<pcl::PointCloud<pcl::PointXYZ>>(topic,100);
+    it = pubs.find(topic);
+  }
+  //cout<<"publish to "<<topic<<endl;
 
-    it->second.publish(cld);
+  it->second.publish(cld);
 }
 
 
@@ -209,6 +209,19 @@ pcl::PointCloud<pcl::PointXY>::Ptr pcl3dto2d(const pcl::PointCloud<pcl::PointXYZ
     intensity[index++] = p.intensity;
   }
   return output;
+}
+
+pcl::PointCloud<pcl::PointXYZI>::Ptr pclAddIntensity(const pcl::PointCloud<pcl::PointXYZ>::Ptr& input, const std::vector<double>& intensity){
+  pcl::PointCloud<pcl::PointXYZI>::Ptr cld(new pcl::PointCloud<pcl::PointXYZI>());
+  assert( intensity.size() == input->size() );
+  cld->resize(input->size());
+  for(int i=0;i<input->size();i++){
+    cld->points[i].x = input->points[i].x;
+    cld->points[i].y = input->points[i].y;
+    cld->points[i].z = input->points[i].z;
+    cld->points[i].intensity = intensity[i];
+  }
+  return cld;
 }
 
 

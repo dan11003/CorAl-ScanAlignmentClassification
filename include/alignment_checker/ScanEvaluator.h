@@ -6,7 +6,10 @@
 #include "alignment_checker/Utils.h"
 #include <sstream>      // std::stringstream
 
+#include "std_msgs/MultiArrayLayout.h"
+#include "std_msgs/MultiArrayDimension.h"
 
+#include "std_msgs/Int32MultiArray.h"
 namespace CorAlignment {
 using namespace alignment_checker;
 
@@ -35,7 +38,10 @@ public:
   std::vector<double> perturbation_={0,0,0};
   std::vector<double> score_={0,0,0};
   int index_, ref_id_, src_id_;
-  bool  aligned();
+  bool aligned(){return datapoint::aligned(perturbation_);}
+
+  static bool aligned(const std::vector<double>& perturbation);
+
 };
 class scanEvaluator
 {
@@ -54,6 +60,9 @@ public:
     // Ideally, theta_range is 360 deg and theta_range -> infinity, however we can approximate this by looking at a 1/4 of the full sweep e.g. in offset_rotation_steps=2steps
     double range_error = 0.5;
     double theta_range = 2*M_PI/4.0;
+    double frame_delay = 0.0;
+
+
     int offset_rotation_steps = 2;
 
     //For inducing rotation error
@@ -106,6 +115,8 @@ private:
 
   std::vector< std::vector<double> > vek_perturbation_;
   std::vector<datapoint> datapoints_;
+  ros::Publisher pub_train_data;
+  ros::NodeHandle nh_;
 
 };
 
