@@ -54,11 +54,11 @@ print("ratio: "+str(ratio)+", w="+str(w) )
 #print("misaligned: "+str(aligned))
 
 exit
-logreg = LogisticRegression()
+logreg = LogisticRegression(class_weight='balanced')
 logreg.fit(X_train,y_train)
 y_pred=logreg.predict(X_test)
-cnf_matrix = metrics.confusion_matrix(y_test, y_pred)
-cnf_matrix = cnf_matrix /cnf_matrix.astype(float).sum(axis=1)
+cnf_matrix = metrics.confusion_matrix(y_test, y_pred,normalize='true')
+#cnf_matrix = cnf_matrix /cnf_matrix.astype(float).sum(axis=1)
 
 print(cnf_matrix)
 #print(y_pred)
