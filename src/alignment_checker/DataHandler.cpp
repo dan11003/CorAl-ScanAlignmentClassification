@@ -102,6 +102,7 @@ std::shared_ptr<PoseScan> RadarRosbagHandler::Next(){
     else return nullptr;
 
   }
+  return nullptr;
 }
 
   MockupHandler::MockupHandler(){

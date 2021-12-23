@@ -25,18 +25,19 @@ void scanEvaluator::CreatePerturbations()
 
 }
 void scanEvaluator::SaveEvaluation(){
+    cout<<"Save Evaluation"<<endl;
   std::ofstream ofs_meta, ofs_eval;
   ofs_meta.open(par_.output_directory+std::string("/")+par_.output_meta_file);
   ofs_meta <<"evaluation name, method, radius, scan spacing, theta range, offset rotation steps, theta error, range error"<<std::endl; //, scan index,
   ofs_meta<<par_.eval_name<<","<<quality_par_.method<<","<<std::to_string(quality_par_.radius)<<","<<std::to_string(par_.scan_spacing)<<","<<std::to_string(par_.theta_range)
-         <<","<<par_.offset_rotation_steps<<","<<std::to_string(par_.theta_error)<<std::to_string(par_.range_error)<<endl;
+         <<","<<par_.offset_rotation_steps<<","<<std::to_string(par_.theta_error)<<","<<std::to_string(par_.range_error)<<endl;
 
   assert(!datapoints_.empty());
   ofs_eval.open(par_.output_directory+std::string("/")+par_.output_eval_file);
   ofs_eval << datapoint::HeaderToString()<<endl;;
   for(auto&& d : datapoints_)
     ofs_eval<<d.ToString()<<std::endl;
-
+cout<<"Saved Evaluation"<<endl;
 }
 void scanEvaluator::InputSanityCheck(){
 
