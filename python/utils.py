@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split
 import seaborn as sns
 import argparse
 
-def PrintConfusionMatric(cnf_matrix, directory):
+def PrintConfusionMatric(cnf_matrix, cnf_matrix_un, directory):
 
     if not os.path.exists(directory):
         os.mkdir(directory)
@@ -33,6 +33,14 @@ def PrintConfusionMatric(cnf_matrix, directory):
     plt.savefig(path+".png")
     plt.savefig(path+".pdf", bbox_inches='tight')
     plt.show()
+
+    # Store confusion matrix as text file
+    f = open(directory + '/results.txt','w')
+    accuracy = (cnf_matrix_un[0][0]+cnf_matrix_un[1][1])/(cnf_matrix_un[0][0]+cnf_matrix_un[0][1]+cnf_matrix_un[1][0]+cnf_matrix_un[1][1])
+    # Accuracy and Confusion matrix (row-major order)
+    f.writelines([str(accuracy)+ ',' + str(cnf_matrix_un[0][0]) + ',' + str(cnf_matrix_un[0][1]) + ',' + str(cnf_matrix_un[1][0]) + ',' + str(cnf_matrix_un[1][1]) ]) 
+    f.close()
+
     return None
 
 def PrintROC(logreg,X_test,y_test,directory):

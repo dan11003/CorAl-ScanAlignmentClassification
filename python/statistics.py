@@ -1,0 +1,52 @@
+# Statistics output for experiments
+import os
+import sys
+import copy
+import threading
+from datetime import datetime
+import argparse
+
+# Get tests directory and file
+bag_location = os.getenv('BAG_LOCATION')
+directory = bag_location + '/CoralRadarEval/'
+parser = argparse.ArgumentParser()
+parser.add_argument("--filename", "-f", help="filename containing a list of directories under CoralRadarEval folder", default="")
+args = parser.parse_args()
+
+# Count number of tests in file
+file_dir = directory + args.filename
+with open(file_dir,'r') as f :
+    for count, line in enumerate(f) :
+        pass
+
+# Generate full statistics file
+f = open(file_dir, 'r')
+stat_file_name = file_dir.replace("directories","statistics")
+f_stat = open(stat_file_name, 'a')
+f_stat.writelines(["evaluation name,method,radius,scan spacing,theta range,offset rotation steps,theta error,range error,accuracy,c11,c12,c21,c22\n"]) 
+
+for i in range(0,count+1) : 
+
+    #Execute "classify" script for directory
+    line = f.readline()
+    os.system('python3 classify.py -d ' + directory + line)
+    line = line.replace("\n","")
+
+    #Get 'params' from the results
+    f_params = open(directory + line + '/params.txt','r')
+    params_lines = f_params.readlines()
+    params = params_lines[1]
+    params = params.replace("\n","")
+    f_params.close()
+
+    #Get accuracy and confusion matrix results
+    f_results = open(directory + line +'/output/results.txt', 'r')
+    results = f_results.readline()
+    f_results.close()
+
+    #Append line to the statistics file
+    f_stat.writelines([params + ',' + results + '\n'])
+
+
+f.close()
+f_stat.close()

@@ -58,6 +58,7 @@ def getCombinationsTable(parameters):
 
 def thread_task(lock, table, name, bag_location, bag_file_path):
     global index
+    global dir_string
     l_table = len(table[0])
 
     if index <= l_table-1 :
@@ -69,7 +70,6 @@ def thread_task(lock, table, name, bag_location, bag_file_path):
         # Generate directory for results
         now = datetime.now()
         dt_string   = now.strftime("%Y-%m-%d_%H:%M:%S")
-        dt_string_2 = now.strftime("%Y-%m-%d_%H")
         eval_name = 'Test_number_'+ str(local_index) + '_' + dt_string
         output_eval_path = bag_location + '/CoralRadarEval/' + eval_name
         os.system('mkdir -p ' + output_eval_path)
@@ -82,9 +82,10 @@ def thread_task(lock, table, name, bag_location, bag_file_path):
         launch_str = 'rosrun alignment_checker evaluate_scans --input-file-path ' + bag_file_path + ' --output-dir ' + output_eval_path + ' --eval-name ' + eval_name + ' --sequence ' + sequence + ' --method ' + method + ' --range-error ' + str(range_error) + ' --scan-type cfear --rosbag-offset 200 --frame-delay 0.0 --visualization false __name:=Test_' + str(local_index)
         os.system(launch_str)
         
-        # Append line to file with these parameters
-        f = open(bag_location + '/CoralRadarEval/' + 'testsLogInfo_'+ dt_string_2 +'.txt', "a")
-        f.writelines([param_str+'\n'])
+        # Append line to file with the generated directory
+        #f = open(bag_location + '/CoralRadarEval/' + 'testsLogInfo_'+ dt_string_2 +'.txt', "a")
+        f = open(bag_location + '/CoralRadarEval/' + 'directories_'+ dir_string +'.txt', "a")
+        f.writelines([eval_name+'\n'])
         f.close
 
     else : 
@@ -102,7 +103,10 @@ if __name__ == '__main__' :
 
     # Initialization
     global index
+    global dir_string
     index = 0
+    now = datetime.now()
+    dir_string = now.strftime("%Y-%m-%d_%H:%M:%S")
     l_table = len(tableParams[0])
     #n_threads = int( input('Number of threads to be used: ') )
     n_threads = int(float(sys.argv[1]))
