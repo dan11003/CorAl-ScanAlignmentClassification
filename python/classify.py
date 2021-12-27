@@ -68,7 +68,7 @@ print(cnf_matrix)
 PrintConfusionMatric(cnf_matrix, cnf_matrix_un, output_directory)
 PrintROC(logreg, X_test, y_test, output_directory)
 
-
+#accuracy cm11 cm12 cm21 cm22 nr1 nr0
 
 #dg = pd.read_csv(args.path)
 #df = pd.DataFrame(dg,columns = ['aligned','score1','score2','score3'])

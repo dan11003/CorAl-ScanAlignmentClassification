@@ -13,6 +13,8 @@
 #include "pcl/common/distances.h"
 #include "pcl_ros/point_cloud.h"
 #include "pcl_ros/publisher.h"
+#include "cv.h"
+#include "cv_bridge/cv_bridge.h"
 
 using std::cout;
 using std::cerr;
@@ -47,6 +49,11 @@ void FilterCloudsByDistance(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > &c
 pcl::PointCloud<pcl::PointXY>::Ptr pcl3dto2d(const pcl::PointCloud<pcl::PointXYZI>::Ptr& input, std::vector<double>& intensity);
 
 pcl::PointCloud<pcl::PointXYZI>::Ptr pclAddIntensity(const pcl::PointCloud<pcl::PointXYZ>::Ptr& input, const std::vector<double>& intensity);
+
+double get_azimuth_index(const std::vector<double> &azimuths, double azimuth);
+
+void radar_polar_to_cartesian(const cv::Mat &polar_in, const std::vector<double> &azimuths_in, cv::Mat &cart_out,
+    float radar_resolution = 0.04328, float cart_resolution = 0.2384, int cart_pixel_width = 640, bool fix_wobble = true);
 
 
 template <typename T>

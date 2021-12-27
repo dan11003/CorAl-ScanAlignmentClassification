@@ -224,6 +224,95 @@ pcl::PointCloud<pcl::PointXYZI>::Ptr pclAddIntensity(const pcl::PointCloud<pcl::
   return cld;
 }
 
+double get_azimuth_index(const std::vector<double> &azimuths, double azimuth) {
+    auto lower = std::lower_bound(azimuths.begin(), azimuths.end(), azimuth);
+    double closest = std::distance(azimuths.begin(), lower);
+    uint M = azimuths.size();
+    if (closest >= M)
+        closest = M - 1;
 
+    if (azimuths[closest] < azimuth) {
+        double delta = 0;
+        if (closest < M - 1) {
+            if (azimuths[closest + 1] == azimuths[closest])
+                delta = 0.5;
+            else
+                delta = (azimuth - azimuths[closest]) / (azimuths[closest + 1] - azimuths[closest]);
+        }
+        closest += delta;
+    } else if (azimuths[closest] > azimuth){
+        double delta = 0;
+        if (closest > 0) {
+            if (azimuths[closest - 1] == azimuths[closest])
+                delta = 0.5;
+            else
+                delta = (azimuths[closest] - azimuth) / (azimuths[closest] - azimuths[closest - 1]);
+        }
+        closest -= delta;
+    }
+    return closest;
+}
+
+
+void radar_polar_to_cartesian(const cv::Mat &polar_in, const std::vector<double> &azimuths_in, cv::Mat &cart_out,
+    float radar_resolution, float cart_resolution, int cart_pixel_width, bool fix_wobble) {
+
+    float cart_min_range = (cart_pixel_width / 2) * cart_resolution;
+    if (cart_pixel_width % 2 == 0)
+        cart_min_range = (cart_pixel_width / 2 - 0.5) * cart_resolution;
+
+    cv::Mat map_x = cv::Mat::zeros(cart_pixel_width, cart_pixel_width, CV_32F);
+    cv::Mat map_y = cv::Mat::zeros(cart_pixel_width, cart_pixel_width, CV_32F);
+
+#pragma omp parallel for collapse(2)
+    for (int j = 0; j < map_y.cols; ++j) {
+        for (int i = 0; i < map_y.rows; ++i) {
+            map_y.at<float>(i, j) = -1 * cart_min_range + j * cart_resolution;
+        }
+    }
+#pragma omp parallel for collapse(2)
+    for (int i = 0; i < map_x.rows; ++i) {
+        for (int j = 0; j < map_x.cols; ++j) {
+            map_x.at<float>(i, j) = cart_min_range - i * cart_resolution;
+        }
+    }
+    cv::Mat range = cv::Mat::zeros(cart_pixel_width, cart_pixel_width, CV_32F);
+    cv::Mat angle = cv::Mat::zeros(cart_pixel_width, cart_pixel_width, CV_32F);
+
+    uint M = azimuths_in.size();
+    double azimuth_step = (azimuths_in[M - 1] - azimuths_in[0]) / (M - 1);
+#pragma omp parallel for collapse(2)
+    for (int i = 0; i < range.rows; ++i) {
+        for (int j = 0; j < range.cols; ++j) {
+            float x = map_x.at<float>(i, j);
+            float y = map_y.at<float>(i, j);
+            float r = (sqrt(pow(x, 2) + pow(y, 2)) - radar_resolution / 2) / radar_resolution;
+            if (r < 0)
+                r = 0;
+            range.at<float>(i, j) = r;
+            float theta = atan2f(y, x);
+            if (theta < 0)
+                theta += 2 * M_PI;
+            if (fix_wobble and radar_resolution == 0.0596) {  // fix wobble in CIR204-H data
+                angle.at<float>(i, j) = get_azimuth_index(azimuths_in, theta);
+            } else {
+                angle.at<float>(i, j) = (theta - azimuths_in[0]) / azimuth_step;
+            }
+        }
+    }
+    // interpolate cross-over
+    cv::Mat a0 = cv::Mat::zeros(1, polar_in.cols, CV_32F);
+    cv::Mat aN_1 = cv::Mat::zeros(1, polar_in.cols, CV_32F);
+    for (int j = 0; j < polar_in.cols; ++j) {
+        a0.at<float>(0, j) = polar_in.at<float>(0, j);
+        aN_1.at<float>(0, j) = polar_in.at<float>(polar_in.rows-1, j);
+    }
+    cv::Mat polar = polar_in.clone();
+    cv::vconcat(aN_1, polar, polar);
+    cv::vconcat(polar, a0, polar);
+    angle = angle + 1;
+    // polar to cart warp
+    cv::remap(polar, cart_out, range, angle, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
+}
 
 }
