@@ -153,6 +153,15 @@ public:
   // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
 };
 
+class CorAlCartQuality: public AlignmentQuality
+{
+public:
+
+    CorAlCartQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity());
+
+    ~CorAlCartQuality(){}
+};
+
 class CorAlRadarQuality: public AlignmentQuality
 {
 public:
@@ -222,6 +231,9 @@ public:
       if(pars.method=="Coral")
         quality = std::make_shared<CorAlRadarQuality>(CorAlRadarQuality(ref,src,pars,Toffset));
     }// RAW LIDAR (P2P/P2D/CORAL)
+    if(std::dynamic_pointer_cast<CartesianRadar>(ref)!=nullptr && std::dynamic_pointer_cast<CartesianRadar>(src)!=nullptr){
+      quality = std::make_shared<CorAlCartQuality>(CorAlCartQuality(ref,src,pars,Toffset));
+    }// RAW LIDAR (P2P/P2D/CORAL)
 
     assert(quality != nullptr);
     return quality;
@@ -236,6 +248,10 @@ public:
   static void PublishPoseScan(const std::string& topic, std::shared_ptr<PoseScan>& scan_plot, const Eigen::Affine3d& T, const std::string& frame_id, const int value=0);
 
   static void PublishCloud(const std::string& topic, pcl::PointCloud<pcl::PointXYZI>::Ptr& cld_plot, const Eigen::Affine3d& T, const std::string& frame_id, const int value = 0);
+
+  static void PublishRadar(const std::string& topic, cv_bridge::CvImagePtr& img, const Eigen::Affine3d& T, const std::string& frame_id, const ros::Time& t = ros::Time::now() );
+
+  static void PublishTransform(const Eigen::Affine3d& T, const std::string& frame_id, const ros::Time& t = ros::Time::now());
 
   static std::map<std::string, ros::Publisher> pubs;
   

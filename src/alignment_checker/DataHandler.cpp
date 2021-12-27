@@ -46,7 +46,7 @@ void RadarRosbagHandler::UnpackPose(nav_msgs::Odometry::ConstPtr& odom_msg){
 
 }
 std::shared_ptr<PoseScan> RadarRosbagHandler::Next(){
-  cout<<"RadarRosbagHandler::Next(){"<<endl;
+  //cout<<"RadarRosbagHandler::Next(){"<<endl;
 
   static bool synced = false;
   while (m_pose_!=view_pose_->end() && m_image_!=view_image_->end() && ros::ok()) {
@@ -99,6 +99,8 @@ std::shared_ptr<PoseScan> RadarRosbagHandler::Next(){
       return PoseScan_S(new kstrongRadar(radar_stream_[1], pose_stream_[1].first, Tmotion, scanPars_.kstrong, scanPars_.z_min, scanPars_.range_res, scanPars_.range_min));
     else if(scanPars_.scan_type == cfear)
       return PoseScan_S(new CFEARFeatures(radar_stream_[1], pose_stream_[1].first, Tmotion, scanPars_.kstrong, scanPars_.z_min, scanPars_.range_res, scanPars_.range_min,scanPars_.resolution));
+    else if(scanPars_.scan_type == kstrongCart)
+      return PoseScan_S(new CartesianRadar(radar_stream_[1], pose_stream_[1].first, Tmotion, scanPars_.kstrong, scanPars_.z_min, scanPars_.range_res, scanPars_.range_min));
     else return nullptr;
 
   }
@@ -114,8 +116,8 @@ std::shared_ptr<PoseScan> RadarRosbagHandler::Next(){
 
   }
   std::shared_ptr<PoseScan> MockupHandler::Next(){
-    cout<<"Mockup::Next()"<<endl;
-     usleep(1000*1000);
+    //cout<<"Mockup::Next()"<<endl;
+
     if(step==100)
       return nullptr;
     else{

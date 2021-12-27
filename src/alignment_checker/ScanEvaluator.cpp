@@ -59,6 +59,7 @@ scanEvaluator::scanEvaluator( dataHandler_U& reader, const parameters& eval_par,
 
   std::vector< std::shared_ptr<PoseScan> > prev_scans;
   int index = 0;
+
   ros::Rate rate(1.0/(0.000000001+par_.frame_delay));
   for (std::shared_ptr<PoseScan> current = reader_->Next(); current!=nullptr && ros::ok(); current = reader_->Next()) {
     if( prev_scans.size() == par_.scan_spacing )
@@ -72,16 +73,17 @@ scanEvaluator::scanEvaluator( dataHandler_U& reader, const parameters& eval_par,
         //cout<<endl<<current->GetAffine().matrix()<<endl;
         AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(prev_scans.back(), current, quality_par_, Tperturbation);
         cout<<"computed score"<<endl;
-        if(eval_par.visualize){
+        /*if(eval_par.visualize){
           AlignmentQualityPlot::PublishPoseScan("/src", current, current->GetAffine()*Tperturbation,"/src_link");
           AlignmentQualityPlot::PublishPoseScan("/ref", prev_scans.back(), prev_scans.back()->GetAffine(),"/ref_link");
-        }
+        }*/
         std::vector<double> res = quality->GetResiduals();
         std::vector<double> quality_measure = quality->GetQualityMeasure();
         std_msgs::Float64MultiArray training_data;
         training_data.data = {((double)datapoint::aligned(verr)), quality_measure[0], quality_measure[1], quality_measure[2]};
         cout<<"publish: "<<training_data.data<<endl;
         pub_train_data.publish(training_data);
+
 
 
         //cout<<"quality: "<<quality_measures<<endl;

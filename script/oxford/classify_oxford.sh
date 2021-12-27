@@ -10,4 +10,4 @@ mkdir -p ${OUTPUT_EVAL_PATH}
 
 roslaunch alignment_checker vis.launch&
 #rosrun alignment_checker alignment_service.py&
-rosrun alignment_checker evaluate_scans --input-file-path ${BAG_FILE_PATH} --output-dir ${OUTPUT_EVAL_PATH} --eval-name ${EVAL_NAME} --sequence ${SEQUENCE} --method P2L --scan-type cfear --range-error 1.0 --rosbag-offset 200 --frame-delay 0.0 #&> /dev/null
+rosrun alignment_checker evaluate_scans --input-file-path ${BAG_FILE_PATH} --output-dir ${OUTPUT_EVAL_PATH} --eval-name ${EVAL_NAME} --sequence ${SEQUENCE} --method Coral --scan-type kstrongCart --range-error 0.5 --rosbag-offset 0 --frame-delay 0.0 #&> /dev/null
