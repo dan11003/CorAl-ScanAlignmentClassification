@@ -3,6 +3,7 @@ import os
 import sys
 import copy
 import threading
+import argparse
 from datetime import datetime
 
 
@@ -100,6 +101,10 @@ if __name__ == '__main__' :
     filename = 'parameters.py'
     exec(compile(open(filename, 'rb').read(), filename, 'exec'))
     tableParams = getCombinationsTable(parameters)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--sequence", "-s", help="rosbag filename", default="2019-01-10-12-32-52-radar-oxford-10k")
+    parser.add_argument("--threads", "-t", help="number of computation threads to be used", default="2")
+    args = parser.parse_args()
 
     # Initialization
     global index
@@ -109,14 +114,15 @@ if __name__ == '__main__' :
     dir_string = now.strftime("%Y-%m-%d_%H:%M:%S")
     l_table = len(tableParams[0])
     #n_threads = int( input('Number of threads to be used: ') )
-    n_threads = int(float(sys.argv[1]))
+    #n_threads = int(float(sys.argv[1]))
+    n_threads = int(float(args.threads))
     threads = [None]*n_threads
 
     # Get rosbag base dir and others
     bag_location = os.getenv('BAG_LOCATION')
     bag_base_dir = bag_location + '/oxford-eval-sequences'
-    sequence = '2019-01-10-12-32-52-radar-oxford-10k'
-    bag_file_path = bag_base_dir + '/' + sequence + '/radar/' + sequence + '.bag'
+    sequence = args.sequence
+    bag_file_path = bag_base_dir + '/radar/' + sequence + '.bag'
 
     # Mutex
     lock = threading.Lock()

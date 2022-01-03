@@ -23,7 +23,7 @@ with open(file_dir,'r') as f :
 f = open(file_dir, 'r')
 stat_file_name = file_dir.replace("directories","statistics")
 f_stat = open(stat_file_name, 'a')
-f_stat.writelines(["evaluation name,method,radius,scan spacing,theta range,offset rotation steps,theta error,range error,accuracy,c11,c12,c21,c22\n"]) 
+f_stat.writelines(["evaluation name,method,radius,scan spacing,theta range,offset rotation steps,theta error,range error,accuracy,auc,c11,c12,c21,c22\n"]) 
 
 for i in range(0,count+1) : 
 
@@ -39,7 +39,7 @@ for i in range(0,count+1) :
     params = params.replace("\n","")
     f_params.close()
 
-    #Get accuracy and confusion matrix results
+    #Get accuracy, auc and confusion matrix results
     f_results = open(directory + line +'/output/results.txt', 'r')
     results = f_results.readline()
     f_results.close()

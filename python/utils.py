@@ -17,6 +17,7 @@ def PrintConfusionMatric(cnf_matrix, cnf_matrix_un, directory):
     if not os.path.exists(directory):
         os.mkdir(directory)
 
+    plt.clf()
     class_names=[0,1] # name  of classes
     fig, ax = plt.subplots()
     tick_marks = np.arange(len(class_names))
@@ -32,20 +33,17 @@ def PrintConfusionMatric(cnf_matrix, cnf_matrix_un, directory):
     path = os.path.join(directory,"confusion")
     plt.savefig(path+".png")
     plt.savefig(path+".pdf", bbox_inches='tight')
-    plt.show()
+    #plt.show()
 
-    # Store confusion matrix as text file
-    f = open(directory + '/results.txt','w')
+    # Calculate accuracy
     accuracy = (cnf_matrix_un[0][0]+cnf_matrix_un[1][1])/(cnf_matrix_un[0][0]+cnf_matrix_un[0][1]+cnf_matrix_un[1][0]+cnf_matrix_un[1][1])
-    # Accuracy and Confusion matrix (row-major order)
-    f.writelines([str(accuracy)+ ',' + str(cnf_matrix_un[0][0]) + ',' + str(cnf_matrix_un[0][1]) + ',' + str(cnf_matrix_un[1][0]) + ',' + str(cnf_matrix_un[1][1]) ]) 
-    f.close()
-
-    return None
+    return accuracy
 
 def PrintROC(logreg,X_test,y_test,directory):
     if not os.path.exists(directory):
         os.mkdir(directory)
+    
+    plt.clf()
     y_pred_proba = logreg.predict_proba(X_test)[::,1]
     fpr, tpr, _ = metrics.roc_curve(y_test,  y_pred_proba)
     auc = metrics.roc_auc_score(y_test, y_pred_proba)
@@ -55,8 +53,8 @@ def PrintROC(logreg,X_test,y_test,directory):
     path = os.path.join(directory,"ROC")
     plt.savefig(path+".png")
     plt.savefig(path+".pdf", bbox_inches='tight')
-    plt.show()
-    return None
+    #plt.show()
+    return auc
 
 def TrainClassifier(df):
     col_names=['score1','score2','score3']
