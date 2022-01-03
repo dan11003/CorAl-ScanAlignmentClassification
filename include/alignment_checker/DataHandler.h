@@ -49,9 +49,11 @@
 #include "eigen_conversions/eigen_msg.h"
 #include "tf_conversions/tf_eigen.h"
 #include <cv_bridge/cv_bridge.h>
+#include "radar_mapping/statistics.h"
 namespace CorAlignment {
 
 typedef std::pair<Eigen::Affine3d,ros::Time> poseStamped;
+using namespace radar_mapping;
 
 
 class dataHandler
@@ -62,6 +64,8 @@ public:
   virtual std::shared_ptr<PoseScan> Next() = 0;
 protected:
   ros::NodeHandle nh_;
+  Eigen::Affine3d TposePrev;
+
 };
 
 class FiledataHandler: public dataHandler
@@ -75,7 +79,9 @@ public:
 class RadarRosbagHandler: public dataHandler
 {
 public:
-  RadarRosbagHandler(const std::string& rosbag_path, const PoseScan::Parameters& scanPars, const int rosbag_offset= 0, const std::string& radar_topic = "/Navtech/Polar", const std::string& gt_topic = "/gt");
+    RadarRosbagHandler(const std::string& rosbag_path, const PoseScan::Parameters& scanPars, const int rosbag_offset = 0, const double min_distance = -1.0,  const std::string& gt_topic = "/gt", const std::string& radar_topic = "/Navtech/Polar");
+
+public:
 
   std::shared_ptr<PoseScan> Next();
 
@@ -90,6 +96,8 @@ protected:
   rosbag::Bag bag_;
   std::unique_ptr<rosbag::View> view_image_, view_pose_;
   rosbag::View::iterator m_image_, m_pose_;
+  double min_distance_;
+  bool synced_ = false;
 
 
   std::vector<cv_bridge::CvImagePtr> radar_stream_;

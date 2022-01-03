@@ -67,13 +67,13 @@ def TrainClassifier(df):
 
     #print(X_train)
     #print(y_train)
-    logreg = LogisticRegression()
+    logreg = LogisticRegression(class_weight='balanced')
     logreg.fit(X,y)
     y_pred=logreg.predict(X)
     accuracy = metrics.balanced_accuracy_score(y,y_pred)
     #print("accuracy: "+str(accuracy))
-    return accuracy
-    #cnf_matrix = metrics.confusion_matrix(y, y_pred)
+    cnf_matrix = metrics.confusion_matrix(y, y_pred,normalize=None) #'pred'
+    return accuracy,cnf_matrix
     #print(cnf_matrix)
     #print(y_pred)
     #print(y)

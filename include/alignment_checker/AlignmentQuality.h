@@ -47,9 +47,9 @@ public:
   {
   public:
     parameters() {}
-    std::string method;
-    scan_type scantype;
-    double radius;
+    std::string method = "P2L";
+    scan_type scantype = scan_type::cfear;
+    double radius = 3;
 
     std::string ToString(){
       std::ostringstream stringStream;
@@ -160,6 +160,8 @@ public:
     CorAlCartQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity());
 
     ~CorAlCartQuality(){}
+protected:
+    cv_bridge::CvImagePtr CreateImage(cv_bridge::CvImagePtr ref);
 };
 
 class CorAlRadarQuality: public AlignmentQuality
@@ -249,7 +251,7 @@ public:
 
   static void PublishCloud(const std::string& topic, pcl::PointCloud<pcl::PointXYZI>::Ptr& cld_plot, const Eigen::Affine3d& T, const std::string& frame_id, const int value = 0);
 
-  static void PublishRadar(const std::string& topic, cv_bridge::CvImagePtr& img, const Eigen::Affine3d& T, const std::string& frame_id, const ros::Time& t = ros::Time::now() );
+  static void PublishRadar(const std::string& topic, cv_bridge::CvImagePtr& img, const Eigen::Affine3d& T = Eigen::Affine3d::Identity(), const std::string& frame_id="", const ros::Time& t = ros::Time::now() );
 
   static void PublishTransform(const Eigen::Affine3d& T, const std::string& frame_id, const ros::Time& t = ros::Time::now());
 

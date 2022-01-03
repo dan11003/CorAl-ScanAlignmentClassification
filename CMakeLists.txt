@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(alignment_checker)
 set (CMAKE_CXX_STANDARD 14)
-set(CMAKE_BUILD_TYPE debug)
+set(CMAKE_BUILD_TYPE release)
 
 IF(CMAKE_SIZEOF_VOID_P EQUAL 4)
     SET(LIB_SUFFIX "")
@@ -18,6 +18,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(PCL 1.7 REQUIRED)
+find_package(OpenCV REQUIRED)
 
 find_package(catkin REQUIRED
     geometry_msgs
@@ -52,7 +53,7 @@ catkin_package(
   CATKIN_DEPENDS geometry_msgs eigen_conversions pcl_ros roscpp rospy sensor_msgs std_msgs tf_conversions tf genmsg tf_conversions radar_mapping #cmake_modules #ndt_map
 )
 
-INCLUDE_DIRECTORIES ( $ENV{EIGEN3_INCLUDE_DIR} )
+INCLUDE_DIRECTORIES ( $ENV{EIGEN3_INCLUDE_DIR}  ${OpenCV_INCLUDE_DIRS})
 
 include_directories( include ${Boost_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS} )
 link_directories(${PCL_LIBRARY_DIRS})
@@ -71,9 +72,8 @@ set (${PROJECT_NAME}_LIB_SRCS
     #src/alignment_checker/viewer.cpp
     #src/alignment_checker/ndtScanComparsion.cpp ##uncomment if ndt libraries are not being used, this is only used for evaluation
     )
-
 add_library(${PROJECT_NAME} ${${PROJECT_NAME}_LIB_SRCS})
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${PCL_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR}  pcl_common )
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${PCL_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR}  pcl_common ${OpenCV_LIBS})
 
 ###########
 ## Build ##

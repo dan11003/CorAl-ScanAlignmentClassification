@@ -24,6 +24,7 @@
 #include "radar_mapping/pointnormal.h"
 #include "pcl/point_types.h"
 #include "alignment_checker/Utils.h"
+#include "radar_mapping/intensity_utils.h"
 
 namespace CorAlignment{
 
@@ -49,32 +50,44 @@ public:
     std::string ToString(){
       std::ostringstream stringStream;
       stringStream << "scan_type, "<<Scan2str(scan_type)<<endl;
-      stringStream << "range_min, "<<range_min<<endl;
+      stringStream << "sensor_min_distance, "<<sensor_min_distance<<endl;
       stringStream << "range_res, "<<range_res<<endl;
       stringStream << "kstrong, "<<kstrong<<endl;
       stringStream << "z_min, "<<z_min<<endl;
+      stringStream << "compensate, "<<compensate<<endl;
+      stringStream << "cart_resolution, "<<cart_resolution<<endl;
+      stringStream << "cart_pixel_width, "<<cart_pixel_width<<endl;
+
       return stringStream.str();
     }
 
     ScanType scan_type = rawlidar;
+    double sensor_min_distance = 2.5;
 
-    //generic parameters
-    double range_min = 0;
+
 
     //Radar
     double range_res = 0.04328;
 
     //kstrong
     int kstrong = 12;
-    double z_min = 60;
+    double z_min = 80;
     //CFEAR
     double resolution = 3;
+    bool compensate = true;
+
+    float cart_resolution = 0.2384;
+    int cart_pixel_width = 300;
 
 
 
   };
-  PoseScan(const Eigen::Affine3d& T, const Eigen::Affine3d& Tmot) : Test_(T), Tmot_(Tmot), cloud_(new pcl::PointCloud<pcl::PointXYZI>()),pose_id(pose_count++){cout<<"Created posescan"<<endl;}
-  Eigen::Affine3d Test_, Tmot_;
+  PoseScan(const PoseScan::Parameters pars, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion);
+
+
+  Eigen::Affine3d Test_;
+  Eigen::Affine3d Tmotion_; // the motion
+  const PoseScan::Parameters pars_;
 
   const Eigen::Affine3d& GetAffine() {return Test_;}
 
@@ -82,38 +95,46 @@ public:
 
   const std::string ToString(){return "PoseScan";}
 
-  static int pose_count;
-
-  const int pose_id;
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr GetCloudCopy(const Eigen::Affine3d& T);
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr GetCloudNoCopy() {return cloud_;}
+
+
+
+  static int pose_count;
+
+  const int pose_id;
+
 
 protected:
 
   pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_;
 };
 
+
 class RawRadar: public PoseScan{
 public:
 
-  RawRadar(cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmot ) : PoseScan(T,Tmot){ polar_ = polar;}
+  RawRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion);
 
   const std::string ToString(){return "RawRadar";}
 
   cv_bridge::CvImagePtr polar_;
+  double range_res_;
 };
 
 
 class CartesianRadar: public RawRadar{
 public:
 
-  CartesianRadar(cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmot, int kstrong = 12, double z_min = 60, double range_res = 0.04328, double min_distance = 2.5);
+  CartesianRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion);
 
   const std::string ToString(){return "CartesianRadar";}
 
   cv_bridge::CvImagePtr polar_, polar_filtered_, cart_;
+  double  sensor_min_distance, cart_resolution_;
+  int cart_pixel_width_;
 
 
 };
@@ -122,7 +143,7 @@ class kstrongRadar: public RawRadar
 {
 public:
 
-  kstrongRadar(cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmot , int kstrong = 12, double z_min = 60, double range_res = 0.04328, double min_distance = 2.5 );
+  kstrongRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion );
 
   const std::string ToString(){return "kstrongRadar";}
 
@@ -132,7 +153,7 @@ class CFEARFeatures: public kstrongRadar
 {
 public:
 
-  CFEARFeatures(cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmot , int kstrong = 12, double z_min = 60, double range_res = 0.04328, double min_distance = 2.5, double resolution = 3 );
+  CFEARFeatures(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion);
 
   const std::string ToString(){return "CFEARFeatures";}
 
@@ -142,7 +163,7 @@ public:
 class RawLidar: public PoseScan{
 public:
 
-  RawLidar(pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmot ) : PoseScan(T,Tmot){ cloud_ = cloud; }
+  RawLidar(const PoseScan::Parameters pars, pcl::PointCloud<pcl::PointXYZI>::Ptr cloud, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion ) : PoseScan(pars,T,Tmotion){ cloud_ = cloud; }
 
   const std::string ToString(){return "RawLidar";}
 
@@ -150,6 +171,6 @@ public:
 
 typedef std::shared_ptr<PoseScan> PoseScan_S;
 
-
+PoseScan_S RadarPoseScanFactory(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr radar_msg, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion);
 }
 

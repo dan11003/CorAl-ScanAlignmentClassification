@@ -54,6 +54,8 @@ public:
     parameters() {}
 
     int scan_spacing = 1;
+    double scan_spacing_distance = -1.0;
+    int rosbag_offset = 0;
 
     // offset parameters
     // For inducing cartesian position error y=r*sin(t) t depends on theta range (coverage) and offset_rotation_steps (resolution)
@@ -71,9 +73,12 @@ public:
     std::string output_directory = "";
     std::string output_meta_file = "params.txt";
     std::string output_eval_file = "eval.txt";
+    std::string bag_file_path = "";
+
     std::string output_residual_prefix = "residuals_";
     std::string eval_name ="noname";
     std::string dataset = "", sequence = "";
+    std::string input_odom_topic ="/gt";
 
     //Visualization
     bool visualize = true;
@@ -83,14 +88,19 @@ public:
       stringStream << "output_directory, "<<output_directory<<endl;
       stringStream << "output_meta_file, "<<output_meta_file<<endl;
       stringStream << "output_eval_file, "<<output_eval_file<<endl;
-      stringStream << "output_residual_prefix, "<<output_residual_prefix<<endl;
+      stringStream << "output_eval_file, "<<output_eval_file<<endl;
+      stringStream << "bag_file_path, "<<bag_file_path<<endl;
       stringStream << "eval_name, "<<eval_name<<endl;
       stringStream << "dataset, "<<std::boolalpha<<dataset<<endl;
+      stringStream << "input_odom_topic, "<<input_odom_topic<<endl;
       stringStream << "scan_spacing, "<<scan_spacing<<endl;
+      stringStream << "scan_spacing_distance, "<<scan_spacing_distance<<endl;
+      stringStream << "rosbag_offset, "<<rosbag_offset<<endl;
       stringStream << "range_error, "<<range_error<<endl;
       stringStream << "theta_range, "<<theta_range<<endl;
       stringStream << "offset_rotation_steps, "<<offset_rotation_steps<<endl;
       stringStream << "theta_error, "<<theta_error<<endl;
+
       return stringStream.str();
     }
 
