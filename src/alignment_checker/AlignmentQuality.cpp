@@ -80,15 +80,34 @@ CFEARQuality::CFEARQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseSc
     //cout<<"CFEAR Feature cost: "<<quality_.front()<<", residuals: "<<residuals_.size()<<", normalized"<<quality_.front()/(residuals_.size()+0.0001)<<endl;
 }
 
-
 CorAlCartQuality::CorAlCartQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset)  : AlignmentQuality(src, ref, par, Toffset){
-    cout<<"coral cart"<<endl;
+
     auto rad_cart_src = std::dynamic_pointer_cast<CartesianRadar>(src);
     auto rad_cart_ref = std::dynamic_pointer_cast<CartesianRadar>(ref);
+
     assert(rad_cart_src != nullptr || rad_cart_ref != nullptr);
     assert (rad_cart_src->ToString() == "CartesianRadar");
-    AlignmentQualityPlot::PublishPoseScan("/coral_polar_src", src, src->GetAffine()*Toffset, "/src_link");
-    AlignmentQualityPlot::PublishPoseScan("/coral_polar_ref", ref, ref->GetAffine()*Toffset, "/ref_link");
+    const Eigen::Affine3d Tsrc = rad_cart_src->GetAffine();
+    const Eigen::Affine3d Tref = rad_cart_src->GetAffine();
+    const Eigen::Affine3d Tchange = Tref.inverse()*Tsrc*Toffset;
+
+
+    auto cart_src_transformed = ac::CreateImage(rad_cart_src->cart_);
+    ac::RotoTranslation(rad_cart_src->cart_->image, cart_src_transformed->image, Tchange,rad_cart_ref->cart_resolution_);
+
+    cv_bridge::CvImagePtr Absdiff = ac::CreateImage(rad_cart_src->cart_);
+    cv::absdiff(cart_src_transformed->image, rad_cart_ref->cart_->image, Absdiff->image);
+
+    AlignmentQualityPlot::PublishRadar("/cart_transformed", cart_src_transformed);
+    AlignmentQualityPlot::PublishRadar("/cart_transformed", cart_src_transformed);
+    AlignmentQualityPlot::PublishRadar("/image_diff", Absdiff);
+    const double abs_diff = cv::sum(Absdiff->image)[0];
+    quality_ = {abs_diff, 0,0};
+    cout<<"abs_diff: "<<abs_diff<<endl;
+
+
+    AlignmentQualityPlot::PublishPoseScan("/radar_src", src, src->GetAffine()*Toffset, "/src_link");
+    AlignmentQualityPlot::PublishPoseScan("/radar_ref", ref, ref->GetAffine()*Toffset, "/ref_link");
 }
 
 
@@ -260,34 +279,18 @@ void AlignmentQualityPlot::PublishRadar(const std::string& topic, cv_bridge::CvI
         it = AlignmentQualityPlot::pubs.find(topic);
     }
 
-    /*
-    //Initialize m
-    double minVal;
-    double maxVal;
-    cv::Point minLoc;
-    cv::Point maxLoc;
-
-    cv::minMaxLoc( img->image, &minVal, &maxVal, &minLoc, &maxLoc );
-*/
     cv_bridge::CvImagePtr img_tmp = boost::make_shared<cv_bridge::CvImage>();
     img_tmp->encoding = sensor_msgs::image_encodings::TYPE_8UC1;
     img_tmp->header = img->header;
-    img_tmp->image = cv::Mat::zeros(img->image.rows, img->image.cols,CV_8UC1);
-    for(int i=0 ; i<img->image.rows ; i++){
-        for(int j=0 ; j<img->image.cols; j++){
-            const float val =255.0*img->image.at<float>(i,j);
-            if(val>0.0001){
-                img_tmp->image.at<uchar>(i,j) = (uchar)val;
-            }
+    img->image.convertTo(img_tmp->image, CV_8UC1, 255.0);
 
-        }
-    }
     img_tmp->header.stamp = t;
     img_tmp->header.frame_id = frame_id;
     sensor_msgs::Image imsg;
     img_tmp->toImageMsg(imsg);
     pubs[topic].publish(imsg);
-    PublishTransform(T,frame_id);
+    if(!frame_id.empty())
+        PublishTransform(T,frame_id);
 
 }
 
@@ -298,8 +301,8 @@ void AlignmentQualityPlot::PublishPoseScan(const std::string& topic, std::shared
     auto cart_rad = std::dynamic_pointer_cast<CartesianRadar>(scan_plot);
     if(cart_rad != NULL){
         cart_rad->polar_filtered_;
-        PublishRadar(topic,cart_rad->polar_filtered_,T,frame_id);
-        //PublishRadar(topic+"_cart",cart_rad->cart_,T,frame_id);
+        PublishRadar(topic+"_polar",cart_rad->polar_,T,frame_id);
+        PublishRadar(topic+"_cart", cart_rad->cart_,T,frame_id);
     }else{
         pcl::PointCloud<pcl::PointXYZI>::Ptr cld_plot = scan_plot->GetCloudNoCopy(); //Extract point cloud from PoseScan
         PublishCloud(topic,cld_plot,T,frame_id,value);

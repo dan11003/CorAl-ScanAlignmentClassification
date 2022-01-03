@@ -30,7 +30,65 @@ scan_type Str2Scan(const std::string& val){
     else if (val=="cfear")
         return scan_type::cfear;
 }
+PoseScan::PoseScan(const PoseScan::Parameters pars, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
+    : Test_(T), Tmotion_(Tmotion), cloud_(new pcl::PointCloud<pcl::PointXYZI>()), pose_id(pose_count++),pars_(pars)
+{
 
+}
+
+RawRadar::RawRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
+    : PoseScan(pars,T,Tmotion), range_res_(pars.range_res)
+{
+    polar_ = polar;
+}
+
+kstrongRadar::kstrongRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
+    : RawRadar(pars, polar, T, Tmotion)
+{
+    assert(polar !=NULL);
+
+    radar_mapping::k_strongest_filter(polar, cloud_, pars.kstrong, pars.z_min, pars.range_res, pars.sensor_min_distance);
+    assert(cloud_ != nullptr);
+    if(pars.compensate){
+        cout<<"compensate"<<Tmotion.translation().transpose()<<endl;
+        //const Eigen::Affine3d Tmotion_next = T.inverse()*Tnext;
+        //const Eigen::Affine3d Tmotion = Tprev.inverse()*Tnext;
+        //Eigen::Vector3d par;
+        //radar_mapping::Affine3dToEigVectorXYeZ(Tmotion,par);
+        //Eigen::Affine3d Tmotion_adjusted = radar_mapping::vectorToAffine3d(par(0)/2.0, par(1)/2.0, 0, 0, 0, par(2)/2.0);
+
+        radar_mapping::Compensate(cloud_, Tmotion_, false); //cout<<"k strongest: "<<cloud_->size()<<endl;
+    }
+}
+
+CFEARFeatures::CFEARFeatures(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion )
+    : kstrongRadar(pars, polar, T, Tmotion)
+{
+
+    CFEARFeatures_ = radar_mapping::MapNormalPtr(new radar_mapping::MapPointNormal(cloud_, pars.resolution));
+    //cout<<"frame: "<<pose_id<<"time: "<<cloud_->header.stamp<<", "<<cloud_->size()<<", "<<CFEARFeatures_->GetSize()<<endl;
+}
+
+
+CartesianRadar::CartesianRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion )
+    : RawRadar(pars,polar,T,Tmotion), sensor_min_distance(pars.sensor_min_distance), cart_resolution_(pars.cart_resolution), cart_pixel_width_(pars.cart_pixel_width){
+    polar_ = polar;
+    cart_ = boost::make_shared<cv_bridge::CvImage>();
+    cart_->encoding = polar_->encoding;
+    cart_->header.stamp = polar_->header.stamp;
+    //cout<<"CartesianRadar::CartesianRadar"<<endl;
+    radar_mapping::KstrongestPolar filter(pars.z_min, pars.kstrong, pars.sensor_min_distance);
+    //filter.getFilteredImage(polar_,polar_filtered_);
+    polar_->image.convertTo(polar_->image, CV_32F, 1/255.0);
+
+
+    std::vector<double> azimuths;
+    for (int bearing = 0; bearing < polar->image.rows; bearing++)
+        azimuths.push_back( ((double)(bearing+1) / polar_->image.rows) * 2 * M_PI);
+
+    alignment_checker::radar_polar_to_cartesian(polar_->image, azimuths, cart_->image);
+
+}
 
 pcl::PointCloud<pcl::PointXYZI>::Ptr PoseScan::GetCloudCopy(const Eigen::Affine3d& T){
     pcl::PointCloud<pcl::PointXYZI>::Ptr transformed( new pcl::PointCloud<pcl::PointXYZI>());
@@ -38,31 +96,18 @@ pcl::PointCloud<pcl::PointXYZI>::Ptr PoseScan::GetCloudCopy(const Eigen::Affine3
     return transformed;
 }
 
-
-
-kstrongRadar::kstrongRadar(cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmot, int kstrong, double z_min, double range_res, double min_distance) : RawRadar(polar, T, Tmot){
-    assert(polar !=NULL);
-    radar_mapping::k_strongest_filter(polar, cloud_, kstrong, z_min, range_res, min_distance);
-    assert(cloud_ != nullptr);
-    cout<<"k strongest: "<<cloud_->size()<<endl;
+PoseScan_S RadarPoseScanFactory(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr radar_msg, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion){
+    if(pars.scan_type == rawradar)
+        return PoseScan_S(new RawRadar(pars, radar_msg, T, Tmotion));
+    else if(pars.scan_type == kstrong)
+        return PoseScan_S(new kstrongRadar(pars, radar_msg, T, Tmotion));
+    else if(pars.scan_type == cfear)
+        return PoseScan_S(new CFEARFeatures(pars, radar_msg, T, Tmotion));
+    else if(pars.scan_type == kstrongCart)
+        return PoseScan_S(new CartesianRadar(pars, radar_msg, T, Tmotion));
+    else return nullptr;
 }
 
-CFEARFeatures::CFEARFeatures(cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmot , int kstrong, double z_min, double range_res, double min_distance, double resolution ) : kstrongRadar(polar, T, Tmot, kstrong, z_min, range_res, min_distance){
-    CFEARFeatures_ = radar_mapping::MapNormalPtr(new radar_mapping::MapPointNormal(cloud_, resolution));
-}
-CartesianRadar::CartesianRadar(cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmot, int kstrong, double z_min, double range_res, double min_distance ): RawRadar(polar,T,Tmot){
-    polar_ = polar;
-    cart_ = boost::make_shared<cv_bridge::CvImage>();
-    cart_->encoding = polar_->encoding;
-    cart_->header.stamp = polar_->header.stamp;
-    cout<<"CartesianRadar::CartesianRadar"<<endl;
-    radar_mapping::KstrongestPolar filter(z_min,kstrong,min_distance);
-    filter.getFilteredImage(polar_,polar_filtered_);
-    std::vector<double> azimuths;
-    for (int bearing = 0; bearing < polar->image.rows; bearing++)
-      azimuths.push_back( ((double)(bearing+1) / polar_->image.rows) * 2 * M_PI);
-    //alignment_checker::radar_polar_to_cartesian(polar_->image,azimuths,cart_->image);
-    cout<<"end CartesianRadar::CartesianRadar"<<endl;
-}
+
 
 }

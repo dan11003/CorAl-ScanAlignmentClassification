@@ -252,8 +252,6 @@ double get_azimuth_index(const std::vector<double> &azimuths, double azimuth) {
     }
     return closest;
 }
-
-
 void radar_polar_to_cartesian(const cv::Mat &polar_in, const std::vector<double> &azimuths_in, cv::Mat &cart_out,
     float radar_resolution, float cart_resolution, int cart_pixel_width, bool fix_wobble) {
 
@@ -270,17 +268,25 @@ void radar_polar_to_cartesian(const cv::Mat &polar_in, const std::vector<double>
             map_y.at<float>(i, j) = -1 * cart_min_range + j * cart_resolution;
         }
     }
+
 #pragma omp parallel for collapse(2)
     for (int i = 0; i < map_x.rows; ++i) {
         for (int j = 0; j < map_x.cols; ++j) {
             map_x.at<float>(i, j) = cart_min_range - i * cart_resolution;
         }
     }
+
+
+
+
+
+
     cv::Mat range = cv::Mat::zeros(cart_pixel_width, cart_pixel_width, CV_32F);
     cv::Mat angle = cv::Mat::zeros(cart_pixel_width, cart_pixel_width, CV_32F);
 
     uint M = azimuths_in.size();
     double azimuth_step = (azimuths_in[M - 1] - azimuths_in[0]) / (M - 1);
+
 #pragma omp parallel for collapse(2)
     for (int i = 0; i < range.rows; ++i) {
         for (int j = 0; j < range.cols; ++j) {
@@ -308,11 +314,35 @@ void radar_polar_to_cartesian(const cv::Mat &polar_in, const std::vector<double>
         aN_1.at<float>(0, j) = polar_in.at<float>(polar_in.rows-1, j);
     }
     cv::Mat polar = polar_in.clone();
-    cv::vconcat(aN_1, polar, polar);
-    cv::vconcat(polar, a0, polar);
-    angle = angle + 1;
+    //cv::vconcat(aN_1, polar, polar);
+    //cv::vconcat(polar, a0, polar);
+    //angle = angle + 1;
     // polar to cart warp
+    cout<<"polar: "<<polar.size<<", cart: "<<cart_out.size<<", range: "<<range.size<<", angle: "<<angle.size<<endl;
     cv::remap(polar, cart_out, range, angle, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0, 0, 0));
 }
+
+void RotoTranslation(const cv::Mat& input, cv::Mat& output, const Eigen::Affine3d& T, const float image_res){
+    Eigen::Vector3d pars;
+    radar_mapping::Affine3dToEigVectorXYeZ(T,pars);
+    cv::Point2f center((input.cols - 1) / 2.0, (input.rows - 1) / 2.0);
+    cv::Mat rotation_matix = getRotationMatrix2D(center, pars(2), 1.0);
+    cv::Mat rotated_image;
+    warpAffine(input, rotated_image, rotation_matix, input.size());
+    const float tx = (float)pars(0)/image_res;
+    const float ty = (float)pars(1)/image_res;
+    float warp_values[] = { 1.0, 0.0, tx, 0.0, 1.0, ty };
+
+    cv::Mat translation_matrix = cv::Mat(2, 3, CV_32F, warp_values);
+    cv::warpAffine(rotated_image, output, translation_matrix, rotated_image.size());
+
+}
+cv_bridge::CvImagePtr CreateImage(cv_bridge::CvImagePtr ref){
+    cv_bridge::CvImagePtr tmp_new = boost::make_shared<cv_bridge::CvImage>();
+    tmp_new->header =   ref->header;
+    tmp_new->encoding = ref->encoding;
+    return tmp_new;
+}
+
 
 }

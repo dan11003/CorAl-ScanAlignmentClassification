@@ -15,12 +15,17 @@
 #include "pcl_ros/publisher.h"
 #include "cv.h"
 #include "cv_bridge/cv_bridge.h"
+#include "radar_mapping/registration.h"
+#include<opencv2/opencv.hpp>
+
+
+
+namespace alignment_checker {
 
 using std::cout;
 using std::cerr;
 using std::endl;
 using std::string;
-namespace alignment_checker {
 
 void SetScanLocations(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > &clouds,  std::vector<Eigen::Affine3d,Eigen::aligned_allocator<Eigen::Affine3d> > &poses);
 
@@ -53,7 +58,11 @@ pcl::PointCloud<pcl::PointXYZI>::Ptr pclAddIntensity(const pcl::PointCloud<pcl::
 double get_azimuth_index(const std::vector<double> &azimuths, double azimuth);
 
 void radar_polar_to_cartesian(const cv::Mat &polar_in, const std::vector<double> &azimuths_in, cv::Mat &cart_out,
-    float radar_resolution = 0.04328, float cart_resolution = 0.2384, int cart_pixel_width = 640, bool fix_wobble = true);
+    float radar_resolution = 0.04328, float cart_resolution = 0.2384, int cart_pixel_width = 300, bool fix_wobble = false);
+
+void RotoTranslation(const cv::Mat& input, cv::Mat& output, const Eigen::Affine3d& T, const float image_res = 0.04328);
+
+cv_bridge::CvImagePtr CreateImage(cv_bridge::CvImagePtr ref);
 
 
 template <typename T>

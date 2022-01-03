@@ -39,8 +39,9 @@ class callback_learner:
             df_copy = self.df.copy()
             self.mutex.release()
             if( df_copy.shape[0] > 5 ):
-                accuracy=TrainClassifier(df_copy)
+                accuracy,cnf_matrix=TrainClassifier(df_copy)
                 print("Accuracy: "+str(accuracy)+", Datapoints: "+str(df_copy.shape[0]))
+                print("confusion: +\n"+str(cnf_matrix))
             #print(df_copy)
 
 
