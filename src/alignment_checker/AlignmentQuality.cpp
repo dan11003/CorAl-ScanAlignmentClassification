@@ -25,17 +25,15 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
 
     //pcl::transform
 
-    auto ref_pcd =  std::dynamic_pointer_cast<RawLidar>(ref);
-    auto src_pcd = std::dynamic_pointer_cast<RawLidar>(src);
 
 
     //Transform into "world" frame and than into frame of "ref"
-    const Eigen::Affine3d Tsrc = src_pcd->GetAffine();
-    const Eigen::Affine3d Tref = ref_pcd->GetAffine();
+    const Eigen::Affine3d Tsrc = src->GetAffine();
+    const Eigen::Affine3d Tref = ref->GetAffine();
     const Eigen::Affine3d Tchange = Tref.inverse()*Tsrc*Toffset;
     //cout<<"change\n"<<Tchange.matrix()<<endl;
-    pcl::PointCloud<pcl::PointXYZI>::Ptr src_cld = src_pcd->GetCloudCopy(Tchange);//get cloud and also change reference frame to ref
-    pcl::PointCloud<pcl::PointXYZI>::Ptr ref_cld = ref_pcd->GetCloudNoCopy();
+    pcl::PointCloud<pcl::PointXYZI>::Ptr src_cld = src->GetCloudCopy(Tchange);//get cloud and also change reference frame to ref
+    pcl::PointCloud<pcl::PointXYZI>::Ptr ref_cld = ref->GetCloudNoCopy();
     //cout<<"src: "<<src_cld->size()<<", ref: "<<ref_cld->size()<<endl;
     /*for(auto && p : src_cld->points)
     cout<<"src: "<<p.getArray3fMap().transpose()<<endl;
@@ -179,6 +177,17 @@ bool CorAlRadarQuality::ComputeEntropy(const Eigen::Matrix2d& cov_sep, const Eig
 }
 CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset)  : AlignmentQuality(src, ref, par, Toffset)
 {
+    cout<<"coral"<<endl;
+    auto src_kstrong_structured = std::dynamic_pointer_cast<kstrongStructuredRadar>(src);
+    auto ref_kstrong_structured = std::dynamic_pointer_cast<kstrongStructuredRadar>(ref);
+    auto ref_pcd_entropy = ref->GetCloudCopy(ref->GetAffine());
+    auto src_pcd_entropy = src->GetCloudCopy(src->GetAffine()*Toffset);
+    assert(ref_pcd_entropy != NULL && src_pcd_entropy !=NULL);
+
+    AlignmentQualityPlot::PublishCloud("/src_peaks",    src_pcd_entropy, Eigen::Affine3d::Identity(), "world");
+    AlignmentQualityPlot::PublishCloud("/ref_peaks",    ref_pcd_entropy, Eigen::Affine3d::Identity(), "world");
+    cout<<"coral end"<<endl;
+    /*
     cout<<"CorAl Quality"<<endl;
     ref_pcd_entropy = ref->GetCloudCopy(ref->GetAffine());
     src_pcd_entropy = src->GetCloudCopy(src->GetAffine()*Toffset);
@@ -263,6 +272,7 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
     AlignmentQualityPlot::PublishCloud("/coral_src",    src_pcd_entropy, Eigen::Affine3d::Identity(), "coral_world");
     AlignmentQualityPlot::PublishCloud("/coral_ref",    ref_pcd_entropy, Eigen::Affine3d::Identity(), "coral_world");
     AlignmentQualityPlot::PublishCloud("/coral_merged", merged_entropy,  Eigen::Affine3d::Identity(), "coral_world");
+    */
 }
 
 

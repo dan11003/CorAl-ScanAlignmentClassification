@@ -8,6 +8,7 @@ std::string Scan2str(const scan_type& val){
     case rawlidar: return "rawlidar";
     case rawradar: return "rawradar";
     case kstrong: return "kstrong";
+    case kstrongStructured: return "kstrongStructured";
     case cen2018: return "cen2018";
     case cfear: return "cfear";
     case kstrongCart: return "kstrongCart";
@@ -21,6 +22,8 @@ scan_type Str2Scan(const std::string& val){
         return scan_type::rawradar;
     else if (val=="kstrong")
         return scan_type::kstrong;
+    else if (val=="kstrongStructured")
+        return scan_type::kstrongStructured;
     else if (val=="cen2018")
         return scan_type::cen2018;
     else if (val=="kstrongCart")
@@ -50,7 +53,7 @@ kstrongRadar::kstrongRadar(const PoseScan::Parameters& pars, cv_bridge::CvImageP
     radar_mapping::k_strongest_filter(polar, cloud_, pars.kstrong, pars.z_min, pars.range_res, pars.sensor_min_distance);
     assert(cloud_ != nullptr);
     if(pars.compensate){
-        cout<<"compensate"<<Tmotion.translation().transpose()<<endl;
+        //cout<<"compensate"<<Tmotion.translation().transpose()<<endl;
         //const Eigen::Affine3d Tmotion_next = T.inverse()*Tnext;
         //const Eigen::Affine3d Tmotion = Tprev.inverse()*Tnext;
         //Eigen::Vector3d par;
@@ -58,6 +61,21 @@ kstrongRadar::kstrongRadar(const PoseScan::Parameters& pars, cv_bridge::CvImageP
         //Eigen::Affine3d Tmotion_adjusted = radar_mapping::vectorToAffine3d(par(0)/2.0, par(1)/2.0, 0, 0, 0, par(2)/2.0);
 
         radar_mapping::Compensate(cloud_, Tmotion_, false); //cout<<"k strongest: "<<cloud_->size()<<endl;
+    }
+}
+kstrongStructuredRadar::kstrongStructuredRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
+    : RawRadar(pars, polar, T, Tmotion)
+{
+    assert(polar !=NULL);
+    radar_mapping::StructuredKStrongest kstrong(polar_, pars.z_min, pars.kstrong, pars.sensor_min_distance, pars.range_res);
+    kstrong.getPeaksFilteredPointCloud(cloud_,true); // get peaks
+    kstrong_peaks_ = cloud_;
+
+    kstrong.getPeaksFilteredPointCloud(kstrong_filtered_,false); // all k-strongest points
+
+    if(pars.compensate){
+        radar_mapping::Compensate(kstrong_peaks_, Tmotion_, false); //cout<<"k strongest: "<<cloud_->size()<<endl;
+        radar_mapping::Compensate(kstrong_filtered_, Tmotion_, false); //cout<<"k strongest: "<<cloud_->size()<<endl;
     }
 }
 
@@ -101,10 +119,13 @@ PoseScan_S RadarPoseScanFactory(const PoseScan::Parameters& pars, cv_bridge::CvI
         return PoseScan_S(new RawRadar(pars, radar_msg, T, Tmotion));
     else if(pars.scan_type == kstrong)
         return PoseScan_S(new kstrongRadar(pars, radar_msg, T, Tmotion));
+    else if(pars.scan_type == ScanType::kstrongStructured)
+        return PoseScan_S(new kstrongStructuredRadar(pars, radar_msg, T, Tmotion));
     else if(pars.scan_type == cfear)
         return PoseScan_S(new CFEARFeatures(pars, radar_msg, T, Tmotion));
     else if(pars.scan_type == kstrongCart)
         return PoseScan_S(new CartesianRadar(pars, radar_msg, T, Tmotion));
+
     else return nullptr;
 }
 

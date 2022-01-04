@@ -232,12 +232,22 @@ public:
     else if(std::dynamic_pointer_cast<kstrongRadar>(ref)!=nullptr && std::dynamic_pointer_cast<kstrongRadar>(src)!=nullptr){
       if(pars.method=="Coral")
         quality = std::make_shared<CorAlRadarQuality>(CorAlRadarQuality(ref,src,pars,Toffset));
-    }// RAW LIDAR (P2P/P2D/CORAL)
-    if(std::dynamic_pointer_cast<CartesianRadar>(ref)!=nullptr && std::dynamic_pointer_cast<CartesianRadar>(src)!=nullptr){
-      quality = std::make_shared<CorAlCartQuality>(CorAlCartQuality(ref,src,pars,Toffset));
-    }// RAW LIDAR (P2P/P2D/CORAL)
+    }
+    else if(std::dynamic_pointer_cast<kstrongStructuredRadar>(ref)!=nullptr && std::dynamic_pointer_cast<kstrongStructuredRadar>(src)!=nullptr){
+      if(pars.method=="Coral")
+        quality = std::make_shared<CorAlRadarQuality>(CorAlRadarQuality(ref,src,pars,Toffset));
+      else if(pars.method=="P2P")
+        quality = AlignmentQuality_S(new p2pQuality(ref,src,pars,Toffset));
+    }
 
-    assert(quality != nullptr);
+    if(std::dynamic_pointer_cast<CartesianRadar>(ref)!=nullptr && std::dynamic_pointer_cast<CartesianRadar>(src)!=nullptr){
+      quality = std::make_shared<CorAlCartQuality>(CorAlCartQuality(ref,src,pars,Toffset));// RAW LIDAR (P2P/P2D/CORAL)
+    }
+
+    if(quality == nullptr){
+        std::cerr<<"no quality metric for scan typee"<<endl;
+        exit(0);
+    }
     return quality;
   }
 };

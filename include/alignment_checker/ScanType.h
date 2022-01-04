@@ -32,7 +32,7 @@ using std::endl;
 using std::cout;
 using std::cerr;
 
-typedef enum ScanType{none, rawlidar, rawradar, kstrong, kstrongCart, cfear, cen2018}scan_type;
+typedef enum ScanType{none, rawlidar, rawradar, kstrong, kstrongStructured, kstrongCart, cfear, cen2018}scan_type;
 
 std::string Scan2str(const scan_type& val);
 
@@ -146,6 +146,21 @@ public:
   kstrongRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion );
 
   const std::string ToString(){return "kstrongRadar";}
+
+};
+
+
+class kstrongStructuredRadar: public RawRadar
+{
+public:
+
+  kstrongStructuredRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion );
+
+  const std::string ToString(){return "structuredKstrongRadar";}
+
+protected:
+  pcl::PointCloud<pcl::PointXYZI>::Ptr kstrong_filtered_;
+  pcl::PointCloud<pcl::PointXYZI>::Ptr kstrong_peaks_;
 
 };
 
