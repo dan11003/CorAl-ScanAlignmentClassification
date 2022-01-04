@@ -46,7 +46,7 @@ lin = ['-','--',':','-','--',':']
 #sns_plot.locator_params(axis='x', nbins=5)
 
 # ----- Uncertainty plot (range error)
-#sns_plot = sns.catplot(x='Range error (m)', y='Accuracy', hue='Method', kind="box", dodge=False, data=data, legend_out=True) # Old
+#sns_plot = sns.catplot(x='Range error (m)', y='Accuracy', hue='Method', kind="box", dodge=True, data=data, legend_out=True) # Old
 sns_plot = sns.lineplot(x="Range error (m)", y="Accuracy", hue="Method", style="Method", data=data, markers=['o','o','o'], dashes=False) # Current
 plt.ylim(0.45,1)
 plt.xlim(0.05,0.95)
@@ -58,7 +58,12 @@ plt.show()
 
 # ----- Uncertainty plot (scan spacing)
 #sns_plot = sns.catplot(x='Range error (m)', y='Accuracy', hue='Method', kind="box", dodge=False, data=data, legend_out=True) # Old
-sns_plot = sns.lineplot(x="scan spacing distance", y="Accuracy", hue="Method", style="Method", data=data, markers=['o','o','o'], dashes=False) # Current
+method_range = 'Method and range error'
+data[method_range] = data.apply(lambda row: row['Method'] + ', ' + str(row['Range error (m)']), axis=1)
+data_spacing = data[ (data['Range error (m)']==0.3) | (data['Range error (m)']==0.5) | (data['Range error (m)']==0.9)]
+sns_plot = sns.lineplot(x="scan spacing distance", y="Accuracy", hue=method_range, style=method_range, data=data_spacing, markers=['o','o','o','o','o','o','o','o','o'], dashes=False, palette=["#E59866", "#D35400", "#873600", "#85C1E9", "#3498DB", "#2874A6","#E59866", "#D35400", "#873600",]) # Current
+#sns_plot = sns.lineplot(x="scan spacing distance", y="Accuracy", hue="Method", style="Method", data= data[data["Range error (m)"]==0.5], markers=['s','s','s'], dashes=False, palette=["#85C1E9", "#3498DB", "#2874A6"]) # Current
+#sns_plot = sns.lineplot(x="scan spacing distance", y="Accuracy", hue="Method", style="Method", data= data[data["Range error (m)"]==0.9], markers=['^','^','^'], dashes=False, palette=["#E59866", "#D35400", "#873600"]) # Current
 #plt.ylim(0.45,1)
 #plt.xlim(0.05,0.95)
 
