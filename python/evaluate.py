@@ -75,12 +75,13 @@ def thread_task(lock, table, name, bag_location, bag_file_path):
         output_eval_path = bag_location + '/CoralRadarEval/' + eval_name
         os.system('mkdir -p ' + output_eval_path)
 
-        # Initialize ROS node instance
+        # Initialize ROS node instance (parameters are to be added in order, as shown here and in "parameters.py")
         range_error = table[0][local_index-1]
         method = table[1][local_index-1]
-        param_str = name + ' launched test ' + str(local_index) + ' with ' + method + ' and ' + str(range_error) 
+        scan_min_distance = table[2][local_index-1]
+        param_str = name + ' launched test ' + str(local_index) + ' with ' + method + ' range_error ' + str(range_error) + ' and spacing ' + str(scan_min_distance) 
         print(param_str)
-        launch_str = 'rosrun alignment_checker evaluate_scans --input-file-path ' + bag_file_path + ' --output-dir ' + output_eval_path + ' --eval-name ' + eval_name + ' --sequence ' + sequence + ' --method ' + method + ' --range-error ' + str(range_error) + ' --scan-type cfear --rosbag-offset 200 --frame-delay 0.0 --visualization false __name:=Test_' + str(local_index)
+        launch_str = 'rosrun alignment_checker evaluate_scans --input-file-path ' + bag_file_path + ' --output-dir ' + output_eval_path + ' --eval-name ' + eval_name + ' --sequence ' + sequence + ' --method ' + method + ' --range-error ' + str(range_error) + ' --scan-min-distance ' + str(scan_min_distance) + ' --scan-type cfear --rosbag-offset 200 --frame-delay 0.0 --resolution 3 --radius-association 3 --input-odom-topic /gt --compensate __name:=Test_' + str(local_index)
         os.system(launch_str)
         
         # Append line to file with the generated directory
