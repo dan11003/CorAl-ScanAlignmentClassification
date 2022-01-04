@@ -65,8 +65,13 @@ print(cnf_matrix)
 #print(y_pred)
 #print(y_test)
 
-PrintConfusionMatric(cnf_matrix, cnf_matrix_un, output_directory)
-PrintROC(logreg, X_test, y_test, output_directory)
+accuracy = PrintConfusionMatric(cnf_matrix, cnf_matrix_un, output_directory)
+auc = PrintROC(logreg, X_test, y_test, output_directory)
+
+# Store confusion matrix as text file
+f = open(output_directory + '/results.txt','w')
+f.writelines([str(accuracy)+ ',' + str(auc) + ',' + str(cnf_matrix_un[0][0]) + ',' + str(cnf_matrix_un[0][1]) + ',' + str(cnf_matrix_un[1][0]) + ',' + str(cnf_matrix_un[1][1]) ]) 
+f.close()
 
 #accuracy cm11 cm12 cm21 cm22 nr1 nr0
 
