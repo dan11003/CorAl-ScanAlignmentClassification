@@ -1,5 +1,4 @@
-#ifndef IO_H
-#define IO_H
+#pragma once
 #include <Eigen/Eigen>
 #include "pcl/point_cloud.h"
 #include "pcl/point_types.h"
@@ -76,4 +75,26 @@ std::ostream & operator << (std::ostream & os, const std::vector<T> & vec)
 }
 
 }
-#endif // IO_H
+
+/*!
+   \brief Extract features from polar radar data using the method described in cen_icra18
+   \param fft_data Polar radar power readings
+   \param zq If y(i, j) > zq * sigma_q then it is considered a potential target point
+   \param sigma_gauss std dev of the gaussian filter uesd to smooth the radar signal
+   \param min_range We ignore the range bins less than this
+   \param targets [out] Matrix of feature locations (azimuth_bin, range_bin, 1) x N
+*/
+double cen2018features(cv::Mat fft_data, Eigen::MatrixXd &targets, float zq =  3.0, int sigma_gauss = 17, int min_range = 2.5);
+
+/*!
+   \brief Extract features from polar radar data using the method described in cen_icra19
+   \param fft_data Polar radar power readings
+   \param max_points Maximum number of targets points to be extracted from the radar image
+   \param min_range We ignore the range bins less than this
+   \param targets [out] Matrix of feature locations (azimuth_bin, range_bin, 1) x N
+*/
+double cen2019features(cv::Mat fft_data, Eigen::MatrixXd &targets, int max_points = 10000, int min_range = 2.5);
+
+/*double cen2019descriptors(std::vector<double> azimuths, cv::Size polar_dims, Eigen::MatrixXd polar_points,
+    Eigen::MatrixXd cart_targets, float radar_resolution, float cart_resolution, int cart_pixel_width,
+    cv::Mat &descriptors, int navtech_version = CTS350);*/

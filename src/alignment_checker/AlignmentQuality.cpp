@@ -3,6 +3,177 @@ namespace CorAlignment {
 
 
 
+/////**************** CORAL Quality ******************////////
+
+void CorAlRadarQuality::GetNearby(const pcl::PointXY& query, Eigen::MatrixXd& nearby_src, Eigen::MatrixXd& nearby_ref, Eigen::MatrixXd& merged){
+    std::vector<int> pointIdxRadiusSearch_src, pointIdxRadiusSearch_ref;
+    std::vector<float> pointRadiusSquaredDistance_src, pointRadiusSquaredDistance_ref;
+    int nr_nearby_src = kd_src.radiusSearch(query, par_.radius, pointIdxRadiusSearch_src, pointRadiusSquaredDistance_src);
+    int nr_nearby_ref = kd_ref.radiusSearch(query, par_.radius, pointIdxRadiusSearch_ref, pointRadiusSquaredDistance_ref);
+    nearby_src.resize(nr_nearby_src,2);
+    nearby_ref.resize(nr_nearby_ref,2);
+    merged.resize(nr_nearby_ref + nr_nearby_src,2);
+    int tot = 0;
+    for(std::size_t i = 0; i < pointIdxRadiusSearch_src.size (); i++){
+        nearby_src(i,0) = src_pcd->points[pointIdxRadiusSearch_src[i]].x;
+        nearby_src(i,1) = src_pcd->points[pointIdxRadiusSearch_src[i]].y;
+        merged.block<1,2>(tot++,0) = nearby_src.block<1,2>(i,0);
+    }
+    for(std::size_t i = 0; i < pointIdxRadiusSearch_ref.size (); i++){
+        nearby_ref(i,0) = ref_pcd->points[pointIdxRadiusSearch_ref[i]].x;
+        nearby_ref(i,1) = ref_pcd->points[pointIdxRadiusSearch_ref[i]].y;
+        merged.block<1,2>(tot++,0) = nearby_ref.block<1,2>(i,0);
+    }
+}
+bool CorAlRadarQuality::Covariance(Eigen::MatrixXd& x, Eigen::Matrix2d& cov){ //mean already subtracted from x
+    //Compute and subtract mean
+    //cout<<"before subtract: "<< x<<endl;
+    //cout<<"mean: "<<x.rowwise().mean().transpose()<<endl;
+    if(x.rows() <= 2)
+        return false;
+
+    Eigen::MatrixXd mean = x.colwise().mean();
+
+    for(int i=0;i<x.rows();i++) // subtract mean
+        x.block<1,2>(i,0) = x.block<1,2>(i,0) - mean;
+
+    Eigen::Matrix2d covSum = x.transpose()*x;
+    float n = x.rows();
+    cov = covSum*1.0/(n-1.0);
+    Eigen::JacobiSVD<Eigen::Matrix2d> svd(cov.block<2,2>(0,0));
+    double cond = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
+    //cout<<"cond "<<cond<<endl;
+
+    return true;//cond < 100000;
+}
+bool CorAlRadarQuality::ComputeEntropy(const Eigen::Matrix2d& cov_sep, const Eigen::Matrix2d& cov_joint, int index){
+
+    double det_j = cov_joint.determinant();
+    double det_s = cov_sep.determinant();
+    if(isnanl(det_s) || isnanl(det_j))
+        return false;
+
+    const double sep_entropy =  1.0/2.0*log(2.0*M_PI*exp(1.0)*det_s+0.00000001);
+    const double joint_entropy = 1.0/2.0*log(2.0*M_PI*exp(1.0)*det_j+0.00000001);
+
+    if( isnan(sep_entropy) || isnan(joint_entropy) )
+        return false;
+    else{
+        sep_res_[index] = sep_entropy;
+        joint_res_[index] = joint_entropy;
+        return true;
+    }
+}
+CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset)  : AlignmentQuality(src, ref, par, Toffset)
+{
+    //radar_mapping::timing.Document()
+
+    ros::Time t0 = ros::Time::now();
+    auto src_kstrong_structured = std::dynamic_pointer_cast<kstrongStructuredRadar>(src);
+    auto ref_kstrong_structured = std::dynamic_pointer_cast<kstrongStructuredRadar>(ref);
+    auto ref_pcd_entropy = ref->GetCloudCopy(ref->GetAffine());
+    auto src_pcd_entropy = src->GetCloudCopy(src->GetAffine()*Toffset);
+    assert(ref_pcd_entropy != NULL && src_pcd_entropy !=NULL);
+
+    std::vector<double> src_i,ref_i;
+    src_pcd = ac::pcl3dto2d(src_pcd_entropy, src_i);
+    ref_pcd = ac::pcl3dto2d(ref_pcd_entropy, ref_i);
+    kd_src.setInputCloud(src_pcd);
+    kd_ref.setInputCloud(ref_pcd);
+    const int merged_size = src_pcd->size() + ref_pcd->size();
+    assert(src_pcd->size() > 0 && ref_pcd->size()>0);
+
+
+    sep_res_.resize(merged_size, 100.0);
+    sep_valid.resize(merged_size, false);
+    joint_res_.resize(merged_size, 100.0);
+    diff_res_.resize(merged_size, 100.0);
+
+    ros::Time t1 = ros::Time::now();
+    int index = 0;
+    for (auto && searchPoint : src_pcd->points){
+        Eigen::MatrixXd msrc, mref, mjoint;
+        //cout<<"get nearby"<<endl;
+        GetNearby(searchPoint, msrc, mref, mjoint);
+        //cout<<"got nearby"<<endl;
+        if(mref.cols() < overlap_req_){
+            index++;
+            continue;
+        }
+
+        Eigen::Matrix2d sep_cov, joint_cov;
+        if( Covariance(msrc,sep_cov) && Covariance(mjoint,joint_cov) ){
+            if( ComputeEntropy(sep_cov,joint_cov,index) ){
+
+                sep_valid[index] = true;
+                diff_res_[index] = joint_res_[index] - sep_res_[index];
+                joint_ += joint_res_[index]; sep_ += sep_res_[index];
+                count_valid++;
+            }
+        }
+        index++;
+    }
+
+    for (auto && searchPoint : ref_pcd->points){
+        Eigen::MatrixXd msrc, mref, mjoint;
+        GetNearby(searchPoint, msrc, mref, mjoint);
+        if(msrc.cols() < overlap_req_)
+            continue;
+        Eigen::Matrix2d sep_cov, joint_cov;
+        if( Covariance(mref,sep_cov) && Covariance(mjoint,joint_cov) ){
+            if( ComputeEntropy(sep_cov,joint_cov,index) ){
+                sep_valid[index] = true;
+                diff_res_[index] = joint_res_[index] - sep_res_[index];
+                joint_ += joint_res_[index]; sep_ += sep_res_[index];
+                count_valid++;
+            }
+        }
+        index++;
+    }
+    ros::Time t2 = ros::Time::now();
+    if(count_valid > 0){
+        sep_ /=count_valid;
+        joint_ /=count_valid;
+    }
+    diff_ = joint_ - sep_;
+    //cout<<"joint: "<<joint_<<", sep: "<<sep_<<", diff_"<<diff_<<", N: "<<count_valid<<endl;
+    quality_ = {joint_, sep_, 0.0};
+
+    // Create merged point cloud
+
+
+    //Assign entrpy values
+    index = 0;
+    for (auto && p : src_pcd_entropy->points)  // asign entropy
+        p.intensity = sep_res_[index]; // set intensity
+    for (auto && p : ref_pcd_entropy->points)  // asign entropy
+        p.intensity = sep_res_[index++]; // set intensity
+
+    merged_entropy = pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>());
+    *merged_entropy += *src_pcd_entropy;
+    *merged_entropy += *ref_pcd_entropy;
+
+    for (int i = 0; i < merged_entropy->size();i++)
+        merged_entropy->points[i].intensity = diff_res_[i]; // set intensity
+
+    //for(int i=0 ; i<joint_res_.size() ; i++){
+    //   cout<<joint_res_[i]<<", "<<sep_res_[i]<<","<<sep_valid[i]<<endl;
+    //}
+
+    AlignmentQualityPlot::PublishCloud("/coral_src",    src_pcd_entropy, Eigen::Affine3d::Identity(), "coral_world");
+    AlignmentQualityPlot::PublishCloud("/coral_ref",    ref_pcd_entropy, Eigen::Affine3d::Identity(), "coral_world");
+    AlignmentQualityPlot::PublishCloud("/coral_merged", merged_entropy,  Eigen::Affine3d::Identity(), "coral_world");
+    ros::Time t3 = ros::Time::now();
+    radar_mapping::timing.Document("coral_init",radar_mapping::ToMs(t1-t0));
+    radar_mapping::timing.Document("coral_entropy",radar_mapping::ToMs(t2-t1));
+    radar_mapping::timing.Document("coral_postprocess",radar_mapping::ToMs(t3-t2));
+
+}
+
+
+/////**************** End of CORAL Quality ******************////////
+
+
 std::vector<double> p2pQuality::GetQualityMeasure(){
 
     //Calculate the mean of all the residuals
@@ -113,171 +284,7 @@ CorAlCartQuality::CorAlCartQuality(std::shared_ptr<PoseScan> ref, std::shared_pt
 
 
 
-/////**************** CORAL POINT CLOUD ******************////////
-
-void CorAlRadarQuality::GetNearby(const pcl::PointXY& query, Eigen::MatrixXd& nearby_src, Eigen::MatrixXd& nearby_ref, Eigen::MatrixXd& merged){
-    std::vector<int> pointIdxRadiusSearch_src, pointIdxRadiusSearch_ref;
-    std::vector<float> pointRadiusSquaredDistance_src, pointRadiusSquaredDistance_ref;
-    int nr_nearby_src = kd_src.radiusSearch(query, par_.radius, pointIdxRadiusSearch_src, pointRadiusSquaredDistance_src);
-    int nr_nearby_ref = kd_ref.radiusSearch(query, par_.radius, pointIdxRadiusSearch_ref, pointRadiusSquaredDistance_ref);
-    nearby_src.resize(nr_nearby_src,2);
-    nearby_ref.resize(nr_nearby_ref,2);
-    merged.resize(nr_nearby_ref + nr_nearby_src,2);
-    int tot = 0;
-    for(std::size_t i = 0; i < pointIdxRadiusSearch_src.size (); i++){
-        nearby_src(i,0) = src_pcd->points[pointIdxRadiusSearch_src[i]].x;
-        nearby_src(i,1) = src_pcd->points[pointIdxRadiusSearch_src[i]].y;
-        merged.block<1,2>(tot++,0) = nearby_src.block<1,2>(i,0);
-    }
-    for(std::size_t i = 0; i < pointIdxRadiusSearch_ref.size (); i++){
-        nearby_ref(i,0) = ref_pcd->points[pointIdxRadiusSearch_ref[i]].x;
-        nearby_ref(i,1) = ref_pcd->points[pointIdxRadiusSearch_ref[i]].y;
-        merged.block<1,2>(tot++,0) = nearby_ref.block<1,2>(i,0);
-    }
-
-
-}
-bool CorAlRadarQuality::Covariance(Eigen::MatrixXd& x, Eigen::Matrix2d& cov){ //mean already subtracted from x
-    //Compute and subtract mean
-    //cout<<"before subtract: "<< x<<endl;
-    //cout<<"mean: "<<x.rowwise().mean().transpose()<<endl;
-    Eigen::MatrixXd mean = x.colwise().mean();
-
-    for(int i=0;i<x.rows();i++) // subtract mean
-        x.block<1,2>(i,0) = x.block<1,2>(i,0) - mean;
-
-    Eigen::Matrix2d covSum = x.transpose()*x;
-    float n = x.rows();
-    cov = covSum*1.0/(n-1.0);
-    Eigen::JacobiSVD<Eigen::Matrix2d> svd(cov.block<2,2>(0,0));
-    double cond = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
-    //cout<<"cond "<<cond<<endl;
-
-    return cond < 100000;
-}
-bool CorAlRadarQuality::ComputeEntropy(const Eigen::Matrix2d& cov_sep, const Eigen::Matrix2d& cov_joint, int index){
-
-
-
-    double det_j = cov_joint.determinant();
-    double det_s = cov_sep.determinant();
-    if(isnanl(det_s) || isnanl(det_j))
-        return false;
-
-    const double sep_entropy =  1.0/2.0*log(2.0*M_PI*exp(1.0)*det_s+0.00000001);
-    const double joint_entropy = 1.0/2.0*log(2.0*M_PI*exp(1.0)*det_j+0.00000001);
-
-    if( isnan(sep_entropy) || isnan(joint_entropy) )
-        return false;
-    else{
-        sep_res_[index] = sep_entropy;
-        joint_res_[index] = joint_entropy;
-        return true;
-    }
-}
-CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset)  : AlignmentQuality(src, ref, par, Toffset)
-{
-    cout<<"coral"<<endl;
-    auto src_kstrong_structured = std::dynamic_pointer_cast<kstrongStructuredRadar>(src);
-    auto ref_kstrong_structured = std::dynamic_pointer_cast<kstrongStructuredRadar>(ref);
-    auto ref_pcd_entropy = ref->GetCloudCopy(ref->GetAffine());
-    auto src_pcd_entropy = src->GetCloudCopy(src->GetAffine()*Toffset);
-    assert(ref_pcd_entropy != NULL && src_pcd_entropy !=NULL);
-
-    AlignmentQualityPlot::PublishCloud("/src_peaks",    src_pcd_entropy, Eigen::Affine3d::Identity(), "world");
-    AlignmentQualityPlot::PublishCloud("/ref_peaks",    ref_pcd_entropy, Eigen::Affine3d::Identity(), "world");
-    cout<<"coral end"<<endl;
-    /*
-    cout<<"CorAl Quality"<<endl;
-    ref_pcd_entropy = ref->GetCloudCopy(ref->GetAffine());
-    src_pcd_entropy = src->GetCloudCopy(src->GetAffine()*Toffset);
-    assert(ref_pcd_entropy != NULL && src_pcd_entropy !=NULL);
-
-
-    src_pcd = ac::pcl3dto2d(src_pcd_entropy, src_i);
-    ref_pcd = ac::pcl3dto2d(ref_pcd_entropy, ref_i);
-    kd_src.setInputCloud(src_pcd);
-    kd_ref.setInputCloud(ref_pcd);
-    const int merged_size = src_pcd->size() + ref_pcd->size();
-    assert(src_pcd->size() > 0 && ref_pcd->size());
-
-    sep_res_.resize(merged_size, 100.0);
-    sep_valid.resize(merged_size, false);
-    joint_res_.resize(merged_size, 100.0);
-    diff_res_.resize(merged_size, 100.0);
-
-
-    int index = 0;
-    for (auto && searchPoint : src_pcd->points){
-        Eigen::MatrixXd msrc, mref, mjoint;
-        //cout<<"get nearby"<<endl;
-        GetNearby(searchPoint, msrc, mref, mjoint);
-        //cout<<"got nearby"<<endl;
-        if(mref.cols() < overlap_req_){
-            index++;
-            continue;
-        }
-
-        Eigen::Matrix2d sep_cov, joint_cov;
-        if( Covariance(msrc,sep_cov) && Covariance(mjoint,joint_cov) ){
-            if( ComputeEntropy(sep_cov,joint_cov,index) ){
-
-                sep_valid[index] = true;
-                diff_res_[index] = joint_res_[index] - sep_res_[index];
-                joint_ += joint_res_[index]; sep_ += sep_res_[index];
-                count_valid++;
-            }
-        }
-        index++;
-    }
-    for (auto && searchPoint : ref_pcd->points){
-        Eigen::MatrixXd msrc, mref, mjoint;
-        GetNearby(searchPoint, msrc, mref, mjoint);
-        if(msrc.cols() < overlap_req_)
-            continue;
-        Eigen::Matrix2d sep_cov, joint_cov;
-        if( Covariance(mref,sep_cov) && Covariance(mjoint,joint_cov) ){
-            if( ComputeEntropy(sep_cov,joint_cov,index) ){
-                sep_valid[index] = true;
-                diff_res_[index] = joint_res_[index] - sep_res_[index];
-                joint_ += joint_res_[index]; sep_ += sep_res_[index];
-                count_valid++;
-            }
-        }
-        index++;
-    }
-    if(count_valid > 0){
-        sep_ /=count_valid;
-        joint_ /=count_valid;
-    }
-    diff_ = joint_ - sep_;
-    cout<<"joint: "<<joint_<<", sep: "<<sep_<<", diff_"<<diff_<<", N: "<<count_valid<<endl;
-    quality_ = {joint_, sep_, 0.0};
-
-    // Create merged point cloud
-    merged_entropy = pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>());
-    *merged_entropy += *src_pcd_entropy;
-    *merged_entropy += *ref_pcd_entropy;
-
-    //Assign entrpy values
-    index = 0;
-    for (auto && p : src_pcd_entropy->points)  // asign entropy
-        p.intensity = sep_res_[index]; // set intensity
-    for (auto && p : ref_pcd_entropy->points)  // asign entropy
-        p.intensity = sep_res_[index++]; // set intensity
-
-    for (auto && p : merged_entropy->points)  // asign entropy
-        p.intensity = joint_res_[index]; // set intensity
-
-    AlignmentQualityPlot::PublishCloud("/coral_src",    src_pcd_entropy, Eigen::Affine3d::Identity(), "coral_world");
-    AlignmentQualityPlot::PublishCloud("/coral_ref",    ref_pcd_entropy, Eigen::Affine3d::Identity(), "coral_world");
-    AlignmentQualityPlot::PublishCloud("/coral_merged", merged_entropy,  Eigen::Affine3d::Identity(), "coral_world");
-    */
-}
-
-
-
-
+/////**************** Publishing tools ******************////////
 std::map<std::string, ros::Publisher> AlignmentQualityPlot::pubs = std::map<std::string, ros::Publisher>();
 
 

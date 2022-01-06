@@ -26,7 +26,7 @@
 #include "tf/transform_broadcaster.h"
 #include "tf_conversions/tf_eigen.h"
 #include "alignment_checker/Utils.h"
-
+#include "radar_mapping/statistics.h"
 
 
 namespace CorAlignment{
@@ -239,11 +239,16 @@ public:
       else if(pars.method=="P2P")
         quality = AlignmentQuality_S(new p2pQuality(ref,src,pars,Toffset));
     }
+    else if(std::dynamic_pointer_cast<Cen2018Radar>(ref)!=nullptr && std::dynamic_pointer_cast<Cen2018Radar>(src)!=nullptr){
+        if(pars.method=="P2P")
+            quality = AlignmentQuality_S(new p2pQuality(ref,src,pars,Toffset));
+    }
+    else if(std::dynamic_pointer_cast<Cen2019Radar>(ref)!=nullptr && std::dynamic_pointer_cast<Cen2019Radar>(src)!=nullptr){
 
-    if(std::dynamic_pointer_cast<CartesianRadar>(ref)!=nullptr && std::dynamic_pointer_cast<CartesianRadar>(src)!=nullptr){
+    }
+    else if(std::dynamic_pointer_cast<CartesianRadar>(ref)!=nullptr && std::dynamic_pointer_cast<CartesianRadar>(src)!=nullptr){
       quality = std::make_shared<CorAlCartQuality>(CorAlCartQuality(ref,src,pars,Toffset));// RAW LIDAR (P2P/P2D/CORAL)
     }
-
     if(quality == nullptr){
         std::cerr<<"no quality metric for scan typee"<<endl;
         exit(0);

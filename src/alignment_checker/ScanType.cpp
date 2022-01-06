@@ -10,6 +10,7 @@ std::string Scan2str(const scan_type& val){
     case kstrong: return "kstrong";
     case kstrongStructured: return "kstrongStructured";
     case cen2018: return "cen2018";
+    case cen2019: return "cen2019";
     case cfear: return "cfear";
     case kstrongCart: return "kstrongCart";
     default: return "none";
@@ -26,6 +27,8 @@ scan_type Str2Scan(const std::string& val){
         return scan_type::kstrongStructured;
     else if (val=="cen2018")
         return scan_type::cen2018;
+    else if (val=="cen2019")
+        return scan_type::cen2019;
     else if (val=="kstrongCart")
         return scan_type::kstrongCart;
     else if (val=="none")
@@ -44,6 +47,23 @@ RawRadar::RawRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& pola
 {
     polar_ = polar;
 }
+
+Cen2018Radar::Cen2018Radar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
+    : RawRadar(pars, polar, T, Tmotion){
+    polar_->image.convertTo(f_polar_, CV_32F, 1/255.0);
+    auto time = cen2018features(f_polar_, targets_);
+    cout<<"cen 2018"<<targets_.rows()<<endl;
+
+}
+
+Cen2019Radar::Cen2019Radar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
+    : RawRadar(pars, polar, T, Tmotion){
+    polar_->image.convertTo(f_polar_, CV_32F, 1/255.0);
+    auto time = cen2019features(f_polar_, targets_);
+    cout<<"cen 2018"<<targets_.rows()<<endl;
+
+}
+
 
 kstrongRadar::kstrongRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
     : RawRadar(pars, polar, T, Tmotion)
@@ -125,6 +145,10 @@ PoseScan_S RadarPoseScanFactory(const PoseScan::Parameters& pars, cv_bridge::CvI
         return PoseScan_S(new CFEARFeatures(pars, radar_msg, T, Tmotion));
     else if(pars.scan_type == kstrongCart)
         return PoseScan_S(new CartesianRadar(pars, radar_msg, T, Tmotion));
+    else if(pars.scan_type == cen2018)
+        return PoseScan_S(new Cen2018Radar(pars, radar_msg, T, Tmotion));
+    else if(pars.scan_type == cen2019)
+        return PoseScan_S(new Cen2019Radar(pars, radar_msg, T, Tmotion));
 
     else return nullptr;
 }
