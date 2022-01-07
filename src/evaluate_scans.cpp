@@ -53,7 +53,7 @@
 #include "memory"
 
 namespace po = boost::program_options;
-namespace ac=alignment_checker;
+
 using std::cout;
 using std::endl;
 using std::string;
@@ -79,6 +79,7 @@ int main(int argc, char **argv)
   AlignmentQuality::parameters qualityPars;
   PoseScan::Parameters scanPars;
   bool test;
+  int entropy_config;
 
 
   po::options_description desc("Allowed options");
@@ -110,6 +111,7 @@ int main(int argc, char **argv)
       ("rosbag-offset",po::value<int>(&rosbag_offset)->default_value(0),"Misalignment error - angular")
       ("scan-min-distance",po::value<double>(&evalPars.scan_spacing_distance)->default_value(0),"scan_min_distance")
       ("compensate","compensate")
+       ("entropy-configuration",po::value<int>(&entropy_config)->default_value(0),"Misalignment error - angular")
       ("frame-delay",po::value<double>(&evalPars.frame_delay)->default_value(0),"Misalignment error - angular");
 
 
@@ -127,6 +129,7 @@ int main(int argc, char **argv)
   evalPars.visualize = vm.count("visualization");
   scanPars.scan_type = Str2Scan(scantype);
   scanPars.compensate = vm.count("compensate");
+  qualityPars.ent_cfg = static_cast<AlignmentQuality::parameters::entropy_cfg>(entropy_config);
 
   cout<<"----------------\nEvaluation\n----------------"<<endl;
   cout<<evalPars.ToString()<<endl;

@@ -76,8 +76,8 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
     assert(ref_pcd_entropy != NULL && src_pcd_entropy !=NULL);
 
     std::vector<double> src_i,ref_i;
-    src_pcd = ac::pcl3dto2d(src_pcd_entropy, src_i);
-    ref_pcd = ac::pcl3dto2d(ref_pcd_entropy, ref_i);
+    src_pcd = pcl3dto2d(src_pcd_entropy, src_i);
+    ref_pcd = pcl3dto2d(ref_pcd_entropy, ref_i);
     kd_src.setInputCloud(src_pcd);
     kd_ref.setInputCloud(ref_pcd);
     const int merged_size = src_pcd->size() + ref_pcd->size();
@@ -123,6 +123,12 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
         if( Covariance(mref,sep_cov) && Covariance(mjoint,joint_cov) ){
             if( ComputeEntropy(sep_cov,joint_cov,index) ){
                 sep_valid[index] = true;
+                if(par_.ent_cfg==parameters::non_zero){
+                    if(sep_res_[index] > joint_res_[index])
+                        cout<<"fix entrop"<<endl;
+                    joint_res_[index] = std::max(sep_res_[index],joint_res_[index]);
+                }
+
                 diff_res_[index] = joint_res_[index] - sep_res_[index];
                 joint_ += joint_res_[index]; sep_ += sep_res_[index];
                 count_valid++;
@@ -261,10 +267,10 @@ CorAlCartQuality::CorAlCartQuality(std::shared_ptr<PoseScan> ref, std::shared_pt
     const Eigen::Affine3d Tchange = Tref.inverse()*Tsrc*Toffset;
 
 
-    auto cart_src_transformed = ac::CreateImage(rad_cart_src->cart_);
-    ac::RotoTranslation(rad_cart_src->cart_->image, cart_src_transformed->image, Tchange,rad_cart_ref->cart_resolution_);
+    auto cart_src_transformed = CreateImage(rad_cart_src->cart_);
+    RotoTranslation(rad_cart_src->cart_->image, cart_src_transformed->image, Tchange,rad_cart_ref->cart_resolution_);
 
-    cv_bridge::CvImagePtr Absdiff = ac::CreateImage(rad_cart_src->cart_);
+    cv_bridge::CvImagePtr Absdiff = CreateImage(rad_cart_src->cart_);
     cv::absdiff(cart_src_transformed->image, rad_cart_ref->cart_->image, Absdiff->image);
 
     AlignmentQualityPlot::PublishRadar("/cart_transformed", cart_src_transformed);

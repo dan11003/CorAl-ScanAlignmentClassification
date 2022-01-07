@@ -11,7 +11,7 @@
 
 #include "std_msgs/Int32MultiArray.h"
 namespace CorAlignment {
-using namespace alignment_checker;
+
 
 class datapoint
 {

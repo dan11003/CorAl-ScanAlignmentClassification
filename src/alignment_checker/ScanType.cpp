@@ -50,18 +50,37 @@ RawRadar::RawRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& pola
 
 Cen2018Radar::Cen2018Radar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
     : RawRadar(pars, polar, T, Tmotion){
+    //cout<<"cen 2018"<<endl;
     polar_->image.convertTo(f_polar_, CV_32F, 1/255.0);
     auto time = cen2018features(f_polar_, targets_);
-    cout<<"cen 2018"<<targets_.rows()<<endl;
+    //cout<<"p: "<<targets_<<endl;
+    pcl::PointXYZI p;
+    const double nb_azimuths = f_polar_.rows;
+    for(int i=0;i<targets_.cols();i++){
+        const double azimuth_bin = targets_(0  ,i);
+        const double range_bin = targets_(1  ,i);
+        const double theta = (double(azimuth_bin + 1) / nb_azimuths) * 2. * M_PI;
+        const double r = range_res_*range_bin;
+        p.x = r*cos(theta);
+        p.y = r*sin(theta);
+        p.intensity =(float)polar_->image.at<uchar>(azimuth_bin,range_bin);
+        cloud_->push_back(p);
+        //cout<<"p:"<<p.x<<","<<p.y<<","<<p.intensity<<endl;
+    }
 
 }
 
 Cen2019Radar::Cen2019Radar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
     : RawRadar(pars, polar, T, Tmotion){
+/*
+    cout<<"cen 2019"<<endl;
     polar_->image.convertTo(f_polar_, CV_32F, 1/255.0);
     auto time = cen2019features(f_polar_, targets_);
-    cout<<"cen 2018"<<targets_.rows()<<endl;
+    cout<<"p: "<<targets_.rows()<<","<<targets_.cols()<<endl;
 
+
+    cout<<"cen 2019 end"<<targets_.rows()<<endl;
+*/
 }
 
 
@@ -124,7 +143,7 @@ CartesianRadar::CartesianRadar(const PoseScan::Parameters& pars, cv_bridge::CvIm
     for (int bearing = 0; bearing < polar->image.rows; bearing++)
         azimuths.push_back( ((double)(bearing+1) / polar_->image.rows) * 2 * M_PI);
 
-    alignment_checker::radar_polar_to_cartesian(polar_->image, azimuths, cart_->image);
+    radar_polar_to_cartesian(polar_->image, azimuths, cart_->image);
 
 }
 

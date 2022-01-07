@@ -32,6 +32,7 @@ using std::endl;
 using std::cout;
 using std::cerr;
 
+
 typedef enum ScanType{none, rawlidar, rawradar, kstrong, kstrongStructured, kstrongCart, cfear, cen2018, cen2019}scan_type;
 
 std::string Scan2str(const scan_type& val);

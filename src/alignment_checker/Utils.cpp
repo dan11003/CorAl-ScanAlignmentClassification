@@ -1,6 +1,6 @@
 #include "alignment_checker/Utils.h"
 
-namespace alignment_checker {
+namespace CorAlignment {
 
 void SetScanLocations(std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr > &clouds,  std::vector<Eigen::Affine3d,Eigen::aligned_allocator<Eigen::Affine3d> > &poses){
   for(int i = 0 ; i<clouds.size() ; i++)
@@ -345,8 +345,8 @@ cv_bridge::CvImagePtr CreateImage(cv_bridge::CvImagePtr ref){
 }
 
 // Runtime: 0.035s
-double cen2018features(cv::Mat fft_data, Eigen::MatrixXd &targets, float zq, int sigma_gauss, int min_range) {
-    auto t1 = std::chrono::high_resolution_clock::now();
+double cen2018features(cv::Mat fft_data, Eigen::MatrixXd &targets, float zq, int sigma_gauss, int min_range){
+    //auto t1 = std::chrono::high_resolution_clock::now();
 
     std::vector<float> sigma_q(fft_data.rows, 0);
     // Estimate the bias and subtract it from the signal
@@ -429,9 +429,9 @@ double cen2018features(cv::Mat fft_data, Eigen::MatrixXd &targets, float zq, int
         }
     }
 
-    auto t2 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> e = t2 - t1;
-    return e.count();
+    //auto t2 = std::chrono::high_resolution_clock::now();
+    //std::chrono::duration<double> e = t2 - t1;
+    return 0.0;
 }
 
 struct Point {
@@ -494,7 +494,8 @@ static void getMaxInRegion(cv::Mat &h, int a, int start, int end, int &max_r) {
 
 // Runtime: 0.050s
 double cen2019features(cv::Mat fft_data, Eigen::MatrixXd &targets, int max_points, int min_range) {
-    auto t1 = std::chrono::high_resolution_clock::now();
+        cout<<"1"<<endl;
+
     // Calculate gradient along each azimuth using the Prewitt operator
     cv::Mat prewitt = cv::Mat::zeros(1, 3, CV_32F);
     prewitt.at<float>(0, 0) = -1;
@@ -511,6 +512,7 @@ double cen2019features(cv::Mat fft_data, Eigen::MatrixXd &targets, int max_point
     cv::Mat s = fft_data - mean;
     cv::Mat h = s.mul(1 - g);
     float mean_h = cv::mean(h)[0];
+    cout<<"1"<<endl;
 
     // Get indices in descending order of intensity
     std::vector<Point> vec;
@@ -521,7 +523,7 @@ double cen2019features(cv::Mat fft_data, Eigen::MatrixXd &targets, int max_point
         }
     }
     std::sort(vec.begin(), vec.end(), greater_than_pt());
-
+    cout<<"2"<<endl;
     // Create a matrix, R, of "marked" regions consisting of continuous regions of an azimuth that may contain a target
     int false_count = fft_data.rows * fft_data.cols;
     uint j = 0;
@@ -546,7 +548,7 @@ double cen2019features(cv::Mat fft_data, Eigen::MatrixXd &targets, int max_point
         }
         j++;
     }
-
+cout<<"3"<<endl;
     std::vector<std::vector<cv::Point2f>> t(fft_data.rows);
 
 #pragma omp parallel for
@@ -575,7 +577,7 @@ double cen2019features(cv::Mat fft_data, Eigen::MatrixXd &targets, int max_point
             }
         }
     }
-
+cout<<"4"<<endl;
     int size = 0;
     for (uint i = 0; i < t.size(); ++i) {
         size += t[i].size();
@@ -590,9 +592,8 @@ double cen2019features(cv::Mat fft_data, Eigen::MatrixXd &targets, int max_point
         }
     }
 
-    auto t2 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> e = t2 - t1;
-    return e.count();
+
+    return 0.0;
 }
 
 

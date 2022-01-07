@@ -33,7 +33,7 @@ namespace CorAlignment{
 using std::endl;
 using std::cout;
 using std::cerr;
-namespace ac = alignment_checker;
+
 
 
 ///////////// BASE /////////////////
@@ -46,16 +46,19 @@ public:
   class parameters
   {
   public:
+    typedef enum entropy_config{ any=0, non_zero=1, abs=2 }entropy_cfg;
     parameters() {}
     std::string method = "P2L";
     scan_type scantype = scan_type::cfear;
     double radius = 3;
+    entropy_cfg ent_cfg = any;
 
     std::string ToString(){
       std::ostringstream stringStream;
       //stringStream << "OdometryKeyframeFuser::Parameters"<<endl;
       stringStream << "method,"<<method<<endl;
       stringStream << "radius,"<<radius<<endl;
+      stringStream << "entropy_setting,"<<ent_cfg<<endl;
       return stringStream.str();
     }
   };
@@ -160,8 +163,8 @@ public:
     CorAlCartQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity());
 
     ~CorAlCartQuality(){}
-protected:
-    cv_bridge::CvImagePtr CreateImage(cv_bridge::CvImagePtr ref);
+
+
 };
 
 class CorAlRadarQuality: public AlignmentQuality
