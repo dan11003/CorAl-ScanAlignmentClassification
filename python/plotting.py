@@ -28,8 +28,11 @@ if not os.path.exists(save_dir) :
 sns.set_theme(style="ticks", color_codes=True)
 sns.set(style="ticks")
 colors = ["#E59866", "#D35400", "#873600", "#85C1E9", "#3498DB", "#2874A6"]   #Daniel
+color_figures = ["#E59866", "#D35400", "#873600", "#85C1E9", "#3498DB", "#2874A6","#FF90FA", "#FF00F3", "#8F0088", "#94FF76","#39FF00","#26AB00"]
+marker_figures = ['o','o','o','o','o','o','o','o','o','o','o','o']
 #colors = ["#E59866","#2874A6", "#D35400", "#85C1E9", "#3498DB",  "#873600"]  #Mine
 data = data.rename(columns={'range error': 'Range error (m)'})
+data = data.rename(columns={'scan spacing distance': 'Scan spacing distance (m)'})
 data = data.rename(columns={'accuracy': 'Accuracy'})
 data = data.rename(columns={'method': 'Method'})
 data = data.rename(columns={'auc': 'AuC'})
@@ -47,9 +50,20 @@ lin = ['-','--',':','-','--',':']
 
 # ----- Uncertainty plot (range error)
 #sns_plot = sns.catplot(x='Range error (m)', y='Accuracy', hue='Method', kind="box", dodge=True, data=data, legend_out=True) # Old
-sns_plot = sns.lineplot(x="Range error (m)", y="Accuracy", hue="Method", style="Method", data=data, markers=['o','o','o'], dashes=False) # Current
-plt.ylim(0.45,1)
-plt.xlim(0.05,0.95)
+method_scan = 'Method and scan spacing (m)'
+data[method_scan] = data.apply(lambda row: row['Method'] + ', ' + str(row['Scan spacing distance (m)']), axis=1)
+data_scan = data[ (data['Scan spacing distance (m)']==0) | (data['Scan spacing distance (m)']==5) | (data['Scan spacing distance (m)']==10) ]
+data_scan_1 = data_scan[ data_scan['Method']=='P2P' ]  ; data_scan_1 = data_scan_1.sort_values('Scan spacing distance (m)')
+data_scan_2 = data_scan[ data_scan['Method']=='P2D' ]  ; data_scan_2 = data_scan_2.sort_values('Scan spacing distance (m)')
+data_scan_3 = data_scan[ data_scan['Method']=='P2L' ]  ; data_scan_3 = data_scan_3.sort_values('Scan spacing distance (m)')
+data_scan_4 = data_scan[ data_scan['Method']=='Coral'] ; data_scan_4 = data_scan_4.sort_values('Scan spacing distance (m)')
+
+sns_plot = sns.lineplot(x="Range error (m)", y="Accuracy", hue=method_scan, style=method_scan, data=data_scan_1, markers=['.','o','s'], dashes=False, palette=["#E59866", "#D35400", "#873600"]) # Current
+sns_plot = sns.lineplot(x="Range error (m)", y="Accuracy", hue=method_scan, style=method_scan, data=data_scan_2, markers=['.','o','s'], dashes=False, palette=["#85C1E9", "#3498DB", "#2874A6"]) 
+sns_plot = sns.lineplot(x="Range error (m)", y="Accuracy", hue=method_scan, style=method_scan, data=data_scan_3, markers=['.','o','s'], dashes=False, palette=["#FF90FA", "#FF00F3", "#8F0088"]) 
+sns_plot = sns.lineplot(x="Range error (m)", y="Accuracy", hue=method_scan, style=method_scan, data=data_scan_4, markers=['.','o','s'], dashes=False, palette=["#94FF76","#39FF00","#26AB00"]) 
+#plt.ylim(0.45,1)
+#plt.xlim(0.05,0.95)
 
 plt.grid()
 plt.show()
@@ -58,10 +72,17 @@ plt.show()
 
 # ----- Uncertainty plot (scan spacing)
 #sns_plot = sns.catplot(x='Range error (m)', y='Accuracy', hue='Method', kind="box", dodge=False, data=data, legend_out=True) # Old
-method_range = 'Method and range error'
+method_range = 'Method and range error (m)'
 data[method_range] = data.apply(lambda row: row['Method'] + ', ' + str(row['Range error (m)']), axis=1)
-data_spacing = data#[ (data['Range error (m)']==0.3) | (data['Range error (m)']==0.5) | (data['Range error (m)']==0.9)]
-sns_plot = sns.lineplot(x="scan spacing distance", y="Accuracy", hue=method_range, style=method_range, data=data_spacing, markers=['o','o','o','o','o','o','o','o','o'], dashes=False, palette=["#E59866", "#D35400", "#873600", "#85C1E9", "#3498DB", "#2874A6","#E59866", "#D35400", "#873600",]) # Current
+data_spacing = data[ (data['Range error (m)']==0.3) | (data['Range error (m)']==0.6) | (data['Range error (m)']==0.9)]
+data_spacing_1 = data_spacing[data_spacing['Method']=='P2P']
+data_spacing_2 = data_spacing[data_spacing['Method']=='P2D']
+data_spacing_3 = data_spacing[data_spacing['Method']=='P2L']
+data_spacing_4 = data_spacing[data_spacing['Method']=='Coral']
+sns_plot = sns.lineplot(x="Scan spacing distance (m)", y="Accuracy", hue=method_range, style=method_range, data=data_spacing_1, markers=['.','o','s'], dashes=False, palette=["#E59866", "#D35400", "#873600"]) # Current
+sns_plot = sns.lineplot(x="Scan spacing distance (m)", y="Accuracy", hue=method_range, style=method_range, data=data_spacing_2, markers=['.','o','s'], dashes=False, palette=["#85C1E9", "#3498DB", "#2874A6"])
+sns_plot = sns.lineplot(x="Scan spacing distance (m)", y="Accuracy", hue=method_range, style=method_range, data=data_spacing_3, markers=['.','o','s'], dashes=False, palette=["#FF90FA", "#FF00F3", "#8F0088"])
+sns_plot = sns.lineplot(x="Scan spacing distance (m)", y="Accuracy", hue=method_range, style=method_range, data=data_spacing_4, markers=['.','o','s'], dashes=False, palette=["#94FF76","#39FF00","#26AB00"])
 #sns_plot = sns.lineplot(x="scan spacing distance", y="Accuracy", hue="Method", style="Method", data= data[data["Range error (m)"]==0.5], markers=['s','s','s'], dashes=False, palette=["#85C1E9", "#3498DB", "#2874A6"]) # Current
 #sns_plot = sns.lineplot(x="scan spacing distance", y="Accuracy", hue="Method", style="Method", data= data[data["Range error (m)"]==0.9], markers=['^','^','^'], dashes=False, palette=["#E59866", "#D35400", "#873600"]) # Current
 #plt.ylim(0.45,1)
@@ -74,23 +95,23 @@ plt.show()
 
 
 # Print parameters for 'best' configuration for each method
-data_p2p = data[data['Method'] == 'P2P']
-data_p2d = data[data['Method'] == 'P2D']
-data_p2l = data[data['Method'] == 'P2L']
+#data_p2p = data[data['Method'] == 'P2P']
+#data_p2d = data[data['Method'] == 'P2D']
+#data_p2l = data[data['Method'] == 'P2L']
 
-print('Best configurations for all methods: ') 
-print(data_p2p[data_p2p.Accuracy == data_p2p.Accuracy.max()]) ; print(' ')
-print(data_p2d[data_p2d.Accuracy == data_p2d.Accuracy.max()]) ; print(' ')
-print(data_p2l[data_p2l.Accuracy == data_p2l.Accuracy.max()]) ; print(' ')
+#print('Best configurations for all methods: ') 
+#print(data_p2p[data_p2p.Accuracy == data_p2p.Accuracy.max()]) ; print(' ')
+#print(data_p2d[data_p2d.Accuracy == data_p2d.Accuracy.max()]) ; print(' ')
+#print(data_p2l[data_p2l.Accuracy == data_p2l.Accuracy.max()]) ; print(' ')
 
 # Box plot (accuracies and AuC for all methods)
-sns_plot_2 = sns.boxplot(x=data['Method'], y=data['Accuracy'], width=0.3)
-plt.show()
+#sns_plot_2 = sns.boxplot(x=data['Method'], y=data['Accuracy'], width=0.3)
+#plt.show()
 #fig = sns_plot_2.get_figure()
 #fig.savefig(save_dir + '/accuracyBoxplot.pdf', format='pdf')
 
-sns_plot_3 = sns.boxplot(x=data['Method'], y=data['AuC'], width=0.3)
-plt.show()
+#sns_plot_3 = sns.boxplot(x=data['Method'], y=data['AuC'], width=0.3)
+#plt.show()
 #fig = sns_plot_3.get_figure()
 #fig.savefig(save_dir + '/aucBoxplot.pdf', format='pdf')
 

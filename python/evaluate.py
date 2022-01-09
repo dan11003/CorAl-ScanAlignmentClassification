@@ -82,9 +82,9 @@ def thread_task(lock, table, name, bag_location, bag_file_path):
         param_str = name + ' launched test ' + str(local_index) + ' with ' + method + ' range_error ' + str(range_error) + ' and spacing ' + str(scan_min_distance) 
         print(param_str)
         if method == 'Coral':
-            launch_str = 'rosrun alignment_checker evaluate_scans --input-file-path ' + bag_file_path + ' --output-dir ' + output_eval_path + ' --eval-name ' + eval_name + ' --sequence ' + sequence + ' --method ' + method + ' --range-error ' + str(range_error) + ' --scan-min-distance ' + str(scan_min_distance) + ' --scan-type kstrongStructured --rosbag-offset 200 --frame-delay 0.0 --resolution 3 --radius-association 3 --input-odom-topic /gt --compensate __name:=Test_' + str(local_index)
+            launch_str = 'rosrun alignment_checker evaluate_scans --input-file-path ' + bag_file_path + ' --output-dir ' + output_eval_path + ' --eval-name ' + eval_name + ' --sequence ' + sequence + ' --method ' + method + ' --range-error ' + str(range_error) + ' --scan-min-distance ' + str(scan_min_distance) + ' --scan-type kstrongStructured --rosbag-offset 200 --frame-delay 0.0 --resolution 1 --radius-association 3 --input-odom-topic /gt --compensate __name:=Test_' + str(local_index)
         else:
-            launch_str = 'rosrun alignment_checker evaluate_scans --input-file-path ' + bag_file_path + ' --output-dir ' + output_eval_path + ' --eval-name ' + eval_name + ' --sequence ' + sequence + ' --method ' + method + ' --range-error ' + str(range_error) + ' --scan-min-distance ' + str(scan_min_distance) + ' --scan-type cfear --rosbag-offset 200 --frame-delay 0.0 --resolution 3 --radius-association 3 --input-odom-topic /gt --compensate __name:=Test_' + str(local_index)
+            launch_str = 'rosrun alignment_checker evaluate_scans --input-file-path ' + bag_file_path + ' --output-dir ' + output_eval_path + ' --eval-name ' + eval_name + ' --sequence ' + sequence + ' --method ' + method + ' --range-error ' + str(range_error) + ' --scan-min-distance ' + str(scan_min_distance) + ' --scan-type cen2018 --rosbag-offset 200 --frame-delay 0.0 --resolution 3 --radius-association 3 --input-odom-topic /gt --compensate __name:=Test_' + str(local_index)
         os.system(launch_str)
         
         # Append line to file with the generated directory
