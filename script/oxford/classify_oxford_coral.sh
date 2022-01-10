@@ -10,4 +10,4 @@ OUTPUT_EVAL_PATH="${BAG_LOCATION}/CoralRadarEval/${EVAL_NAME}"
 
 roslaunch alignment_checker vis.launch&
 rosrun alignment_checker alignment_service.py&
-rosrun alignment_checker evaluate_scans --input-file-path ${BAG_FILE_PATH} --output-dir ${OUTPUT_EVAL_PATH} --eval-name ${EVAL_NAME} --sequence ${SEQUENCE} --method CoralRadarEval --scan-type kstrong --range-error 0.5 --rosbag-offset 300 --frame-delay 0.0 #&> /dev/null
+rosrun alignment_checker evaluate_scans --input-file-path ${BAG_FILE_PATH} --output-dir ${OUTPUT_EVAL_PATH} --eval-name ${EVAL_NAME} --sequence ${SEQUENCE} --method CoralRadarEval --scan-type kstrong --range-error 0.5 --rosbag-offset 0 --frame-delay 0.0 #&> /dev/null

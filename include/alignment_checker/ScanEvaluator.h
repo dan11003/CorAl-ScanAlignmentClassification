@@ -106,7 +106,7 @@ public:
             if(header.size() != values.size())
                 throw std::runtime_error("size error ToString");
             for(int i = 0 ; i<header.size() ; i++)
-                stringStream << header[i] << "\t" << values[i];
+                stringStream << header[i] << "\t" << values[i]<<endl;;
             return stringStream.str();
         }
 
