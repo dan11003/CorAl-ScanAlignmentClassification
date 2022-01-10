@@ -43,13 +43,17 @@
 
 #include "rosbag/bag.h"
 #include "rosbag/view.h"
-#include "alignment_checker/Utils.h"
+
 #include "nav_msgs/Odometry.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "eigen_conversions/eigen_msg.h"
 #include "tf_conversions/tf_eigen.h"
 #include <cv_bridge/cv_bridge.h>
 #include "radar_mapping/statistics.h"
+//Coral includes
+#include "alignment_checker/Utils.h"
+#include "alignment_checker/ScanType.h"
+
 namespace CorAlignment {
 
 typedef std::pair<Eigen::Affine3d,ros::Time> poseStamped;

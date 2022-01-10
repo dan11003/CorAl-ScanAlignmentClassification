@@ -98,4 +98,7 @@ std::ostream & operator << (std::ostream & os, const std::vector<T> & vec)
     return os;
 }
 
+const std::string Vec2String(const std::vector<std::string>& vec);
+
+
 }

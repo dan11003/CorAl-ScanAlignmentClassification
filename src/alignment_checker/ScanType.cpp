@@ -65,9 +65,8 @@ Cen2018Radar::Cen2018Radar(const PoseScan::Parameters& pars, cv_bridge::CvImageP
         p.y = r*sin(theta);
         p.intensity =(float)polar_->image.at<uchar>(azimuth_bin,range_bin);
         cloud_->push_back(p);
-        //cout<<"p:"<<p.x<<","<<p.y<<","<<p.intensity<<endl;
     }
-
+    radar_mapping::Compensate(cloud_, Tmotion_, pars.ccw); ;
 }
 
 Cen2019Radar::Cen2019Radar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
@@ -92,14 +91,7 @@ kstrongRadar::kstrongRadar(const PoseScan::Parameters& pars, cv_bridge::CvImageP
     radar_mapping::k_strongest_filter(polar, cloud_, pars.kstrong, pars.z_min, pars.range_res, pars.sensor_min_distance);
     assert(cloud_ != nullptr);
     if(pars.compensate){
-        //cout<<"compensate"<<Tmotion.translation().transpose()<<endl;
-        //const Eigen::Affine3d Tmotion_next = T.inverse()*Tnext;
-        //const Eigen::Affine3d Tmotion = Tprev.inverse()*Tnext;
-        //Eigen::Vector3d par;
-        //radar_mapping::Affine3dToEigVectorXYeZ(Tmotion,par);
-        //Eigen::Affine3d Tmotion_adjusted = radar_mapping::vectorToAffine3d(par(0)/2.0, par(1)/2.0, 0, 0, 0, par(2)/2.0);
-
-        radar_mapping::Compensate(cloud_, Tmotion_, false); //cout<<"k strongest: "<<cloud_->size()<<endl;
+        radar_mapping::Compensate(cloud_, Tmotion_, pars.ccw); //cout<<"k strongest: "<<cloud_->size()<<endl;
     }
 }
 kstrongStructuredRadar::kstrongStructuredRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
@@ -108,13 +100,9 @@ kstrongStructuredRadar::kstrongStructuredRadar(const PoseScan::Parameters& pars,
     assert(polar !=NULL);
     radar_mapping::StructuredKStrongest kstrong(polar_, pars.z_min, pars.kstrong, pars.sensor_min_distance, pars.range_res);
     kstrong.getPeaksFilteredPointCloud(cloud_,true); // get peaks
-    kstrong_peaks_ = cloud_;
-
-    kstrong.getPeaksFilteredPointCloud(kstrong_filtered_,false); // all k-strongest points
-
+    //kstrong_peaks_ = cloud_;
     if(pars.compensate){
-        radar_mapping::Compensate(kstrong_peaks_, Tmotion_, false); //cout<<"k strongest: "<<cloud_->size()<<endl;
-        radar_mapping::Compensate(kstrong_filtered_, Tmotion_, false); //cout<<"k strongest: "<<cloud_->size()<<endl;
+        radar_mapping::Compensate(cloud_, Tmotion_, pars.ccw); //cout<<"k strongest: "<<cloud_->size()<<endl;
     }
 }
 

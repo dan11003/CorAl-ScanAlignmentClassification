@@ -593,5 +593,17 @@ cout<<"4"<<endl;
     return 0.0;
 }
 
+const std::string Vec2String(const std::vector<std::string>& vec){
+
+    if (vec.empty())
+        return "";
+    std::ostringstream oss;
+    for(size_t i=0 ; i < vec.size()-1 ; i++)
+        oss << vec[i] << ",";
+    oss << vec.back();
+    return oss.str();
+}
+
+
 }
 

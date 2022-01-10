@@ -73,7 +73,6 @@ int main(int argc, char **argv)
   std::string scantype;
 
   //Method
-  std::string method, dataset;
 
   scanEvaluator::parameters evalPars;
   AlignmentQuality::parameters qualityPars;
@@ -92,15 +91,16 @@ int main(int argc, char **argv)
       ("output-eval-metafile",po::value<std::string>(&evalPars.output_meta_file)->default_value(std::string("params.txt")),"output meta file name")
       ("output-eval-file",po::value<std::string>(&evalPars.output_eval_file)->default_value(std::string("eval.txt")),"output file name")
       ("input-odom-topic",po::value<std::string>(&evalPars.input_odom_topic)->default_value(std::string("/gt")),"output file name")
+      //("range-res",po::value<double>(&scanPars.range_res)->default_value(0.04328),"Misalignment error - position")
       ("method",po::value<std::string>(&qualityPars.method)->default_value(std::string("")),"evaluation method")
       ("scan-type",po::value<std::string>(&scantype)->default_value(std::string("kstrong")),"evaluation method")
       ("kstrong",po::value<int>(&scanPars.kstrong)->default_value(12),"")
       ("zmin",po::value<double>(&scanPars.z_min)->default_value(60),"")
       ("eval-name",po::value<std::string>(&evalPars.eval_name)->default_value(std::string("eval")),"evaluation method")
-      ("data-set",po::value<std::string>(&evalPars.dataset)->default_value(std::string("dataset")),"filename")
+      ("data-set",po::value<std::string>(&evalPars.dataset)->default_value(std::string("Oxford")),"filename")
       ("sequence",po::value<std::string>(&evalPars.sequence)->default_value(std::string("")),"filename")
       ("run-test", "don  t open real data, use mockup instead")
-      ("radius-association",po::value<double>(&qualityPars.radius)->default_value(3),"radius used when searching nearest point (in kdtree radius search)")
+      //("radius-association",po::value<double>(&qualityPars.radius)->default_value(3),"radius used when searching nearest point (in kdtree radius search)")
       ("resolution",po::value<double>(&scanPars.resolution)->default_value(3),"radius used when searching nearest point (in kdtree radius search)")
       ("range-error",po::value<double>(&evalPars.range_error)->default_value(0.1),"Misalignment error - position")
       ("theta-range",po::value<double>(&evalPars.theta_range)->default_value(2*M_PI),"Misalignment error - position")
@@ -108,10 +108,10 @@ int main(int argc, char **argv)
       ("theta-error",po::value<double>(&evalPars.theta_error)->default_value(0.0),"Misalignment error - angular")
       ("index-first-scan",po::value<int>(&index_first_scan)->default_value(0),"index of first scan")
       ("visualization","flag indicating whether the visualization should be enabled")
-      ("rosbag-offset",po::value<int>(&rosbag_offset)->default_value(0),"Misalignment error - angular")
+      ("rosbag-offset",po::value<int>(&evalPars.rosbag_offset)->default_value(0),"Misalignment error - angular")
       ("scan-min-distance",po::value<double>(&evalPars.scan_spacing_distance)->default_value(0),"scan_min_distance")
-      ("compensate","compensate")
-       ("entropy-configuration",po::value<int>(&entropy_config)->default_value(0),"Misalignment error - angular")
+      ("disable-compensation","disable-compensate")
+      ("entropy-configuration",po::value<int>(&entropy_config)->default_value(0),"Misalignment error - angular")
       ("frame-delay",po::value<double>(&evalPars.frame_delay)->default_value(0),"Misalignment error - angular");
 
 
@@ -120,15 +120,27 @@ int main(int argc, char **argv)
   po::store(po::parse_command_line(argc, argv, desc), vm);
   po::notify(vm);
 
+  evalPars.visualize = vm.count("visualization");
+  scanPars.scan_type = Str2Scan(scantype);
+  scanPars.compensate = !vm.count("disable-compensation");
+  if(evalPars.dataset == "Oxford"|| evalPars.dataset == "oxford-eval-sequences"){
+      evalPars.dataset == "Oxford";
+      scanPars.range_res = 0.04328;
+      scanPars.ccw = false;
+  }
+  else if(evalPars.dataset == "Mulran"){
+      scanPars.range_res = 0.0595238;
+      scanPars.ccw = true;
+  }
+  qualityPars.radius = scanPars.resolution; // this is probably a good idea, but should be evaluated ast some point
+
   if (vm.count("help"))
   {
     std::cout << desc << "\n";
     return 0;
   }
 
-  evalPars.visualize = vm.count("visualization");
-  scanPars.scan_type = Str2Scan(scantype);
-  scanPars.compensate = vm.count("compensate");
+
   qualityPars.ent_cfg = static_cast<AlignmentQuality::parameters::entropy_cfg>(entropy_config);
 
   cout<<"----------------\nEvaluation\n----------------"<<endl;
@@ -143,9 +155,9 @@ int main(int argc, char **argv)
     fileHandler = std::make_unique<MockupHandler>();
   }
   else
-    fileHandler = std::make_unique<RadarRosbagHandler>(evalPars.bag_file_path, scanPars, rosbag_offset, evalPars.scan_spacing_distance, evalPars.input_odom_topic);
+    fileHandler = std::make_unique<RadarRosbagHandler>(evalPars.bag_file_path, scanPars, evalPars.rosbag_offset, evalPars.scan_spacing_distance, evalPars.input_odom_topic);
 
-  scanEvaluator eval(fileHandler, evalPars, qualityPars);
+  scanEvaluator eval(fileHandler, evalPars, qualityPars, scanPars   );
   cout<<"----------------\nFinished\n----------------"<<endl;
 
 

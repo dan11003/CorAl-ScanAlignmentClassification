@@ -22,14 +22,26 @@ RadarRosbagHandler::RadarRosbagHandler(const std::string& rosbag_path, const Pos
     m_image_ = std::next(view_image_->begin(),rosbag_offset);
     m_pose_ = std::next(view_pose_->begin(),  rosbag_offset);
 
-    cout<<"images: "<<m_image_->size()<<", poses:"<<m_pose_->size()<<endl;
+    cout<<"images: "<<std::distance(view_image_->begin(),view_image_->end())<<",poses"<<std::distance(view_pose_->begin(),view_pose_->end())<<endl;
 
     pub_image = nh_.advertise<sensor_msgs::Image>("/Navtech/Polar", 1000);
     pub_odom = nh_.advertise<nav_msgs::Odometry>("/gt", 1000);
 }
 void RadarRosbagHandler::UnpackImage(sensor_msgs::ImageConstPtr& image_msg){
 
-    cv_bridge::CvImagePtr cv_polar_image = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::TYPE_8UC1);
+    cv_bridge::CvImagePtr cv_polar_image;
+    //cout<<"encoding: "<<image_msg->encoding<<endl;
+    if(image_msg->encoding == sensor_msgs::image_encodings::MONO8){
+        cv_polar_image = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::MONO8);
+        cv_polar_image->image.convertTo(cv_polar_image->image, CV_8UC1);
+        rotate(cv_polar_image->image, cv_polar_image->image, cv::ROTATE_90_COUNTERCLOCKWISE);
+        image_msg->encoding == sensor_msgs::image_encodings::TYPE_8UC1;
+        //cout<<cv_polar_image->image.rows<<","<<cv_polar_image->image.cols<<endl;
+    }
+    else
+        cv_polar_image = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::TYPE_8UC1);
+
+
     assert(cv_polar_image != NULL);
     cv_polar_image->header.stamp =  image_msg->header.stamp;
     radar_stream_.push_back(cv_polar_image);
@@ -72,13 +84,13 @@ std::shared_ptr<PoseScan> RadarRosbagHandler::Next(){
             else if(pose_stream_.back().second.toSec() > image_msg->header.stamp.toSec()){
                 radar_stream_.erase(radar_stream_.begin());
 
-                sensor_msgs::ImageConstPtr image_msg  = (++m_pose_)->instantiate<sensor_msgs::Image>();
-                UnpackImage(image_msg);
+                sensor_msgs::ImageConstPtr image_msg_synced  = (++m_image_)->instantiate<sensor_msgs::Image>();
+                UnpackImage(image_msg_synced);
             }
             else if(pose_stream_.back().second.toSec() < image_msg->header.stamp.toSec()){
                 pose_stream_.erase(pose_stream_.begin());
-                nav_msgs::Odometry::ConstPtr odom_msg = (++m_image_)->instantiate<nav_msgs::Odometry>();
-                UnpackPose(odom_msg);
+                nav_msgs::Odometry::ConstPtr odom_msg_synced = (++m_pose_)->instantiate<nav_msgs::Odometry>();
+                UnpackPose(odom_msg_synced);
             }
         }
         m_pose_++;

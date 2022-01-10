@@ -7,7 +7,6 @@ Panels:
         - /Global Options1
         - /Status1
         - /TF1
-        - /PointCloud24
         - /PointCloud25
       Splitter Ratio: 0.5
     Tree Height: 843
@@ -90,6 +89,8 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        coral_world:
+          Value: true
         ref_link:
           Value: true
         src_link:
@@ -103,6 +104,8 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
+          coral_world:
+            {}
           ref_link:
             {}
           src_link:
@@ -181,7 +184,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 1
@@ -198,7 +201,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -210,13 +213,13 @@ Visualization Manager:
       Class: rviz/PointCloud2
       Color: 255; 255; 255
       Color Transformer: Intensity
-      Decay Time: 0
+      Decay Time: 1
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 252
+      Max Intensity: 136
       Min Color: 0; 0; 0
-      Min Intensity: 0
+      Min Intensity: 61
       Name: PointCloud2
       Position Transformer: XYZ
       Queue Size: 10
@@ -224,7 +227,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.009999999776482582
       Style: Points
-      Topic: /src
+      Topic: /ref
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -266,7 +269,7 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 5.3626885414123535
+      Scale: 10.036401748657227
       Target Frame: ref_link
       Value: TopDownOrtho (rviz)
       X: 14.067404747009277

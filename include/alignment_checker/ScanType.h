@@ -23,8 +23,14 @@
 #include "radar_mapping/radar_filters.h"
 #include "radar_mapping/pointnormal.h"
 #include "pcl/point_types.h"
-#include "alignment_checker/Utils.h"
 #include "radar_mapping/intensity_utils.h"
+#include "string"
+
+#include "alignment_checker/Utils.h"
+
+
+//represent all possible scan types here. e.g. polar radar e.g. polarRadarKstrong CartesianRadar etc.
+
 
 namespace CorAlignment{
 
@@ -38,7 +44,7 @@ typedef enum ScanType{none, rawlidar, rawradar, kstrong, kstrongStructured, kstr
 std::string Scan2str(const scan_type& val);
 
 scan_type Str2Scan(const std::string& val);
-//represent all possible scan types here. e.g. polar radar e.g. polarRadarKstrong CartesianRadar etc.
+
 
 class PoseScan
 {
@@ -47,25 +53,10 @@ public:
     class Parameters
     {
     public:
-        Parameters() {}
-        std::string ToString(){
-            std::ostringstream stringStream;
-            stringStream << "scan_type, "<<Scan2str(scan_type)<<endl;
-            stringStream << "sensor_min_distance, "<<sensor_min_distance<<endl;
-            stringStream << "range_res, "<<range_res<<endl;
-            stringStream << "kstrong, "<<kstrong<<endl;
-            stringStream << "z_min, "<<z_min<<endl;
-            stringStream << "compensate, "<<compensate<<endl;
-            stringStream << "cart_resolution, "<<cart_resolution<<endl;
-            stringStream << "cart_pixel_width, "<<cart_pixel_width<<endl;
 
-            return stringStream.str();
-        }
 
         ScanType scan_type = rawlidar;
         double sensor_min_distance = 2.5;
-
-
 
         //Radar
         double range_res = 0.04328;
@@ -76,26 +67,47 @@ public:
         //CFEAR
         double resolution = 3;
         bool compensate = true;
+        bool ccw = false;
 
         float cart_resolution = 0.2384;
         int cart_pixel_width = 300;
 
-
+        static const std::vector<std::string> HeaderToString(){
+            return {"scan_type","sensor_min_distance","range_res","kstrong","z_min","compensate","ccw","cart_resolution","cart_pixel_width"};
+        }
+        const std::vector<std::string> ValsToString() const{
+            return {Scan2str(scan_type) , std::to_string(sensor_min_distance) , std::to_string(range_res) , std::to_string(kstrong) , std::to_string(z_min),
+                        std::to_string(compensate) , std::to_string(ccw) , std::to_string(cart_resolution) , std::to_string(cart_pixel_width)};
+        }
+        Parameters() {}
+        std::string ToString(){
+            std::ostringstream stringStream;
+            const std::vector<std::string> header = HeaderToString();
+            const std::vector<std::string> values = ValsToString();
+            if(header.size() != values.size())
+                throw std::runtime_error("size error ToString");
+            for(int i = 0 ; i<header.size() ; i++)
+                stringStream << header[i] << "\t" << values[i] <<endl;
+            return stringStream.str();
+        }
 
     };
-    PoseScan(const PoseScan::Parameters pars, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion);
+    // PoseScan declarations
+    static int pose_count;
 
-
+    const int pose_id;
     Eigen::Affine3d Test_;
     Eigen::Affine3d Tmotion_; // the motion
     const PoseScan::Parameters pars_;
 
-    const Eigen::Affine3d& GetAffine() {return Test_;}
+
+    PoseScan(const PoseScan::Parameters pars, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion);
 
     virtual ~PoseScan() {}
 
-    const std::string ToString(){return "PoseScan";}
+    const Eigen::Affine3d& GetAffine() {return Test_;}
 
+    const std::string ToString(){return "PoseScan";}
 
     pcl::PointCloud<pcl::PointXYZI>::Ptr GetCloudCopy(const Eigen::Affine3d& T);
 
@@ -103,15 +115,15 @@ public:
 
 
 
-    static int pose_count;
-
-    const int pose_id;
-
 
 protected:
 
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_;
 };
+
+typedef std::shared_ptr<PoseScan> PoseScan_S;
+
+PoseScan_S RadarPoseScanFactory(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr radar_msg, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion);
 
 
 class RawRadar: public PoseScan{
@@ -202,8 +214,6 @@ public:
 
 };
 
-typedef std::shared_ptr<PoseScan> PoseScan_S;
 
-PoseScan_S RadarPoseScanFactory(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr radar_msg, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion);
 }
 
