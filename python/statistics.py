@@ -23,7 +23,8 @@ with open(file_dir,'r') as f :
 f = open(file_dir, 'r')
 stat_file_name = file_dir.replace("directories","statistics")
 f_stat = open(stat_file_name, 'a')
-f_stat.writelines(["evaluation name,method,radius,scan spacing,theta range,offset rotation steps,theta error,range error,scan spacing distance,accuracy,auc,c11,c12,c21,c22\n"]) 
+#f_stat.writelines(["evaluation name,method,radius,scan spacing,theta range,offset rotation steps,theta error,range error,scan spacing distance,accuracy,auc,c11,c12,c21,c22\n"]) 
+f_stat.writelines(['output_directory,output_meta_file,output_eval_file,bag_file_path,eval_name,dataset,input_odom_topic,scan_spacing,scan_spacing_distance,rosbag_offset,range_error,theta_range,offset_rotation_steps,theta_error,method,radius,entropy_setting,scan_type,sensor_min_distance,range_res,kstrong,z_min,compensate,ccw,cart_resolution,cart_pixel_width,accuracy,auc,c11,c12,c21,c22\n'])
 
 for i in range(0,count+1) : 
 
