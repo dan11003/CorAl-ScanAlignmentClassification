@@ -52,7 +52,7 @@ Cen2018Radar::Cen2018Radar(const PoseScan::Parameters& pars, cv_bridge::CvImageP
     : RawRadar(pars, polar, T, Tmotion){
     //cout<<"cen 2018"<<endl;
     polar_->image.convertTo(f_polar_, CV_32F, 1/255.0);
-    auto time = cen2018features(f_polar_, targets_);
+    auto time = cen2018features(f_polar_, targets_,3.0,17,pars.sensor_min_distance);
     //cout<<"p: "<<targets_<<endl;
     pcl::PointXYZI p;
     const double nb_azimuths = f_polar_.rows;
@@ -66,7 +66,8 @@ Cen2018Radar::Cen2018Radar(const PoseScan::Parameters& pars, cv_bridge::CvImageP
         p.intensity =(float)polar_->image.at<uchar>(azimuth_bin,range_bin);
         cloud_->push_back(p);
     }
-    radar_mapping::Compensate(cloud_, Tmotion_, pars.ccw); ;
+    if(pars.compensate)
+        radar_mapping::Compensate(cloud_, Tmotion_, pars.ccw); ;
 }
 
 Cen2019Radar::Cen2019Radar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
@@ -94,15 +95,17 @@ kstrongRadar::kstrongRadar(const PoseScan::Parameters& pars, cv_bridge::CvImageP
         radar_mapping::Compensate(cloud_, Tmotion_, pars.ccw); //cout<<"k strongest: "<<cloud_->size()<<endl;
     }
 }
-kstrongStructuredRadar::kstrongStructuredRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
+kstrongStructuredRadar::kstrongStructuredRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion, bool peaks)
     : RawRadar(pars, polar, T, Tmotion)
 {
     assert(polar !=NULL);
     radar_mapping::StructuredKStrongest kstrong(polar_, pars.z_min, pars.kstrong, pars.sensor_min_distance, pars.range_res);
-    kstrong.getPeaksFilteredPointCloud(cloud_,true); // get peaks
-    //kstrong_peaks_ = cloud_;
+    kstrong.getPeaksFilteredPointCloud(kstrong_peaks_, peaks); // get peaks
+    //kstrong.getPeaksFilteredPointCloud(kstrong_filtered_, false); // get peaks
+    cloud_ = kstrong_peaks_;
     if(pars.compensate){
-        radar_mapping::Compensate(cloud_, Tmotion_, pars.ccw); //cout<<"k strongest: "<<cloud_->size()<<endl;
+        radar_mapping::Compensate(kstrong_peaks_, Tmotion_, pars.ccw); //cout<<"k strongest: "<<cloud_->size()<<endl;
+        //radar_mapping::Compensate(kstrong_filtered_, Tmotion_, pars.ccw); //cout<<"k strongest: "<<cloud_->size()<<endl;
     }
 }
 
@@ -122,7 +125,7 @@ CartesianRadar::CartesianRadar(const PoseScan::Parameters& pars, cv_bridge::CvIm
     cart_->encoding = polar_->encoding;
     cart_->header.stamp = polar_->header.stamp;
     //cout<<"CartesianRadar::CartesianRadar"<<endl;
-    radar_mapping::KstrongestPolar filter(pars.z_min, pars.kstrong, pars.sensor_min_distance);
+    //radar_mapping::KstrongestPolar filter(pars.z_min, pars.kstrong, pars.sensor_min_distance);
     //filter.getFilteredImage(polar_,polar_filtered_);
     polar_->image.convertTo(polar_->image, CV_32F, 1/255.0);
 

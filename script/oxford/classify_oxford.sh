@@ -7,12 +7,11 @@ EVAL_NAME="PROTOTYPE_eval_${current_date}"
 OUTPUT_EVAL_PATH="${BAG_LOCATION}/CoralRadarEval/${EVAL_NAME}"
 mkdir -p ${OUTPUT_EVAL_PATH}
 #rosnode kill -a
-odom_topic="/gt" #""
+odom_topic="/CFEAR2" #""
 roslaunch alignment_checker vis.launch&
 rosrun alignment_checker alignment_service.py&
 #rosrun alignment_checker evaluate_scans --input-file-path ${BAG_FILE_PATH} --output-dir ${OUTPUT_EVAL_PATH} --eval-name ${EVAL_NAME} --sequence ${SEQUENCE} --method Coral --scan-type kstrongCart --range-error 0.7  --rosbag-offset 0 --frame-delay 0.0 --min-distance -1 &> /dev/null
     #rosrun alignment_checker evaluate_scans --input-file-path ${BAG_FILE_PATH} --output-dir ${OUTPUT_EVAL_PATH} --eval-name ${EVAL_NAME} --sequence ${SEQUENCE} --method P2L --scan-type cfear --range-error 0.5  --rosbag-offset 0 --frame-delay 0.0 --scan-min-distance 0 --visualization --resolution 1.0 --radius-association 1.0 --input-odom-topic ${odom_topic} --compensate
-rosrun alignment_checker evaluate_scans --input-file-path ${BAG_FILE_PATH} --output-dir ${OUTPUT_EVAL_PATH} --eval-name ${EVAL_NAME} --sequence ${SEQUENCE} --method P2P --scan-type cen2018 --range-error 0.0001  --rosbag-offset 0 --frame-delay 0.2 --scan-min-distance 0 --visualization --resolution 1 --input-odom-topic ${odom_topic} --theta-error 0.01
-
+rosrun alignment_checker evaluate_scans --input-file-path ${BAG_FILE_PATH} --output-dir ${OUTPUT_EVAL_PATH} --eval-name ${EVAL_NAME} --sequence ${SEQUENCE} --method Coral --scan-type kstrongStructured --range-error 0.001  --rosbag-offset 150 --frame-delay 0.0  --scan-min-distance 0 --resolution 3 --input-odom-topic ${odom_topic} --visualization  #--theta-error 0.00 ##2460
 #&> /dev/null
 

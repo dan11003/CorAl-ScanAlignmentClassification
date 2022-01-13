@@ -326,9 +326,15 @@ void AlignmentQualityPlot::PublishPoseScan(const std::string& topic, std::shared
         cart_rad->polar_filtered_;
         PublishRadar(topic+"_polar",cart_rad->polar_,T,frame_id);
         PublishRadar(topic+"_cart", cart_rad->cart_,T,frame_id);
-    }else{
+    }
+    else{
         pcl::PointCloud<pcl::PointXYZI>::Ptr cld_plot = scan_plot->GetCloudNoCopy(); //Extract point cloud from PoseScan
         PublishCloud(topic,cld_plot,T,frame_id,value);
+    }
+    auto cfear = std::dynamic_pointer_cast<CFEARFeatures>(scan_plot);
+    if(cfear  != NULL){
+        Eigen::Affine3d Tnc = T;
+      radar_mapping::MapPointNormal::PublishMap("CFEARFatures",cfear->CFEARFeatures_,Tnc,"world",-1);
     }
 }
 

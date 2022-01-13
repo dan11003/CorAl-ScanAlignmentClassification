@@ -118,10 +118,22 @@ std::shared_ptr<PoseScan> RadarRosbagHandler::Next(){
             ros::Time t1 = ros::Time::now();
 
             auto scan = RadarPoseScanFactory(scanPars_, radar_stream_[2], Tnow, Tmotion );
+            /*
+            auto cenptr = PoseScan_S(new Cen2018Radar(scanPars_, radar_stream_[2], Tnow, Tmotion));
+            auto cfear = PoseScan_S(new CFEARFeatures(scanPars_, radar_stream_[2], Tnow, Tmotion));
+            auto kstrongpeaks = PoseScan_S(new kstrongStructuredRadar(scanPars_, radar_stream_[2], Tnow, Tmotion));
+            auto kstrong = PoseScan_S(new kstrongStructuredRadar(scanPars_, radar_stream_[2], Tnow, Tmotion,false));
+            auto cart = PoseScan_S(new CartesianRadar(scanPars_, radar_stream_[2], Tnow, Tmotion));
+
+            AlignmentQualityPlot::PublishPoseScan("test_cen",cenptr,Tnow,"cen_frame");
+            AlignmentQualityPlot::PublishPoseScan("test_kstrong_12",kstrong,Tnow,"test_kstrong_12");
+            AlignmentQualityPlot::PublishPoseScan("test_kstrongpeaks",kstrongpeaks,Tnow,"test_kstrongpeaks");
+            AlignmentQualityPlot::PublishPoseScan("test_cfear",cfear,Tnow,"cfear_frame");
+            AlignmentQualityPlot::PublishPoseScan("test_cart",cart,Tnow,"cart_frame"); */
 
             ros::Time t2 = ros::Time::now();
             timing.Document("Create scan",radar_mapping::ToMs(t2-t1));
-            timing.Document("Read rosbag",radar_mapping::ToMs(t1-t0));
+            timing.Document("Read r osbag",radar_mapping::ToMs(t1-t0));
             return scan;
         }
         else

@@ -184,13 +184,13 @@ class kstrongStructuredRadar: public RawRadar
 {
 public:
 
-    kstrongStructuredRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion );
+    kstrongStructuredRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion , bool peaks = true);
 
     const std::string ToString(){return "structuredKstrongRadar";}
 
-protected:
     pcl::PointCloud<pcl::PointXYZI>::Ptr kstrong_filtered_;
     pcl::PointCloud<pcl::PointXYZI>::Ptr kstrong_peaks_;
+
 
 };
 

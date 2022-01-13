@@ -53,6 +53,7 @@
 //Coral includes
 #include "alignment_checker/Utils.h"
 #include "alignment_checker/ScanType.h"
+#include "alignment_checker/AlignmentQuality.h"
 
 namespace CorAlignment {
 
