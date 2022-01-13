@@ -133,7 +133,7 @@ std::shared_ptr<PoseScan> RadarRosbagHandler::Next(){
 
             ros::Time t2 = ros::Time::now();
             timing.Document("Create scan",radar_mapping::ToMs(t2-t1));
-            timing.Document("Read r osbag",radar_mapping::ToMs(t1-t0));
+            //timing.Document("Read rosbag",radar_mapping::ToMs(t1-t0));
             return scan;
         }
         else

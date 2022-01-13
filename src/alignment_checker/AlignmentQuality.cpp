@@ -66,7 +66,7 @@ bool CorAlRadarQuality::ComputeEntropy(const Eigen::Matrix2d& cov_sep, const Eig
 }
 CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset)  : AlignmentQuality(src, ref, par, Toffset)
 {
-    //radar_mapping::timing.Document()
+    //radar_mapping::Document()
 
     ros::Time t0 = ros::Time::now();
     auto src_kstrong_structured = std::dynamic_pointer_cast<kstrongStructuredRadar>(src);
@@ -170,9 +170,9 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
     AlignmentQualityPlot::PublishCloud("/coral_ref",    ref_pcd_entropy, Eigen::Affine3d::Identity(), "coral_world");
     AlignmentQualityPlot::PublishCloud("/coral_merged", merged_entropy,  Eigen::Affine3d::Identity(), "coral_world");
     ros::Time t3 = ros::Time::now();
-    radar_mapping::timing.Document("coral_init",radar_mapping::ToMs(t1-t0));
-    radar_mapping::timing.Document("coral_entropy",radar_mapping::ToMs(t2-t1));
-    radar_mapping::timing.Document("coral_postprocess",radar_mapping::ToMs(t3-t2));
+    //radar_mapping::timing.Document("coral_init",radar_mapping::ToMs(t1-t0));
+    //radar_mapping::timing.Document("coral_entropy",radar_mapping::ToMs(t2-t1));
+    //radar_mapping::timing.Document("coral_postprocess",radar_mapping::ToMs(t3-t2));
 
 }
 
