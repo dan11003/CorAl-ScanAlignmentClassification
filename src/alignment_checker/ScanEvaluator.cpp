@@ -93,6 +93,7 @@ scanEvaluator::scanEvaluator(dataHandler_U& reader, const parameters& eval_par, 
                 std::vector<double> quality_measure = quality->GetQualityMeasure();
                 std_msgs::Float64MultiArray training_data;
                 training_data.data = {((double)datapoint::aligned(verr)), quality_measure[0], quality_measure[1], quality_measure[2]};
+                cout<<training_data.data<<endl;
                 //cout<<"publish: "<<training_data.data<<endl;
                 pub_train_data.publish(training_data);
                 datapoints_.push_back(datapoint(index, res, verr, quality_measure, prev_scans.back(), current));

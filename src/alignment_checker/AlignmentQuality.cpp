@@ -285,6 +285,44 @@ p2pQuality::p2pQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> 
 }
 
 
+keypointRepetability::keypointRepetability(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset) : AlignmentQuality(src, ref, par, Toffset){
+
+    //Transform into "world" frame and than into frame of "ref"
+    const Eigen::Affine3d Tsrc = src->GetAffine();
+    const Eigen::Affine3d Tref = ref->GetAffine();
+    const Eigen::Affine3d Tchange = Tref.inverse()*Tsrc*Toffset;
+    //cout<<"change\n"<<Tchange.matrix()<<endl;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr src_cld = src->GetCloudCopy(Tchange);//get cloud and also change reference frame to ref
+    pcl::PointCloud<pcl::PointXYZI>::Ptr ref_cld = ref->GetCloudNoCopy();
+
+    kdtree_ref_.setInputCloud(ref_cld); // ref cloud
+    //kdtree_src_.setInputCloud(src_cld); // ref cloud
+
+    //Calculate the sqaured distances for all 'p' in the point cloud
+    double absolute_repeatable_keypoints = 0.0; // within a tolerance radius
+    for(auto && p : src_cld->points){
+        std::vector<float> pointRadiusSquaredDistance;
+        std::vector<int> pointIdxRadiusSearch;
+        const double radius = par_.radius;
+        kdtree_ref_.setSortedResults(true);
+
+        if ( kdtree_ref_.radiusSearch (p, radius, pointIdxRadiusSearch, pointRadiusSquaredDistance) > 0){
+            //residuals_.push_back(pointRadiusSquaredDistance[0]);
+            absolute_repeatable_keypoints ++;
+        }
+    }
+    const double nr_keypoints = src_cld->points.size();
+    const double relative_repeatable_keypoints = absolute_repeatable_keypoints/nr_keypoints;
+    quality_ = {relative_repeatable_keypoints, absolute_repeatable_keypoints, nr_keypoints};
+    //cout<<quality_<<endl;
+
+    //quality_ = {count_nearby, (double)src_cld->points.size(), 0.0};
+    //cout<<"residuals: "<<residuals_.size()<<endl;
+
+
+}
+
+
 CFEARQuality::CFEARQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset)  : AlignmentQuality(src, ref, par, Toffset){
     auto CFEAR_src = std::dynamic_pointer_cast<CFEARFeatures>(src);
     auto CFEAR_ref = std::dynamic_pointer_cast<CFEARFeatures>(ref);

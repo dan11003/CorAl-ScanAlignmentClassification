@@ -13,6 +13,7 @@ std::string Scan2str(const scan_type& val){
     case cen2019: return "cen2019";
     case cfear: return "cfear";
     case kstrongCart: return "kstrongCart";
+    case bfar: return "bfar";
     default: return "none";
     }
 }
@@ -35,6 +36,8 @@ scan_type Str2Scan(const std::string& val){
         return scan_type::none;
     else if (val=="cfear")
         return scan_type::cfear;
+    else if (val=="bfar")
+        return scan_type::bfar;
 }
 PoseScan::PoseScan(const PoseScan::Parameters pars, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
     : Test_(T), Tmotion_(Tmotion), cloud_(new pcl::PointCloud<pcl::PointXYZI>()), pose_id(pose_count++),pars_(pars)
@@ -113,6 +116,22 @@ kstrongStructuredRadar::kstrongStructuredRadar(const PoseScan::Parameters& pars,
     }
 }
 
+BFARScan::BFARScan(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
+    : RawRadar(pars, polar, T, Tmotion)
+{
+    assert(polar !=NULL);
+    radar_mapping::StructuredKStrongest kstrong(polar_, pars.z_min, pars.kstrong, pars.sensor_min_distance, pars.range_res);
+    kstrong.getPeaksFilteredPointCloud(cloud_, true); // get peaks
+
+    if(pars.normalize_intensity)
+        NormalizeIntensity(cloud_, pars.z_min);
+
+    if(pars.compensate){
+        radar_mapping::Compensate(cloud_, Tmotion_, pars.ccw); //cout<<"k strongest: "<<cloud_->size()<<endl;
+        //radar_mapping::Compensate(kstrong_filtered_, Tmotion_, pars.ccw); //cout<<"k strongest: "<<cloud_->size()<<endl;
+    }
+}
+
 CFEARFeatures::CFEARFeatures(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion )
     : kstrongRadar(pars, polar, T, Tmotion)
 {
@@ -163,6 +182,8 @@ PoseScan_S RadarPoseScanFactory(const PoseScan::Parameters& pars, cv_bridge::CvI
         return PoseScan_S(new Cen2018Radar(pars, radar_msg, T, Tmotion));
     else if(pars.scan_type == cen2019)
         return PoseScan_S(new Cen2019Radar(pars, radar_msg, T, Tmotion));
+    else if(pars.scan_type == bfar)
+        return PoseScan_S(new BFARScan(pars, radar_msg, T, Tmotion));
 
     else return nullptr;
 }

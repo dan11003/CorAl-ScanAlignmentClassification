@@ -39,7 +39,7 @@ using std::cout;
 using std::cerr;
 
 
-typedef enum ScanType{none, rawlidar, rawradar, kstrong, kstrongStructured, kstrongCart, cfear, cen2018, cen2019}scan_type;
+typedef enum ScanType{none, rawlidar, rawradar, kstrong, kstrongStructured, kstrongCart, cfear, cen2018, cen2019, bfar}scan_type;
 
 std::string Scan2str(const scan_type& val);
 
@@ -192,6 +192,16 @@ public:
     pcl::PointCloud<pcl::PointXYZI>::Ptr kstrong_filtered_;
     pcl::PointCloud<pcl::PointXYZI>::Ptr kstrong_peaks_;
 
+
+};
+
+class BFARScan: public RawRadar
+{
+public:
+
+    BFARScan(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion );
+
+    const std::string ToString(){return "BFAR_Radar";}
 
 };
 

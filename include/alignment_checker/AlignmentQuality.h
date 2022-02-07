@@ -62,7 +62,7 @@ public:
         }
 
         const std::vector<std::string> ValsToString() const{
-           return { method , std::to_string(radius) , std::to_string(ent_cfg) };
+            return { method , std::to_string(radius) , std::to_string(ent_cfg) };
         }
 
         const std::string ToString(){
@@ -124,6 +124,19 @@ public:
 
 protected:
     pcl::KdTreeFLANN<pcl::PointXYZI> kdtree_;
+    // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
+};
+
+class keypointRepetability: public AlignmentQuality
+{
+public:
+
+    keypointRepetability(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset = Eigen::Affine3d::Identity());
+
+    ~keypointRepetability(){}
+
+protected:
+    pcl::KdTreeFLANN<pcl::PointXYZI> kdtree_src_, kdtree_ref_;
     // static CreateQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src);
 };
 
@@ -243,6 +256,14 @@ public:
         // CFEAR FEATURES + ANY SCORE (P2P/P2L/P2D)
         if(std::dynamic_pointer_cast<CFEARFeatures>(ref)!=nullptr && std::dynamic_pointer_cast<CFEARFeatures>(src)!=nullptr){
             quality = std::make_shared<CFEARQuality>(CFEARQuality(ref,src,pars,Toffset));
+        }// RAW LIDAR (P2P/P2D/CORAL)
+        if(std::dynamic_pointer_cast<BFARScan>(ref)!=nullptr && std::dynamic_pointer_cast<BFARScan>(src)!=nullptr){
+
+            if(pars.method=="P2P")
+                quality = AlignmentQuality_S(new p2pQuality(ref,src,pars,Toffset));
+            if(pars.method=="keypoint_repetability")
+                quality = AlignmentQuality_S(new keypointRepetability(ref,src,pars,Toffset));
+
         }// RAW LIDAR (P2P/P2D/CORAL)
         else if(std::dynamic_pointer_cast<RawLidar>(ref)!=nullptr && std::dynamic_pointer_cast<RawLidar>(src)!=nullptr){
             if(pars.method=="Coral")
