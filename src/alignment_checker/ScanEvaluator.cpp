@@ -100,17 +100,15 @@ scanEvaluator::scanEvaluator(dataHandler_U& reader, const parameters& eval_par, 
 
             }
             ros::Time t4 = ros::Time::now();
-
         }
         prev_scans.push_back(current);
-        if(prev_scans.size() > par_.scan_spacing){
+        if(prev_scans.size() > par_.scan_spacing)
             prev_scans.erase(prev_scans.begin());
-        }
     }
-
 
     SaveEvaluation();
     timing.PresentStatistics();
 
 }
+
 }

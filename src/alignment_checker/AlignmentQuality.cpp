@@ -25,17 +25,17 @@ void CorAlRadarQuality::GetNearby(const pcl::PointXY& query, Eigen::MatrixXd& ne
         merged.block<1,2>(tot++,0) = nearby_ref.block<1,2>(i,0);
     }
 }
-bool CorAlRadarQuality::Covariance(Eigen::MatrixXd& x, Eigen::Matrix2d& cov){ //mean already subtracted from x
+bool CorAlRadarQuality::Covariance(Eigen::MatrixXd& x, Eigen::Matrix2d& cov, Eigen::Vector2d& mean){ //mean already subtracted from x
     //Compute and subtract mean
     //cout<<"before subtract: "<< x<<endl;
     //cout<<"mean: "<<x.rowwise().mean().transpose()<<endl;
     if(x.rows() <= 2)
         return false;
 
-    Eigen::MatrixXd mean = x.colwise().mean();
+    mean = x.colwise().mean();
 
     for(int i=0;i<x.rows();i++) // subtract mean
-        x.block<1,2>(i,0) = x.block<1,2>(i,0) - mean;
+        x.block<1,2>(i,0) = x.block<1,2>(i,0) - mean.transpose();
 
     Eigen::Matrix2d covSum = x.transpose()*x;
     float n = x.rows();
@@ -46,6 +46,32 @@ bool CorAlRadarQuality::Covariance(Eigen::MatrixXd& x, Eigen::Matrix2d& cov){ //
 
     return true;//cond < 100000;
 }
+bool CorAlRadarQuality::ComputeKLDiv(const Eigen::Vector2d& u0, const Eigen::Vector2d& u1, const Eigen::Matrix2d& S0, const Eigen::Matrix2d& S1, const int index){
+
+    //return  (u1-u0).norm();
+
+    Eigen::Matrix2d S1i = S1.inverse();
+    Eigen::Matrix2d S1iS0 = S1i*S0;
+    double S1iS0_trace = S1iS0.trace();
+    double mahal = (u1-u0).transpose()*S1i*(u1-u0);
+    double k = 3;
+    double d1 = S1.determinant();
+    double d0 = S0.determinant();
+    double logdetratio= log(d1/d0);
+
+    double score = 1/2.0*(S1iS0_trace+mahal-k+logdetratio);
+
+    Eigen::Matrix2d C = S0+S1;
+    Eigen::Vector2d err = u1-u0;
+    //double score = err.transpose()*C.inverse()*err;
+
+    bool score_problem = isnan(score) || !isfinite(score);
+    joint_res_[index] = score_problem ? 0 : score;
+    sep_res_[index] = 0;
+    return score;
+
+}
+
 bool CorAlRadarQuality::ComputeEntropy(const Eigen::Matrix2d& cov_sep, const Eigen::Matrix2d& cov_joint, int index){
 
     double det_j = cov_joint.determinant();
@@ -71,16 +97,22 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
     ros::Time t0 = ros::Time::now();
     auto src_kstrong_structured = std::dynamic_pointer_cast<kstrongStructuredRadar>(src);
     auto ref_kstrong_structured = std::dynamic_pointer_cast<kstrongStructuredRadar>(ref);
-    auto ref_pcd_entropy = ref->GetCloudCopy(ref->GetAffine());
+
     auto src_pcd_entropy = src->GetCloudCopy(src->GetAffine()*Toffset);
+    auto ref_pcd_entropy = ref->GetCloudCopy(ref->GetAffine());
+
     assert(ref_pcd_entropy != NULL && src_pcd_entropy !=NULL);
 
     std::vector<double> src_i,ref_i;
+
     src_pcd = pcl3dto2d(src_pcd_entropy, src_i);
     ref_pcd = pcl3dto2d(ref_pcd_entropy, ref_i);
+    sep_intensity_.insert( sep_intensity_.end(),src_i.begin(),src_i.end() );
+    sep_intensity_.insert( sep_intensity_.end(),ref_i.begin(),ref_i.end() );
+
     kd_src.setInputCloud(src_pcd);
     kd_ref.setInputCloud(ref_pcd);
-    const int merged_size = src_pcd->size() + ref_pcd->size();
+    const size_t merged_size = src_pcd->size() + ref_pcd->size();
     assert(src_pcd->size() > 0 && ref_pcd->size()>0);
 
 
@@ -88,62 +120,77 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
     sep_valid.resize(merged_size, false);
     joint_res_.resize(merged_size, 100.0);
     diff_res_.resize(merged_size, 100.0);
+    covs_sep_.resize(merged_size);
+    cov_joint_.resize(merged_size);
+    means_sep_.resize(merged_size);
+    means_joint_.resize(merged_size);
 
     ros::Time t1 = ros::Time::now();
-    int index = 0;
+    int index = -1;
     for (auto && searchPoint : src_pcd->points){
-        Eigen::MatrixXd msrc, mref, mjoint;
-        //cout<<"get nearby"<<endl;
-        GetNearby(searchPoint, msrc, mref, mjoint);
-        //cout<<"got nearby"<<endl;
-        if(mref.cols() < overlap_req_){
-            index++;
-            continue;
-        }
-
-        Eigen::Matrix2d sep_cov, joint_cov;
-        if( Covariance(msrc,sep_cov) && Covariance(mjoint,joint_cov) ){
-            if( ComputeEntropy(sep_cov,joint_cov,index) ){
-
-                sep_valid[index] = true;
-                diff_res_[index] = joint_res_[index] - sep_res_[index];
-                joint_ += joint_res_[index]; sep_ += sep_res_[index];
-                count_valid++;
-            }
-        }
         index++;
+        Eigen::MatrixXd msrc, mref, mjoint;
+        GetNearby(searchPoint, msrc, mref, mjoint);
+        if(mref.cols() < overlap_req_)
+            continue;
+
+        if( Covariance(msrc, covs_sep_[index], means_sep_[index]) && Covariance(mjoint, cov_joint_[index], means_joint_[index]) ){
+            if(par.ent_cfg == AlignmentQuality::parameters::kl)
+            {
+                sep_valid[index] = ComputeKLDiv(means_sep_[index], means_sep_[index], covs_sep_[index], covs_sep_[index], index);
+            }
+            else
+            {
+                sep_valid[index] = ComputeEntropy(covs_sep_[index], cov_joint_[index], index);
+            }
+            //sep_valid[index] = ComputeKLDiv(means_sep_[index], means_joint_[index], covs_sep_[index], cov_joint_[index], index);
+
+            //bool KLDiv(const Eigen::Vector3d& u0, const Eigen::Vector3d& u1, const Eigen::Matrix3d& S0, const Eigen::Matrix3d& S1, const int index);
+        }
     }
 
     for (auto && searchPoint : ref_pcd->points){
+        index++;
         Eigen::MatrixXd msrc, mref, mjoint;
         GetNearby(searchPoint, msrc, mref, mjoint);
-        if(msrc.cols() < overlap_req_)
+        if(msrc.cols() < overlap_req_){
             continue;
-        Eigen::Matrix2d sep_cov, joint_cov;
-        if( Covariance(mref,sep_cov) && Covariance(mjoint,joint_cov) ){
-            if( ComputeEntropy(sep_cov,joint_cov,index) ){
-                sep_valid[index] = true;
-                if(par_.ent_cfg==parameters::non_zero){
-                    if(sep_res_[index] > joint_res_[index])
-                        cout<<"fix entrop"<<endl;
-                    joint_res_[index] = std::max(sep_res_[index],joint_res_[index]);
-                }
+        }
 
-                diff_res_[index] = joint_res_[index] - sep_res_[index];
-                joint_ += joint_res_[index]; sep_ += sep_res_[index];
-                count_valid++;
+        if( Covariance(mref, covs_sep_[index], means_sep_[index]) && Covariance(mjoint, cov_joint_[index],means_joint_[index]) ){
+            if(par.ent_cfg == AlignmentQuality::parameters::kl)
+            {
+                sep_valid[index] = sep_valid[index] = ComputeKLDiv(means_sep_[index], means_joint_[index], covs_sep_[index], cov_joint_[index], index);
+            }
+            else
+            {
+                sep_valid[index] = ComputeEntropy(covs_sep_[index], cov_joint_[index], index);
             }
         }
-        index++;
     }
     ros::Time t2 = ros::Time::now();
+    for (int i=0;i<sep_res_.size();i++){
+        if(sep_valid[i]){
+            const double w = par.weight_res_intensity ? sep_intensity_[i] : 1.0;
+            w_sum_ += w;
+            joint_res_[i] = w*joint_res_[i];
+            sep_res_[i] = w*sep_res_[i];
+            diff_res_[i] = joint_res_[i] - sep_res_[i];
+            joint_ += joint_res_[i]; sep_ += sep_res_[i];
+            count_valid++;
+        }
+    }
+
     if(count_valid > 0){
-        sep_ /=count_valid;
-        joint_ /=count_valid;
+        sep_ /=w_sum_;
+        joint_ /=w_sum_;
     }
     diff_ = joint_ - sep_;
     //cout<<"joint: "<<joint_<<", sep: "<<sep_<<", diff_"<<diff_<<", N: "<<count_valid<<endl;
-    quality_ = {joint_, sep_, 0.0};
+    double overlap = par_.output_overlap ? count_valid/((double)merged_size) : 0.0;
+    quality_ = {joint_, sep_, overlap};
+    //cout<<"quality: "<<quality_ <<endl;
+    //cout<<quality_<<endl;
 
     // Create merged point cloud
 
@@ -334,7 +381,7 @@ void AlignmentQualityPlot::PublishPoseScan(const std::string& topic, std::shared
     auto cfear = std::dynamic_pointer_cast<CFEARFeatures>(scan_plot);
     if(cfear  != NULL){
         Eigen::Affine3d Tnc = T;
-      radar_mapping::MapPointNormal::PublishMap("CFEARFatures",cfear->CFEARFeatures_,Tnc,"world",-1);
+        radar_mapping::MapPointNormal::PublishMap("CFEARFatures",cfear->CFEARFeatures_,Tnc,"world",-1);
     }
 }
 

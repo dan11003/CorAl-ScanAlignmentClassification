@@ -87,6 +87,8 @@ void RotoTranslation(const cv::Mat& input, cv::Mat& output, const Eigen::Affine3
 
 cv_bridge::CvImagePtr CreateImage(cv_bridge::CvImagePtr ref);
 
+void NormalizeIntensity(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, double min = 60);
+
 
 template <typename T>
 std::ostream & operator << (std::ostream & os, const std::vector<T> & vec)

@@ -111,6 +111,9 @@ int main(int argc, char **argv)
       ("rosbag-offset",po::value<int>(&evalPars.rosbag_offset)->default_value(0),"Misalignment error - angular")
       ("scan-min-distance",po::value<double>(&evalPars.scan_spacing_distance)->default_value(0),"scan_min_distance")
       ("disable-compensation","disable-compensate")
+      ("normalize-intensity","normalize-intensity")
+      ("weight-intensity","weight-intensity")
+      ("calculate-overlap","calculate-overlap")
       ("entropy-configuration",po::value<int>(&entropy_config)->default_value(0),"Misalignment error - angular")
       ("frame-delay",po::value<double>(&evalPars.frame_delay)->default_value(0),"Misalignment error - angular");
 
@@ -123,6 +126,10 @@ int main(int argc, char **argv)
   evalPars.visualize = vm.count("visualization");
   scanPars.scan_type = Str2Scan(scantype);
   scanPars.compensate = !vm.count("disable-compensation");
+  scanPars.normalize_intensity = vm.count("normalize-intensity");
+  qualityPars.weight_res_intensity = vm.count("weight-intensity");
+  qualityPars.output_overlap = vm.count("calculate-overlap");
+
   if(evalPars.dataset == "Oxford"|| evalPars.dataset == "oxford-eval-sequences"){
       evalPars.dataset == "Oxford";
       scanPars.range_res = 0.04328;

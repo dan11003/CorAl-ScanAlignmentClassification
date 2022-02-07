@@ -103,6 +103,10 @@ kstrongStructuredRadar::kstrongStructuredRadar(const PoseScan::Parameters& pars,
     kstrong.getPeaksFilteredPointCloud(kstrong_peaks_, peaks); // get peaks
     //kstrong.getPeaksFilteredPointCloud(kstrong_filtered_, false); // get peaks
     cloud_ = kstrong_peaks_;
+
+    if(pars.normalize_intensity)
+        NormalizeIntensity(cloud_, pars.z_min);
+
     if(pars.compensate){
         radar_mapping::Compensate(kstrong_peaks_, Tmotion_, pars.ccw); //cout<<"k strongest: "<<cloud_->size()<<endl;
         //radar_mapping::Compensate(kstrong_filtered_, Tmotion_, pars.ccw); //cout<<"k strongest: "<<cloud_->size()<<endl;

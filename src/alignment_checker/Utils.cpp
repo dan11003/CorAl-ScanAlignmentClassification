@@ -603,6 +603,17 @@ const std::string Vec2String(const std::vector<std::string>& vec){
     oss << vec.back();
     return oss.str();
 }
+void NormalizeIntensity(pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, double imin){
+
+double imax = cloud->points.front().intensity;
+for(auto&& p : cloud->points)
+    imax = std::max(imax, (double)p.intensity);
+
+//cout<<"max: "<<imax<<", min:"<<imin<<endl;
+for(auto&& p : cloud    ->points)
+    p.intensity = (p.intensity - imin)/(imax-imin);
+
+}
 
 
 }

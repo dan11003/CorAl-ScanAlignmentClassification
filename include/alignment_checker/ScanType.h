@@ -68,6 +68,7 @@ public:
         double resolution = 3;
         bool compensate = true;
         bool ccw = false;
+        bool normalize_intensity = false;
 
         float cart_resolution = 0.2384;
         int cart_pixel_width = 300;

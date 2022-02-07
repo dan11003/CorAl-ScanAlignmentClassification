@@ -47,13 +47,15 @@ public:
     {
     public:
 
-        typedef enum entropy_config{ any=0, non_zero=1, abs=2 }entropy_cfg;
+        typedef enum entropy_config{ any=0, non_zero=1, abs=2, kl=3 }entropy_cfg;
 
         parameters() {}
 
         std::string method = "P2L";
         double radius = 3;
         entropy_cfg ent_cfg = any;
+        bool weight_res_intensity = false;
+        bool output_overlap = false;
 
         static const std::vector<std::string> HeaderToString(){
             return { "method" , "radius" , "entropy_setting" };
@@ -193,19 +195,25 @@ protected:
 
     void GetNearby(const pcl::PointXY& query, Eigen::MatrixXd& nearby_src, Eigen::MatrixXd& nearby_ref, Eigen::MatrixXd& merged);
 
-    bool Covariance(Eigen::MatrixXd& x, Eigen::Matrix2d& cov);
+    bool Covariance(Eigen::MatrixXd& x, Eigen::Matrix2d& cov, Eigen::Vector2d& mean);
+
+    bool ComputeKLDiv(const Eigen::Vector2d& u0, const Eigen::Vector2d& u1, const Eigen::Matrix2d& S0, const Eigen::Matrix2d& S1, const int index);
 
     bool ComputeEntropy(const Eigen::Matrix2d& cov_sep, const Eigen::Matrix2d& cov_joint, int index);
 
     pcl::PointCloud<pcl::PointXY>::Ptr ref_pcd, src_pcd;
-    std::vector<double> ref_i, src_i ;
+
     pcl::KdTreeFLANN<pcl::PointXY> kd_src, kd_ref;
 
+    std::vector<Eigen::Matrix2d> covs_sep_, cov_joint_;
+    std::vector<Eigen::Vector2d> means_sep_, means_joint_;
+
     std::vector<double> sep_res_; // length ref + src
+    std::vector<double> sep_intensity_;
     std::vector<bool> sep_valid; // length  ref + src
     std::vector<double> joint_res_; // length ref + src
     std::vector<double> diff_res_; // length ref + src
-    double sep_ = 0, joint_ = 0, diff_ = 0;
+    double sep_ = 0, joint_ = 0, diff_ = 0, w_sum_;
     int count_valid = 0;
 
     pcl::PointCloud<pcl::PointXYZI>::Ptr ref_pcd_entropy, src_pcd_entropy, merged_entropy;
