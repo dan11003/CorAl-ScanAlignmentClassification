@@ -64,6 +64,11 @@ public:
         //kstrong
         int kstrong = 12;
         double z_min = 80;
+        //BFAR
+        int window_size_ = 12;
+        float offset_factor_= 30;
+        float scale_factor = 1.0;
+    
         //CFEAR
         double resolution = 3;
         bool compensate = true;

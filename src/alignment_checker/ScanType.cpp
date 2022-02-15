@@ -120,16 +120,10 @@ BFARScan::BFARScan(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& pola
     : RawRadar(pars, polar, T, Tmotion)
 {
     assert(polar !=NULL);
-    radar_mapping::StructuredKStrongest kstrong(polar_, pars.z_min, pars.kstrong, pars.sensor_min_distance, pars.range_res);
-    kstrong.getPeaksFilteredPointCloud(cloud_, true); // get peaks
-
-    if(pars.normalize_intensity)
-        NormalizeIntensity(cloud_, pars.z_min);
-
-    if(pars.compensate){
-        radar_mapping::Compensate(cloud_, Tmotion_, pars.ccw); //cout<<"k strongest: "<<cloud_->size()<<endl;
-        //radar_mapping::Compensate(kstrong_filtered_, Tmotion_, pars.ccw); //cout<<"k strongest: "<<cloud_->size()<<endl;
-    }
+    
+    radar_mapping::BFAR_filter(polar, cloud_, pars.window_size_, pars.scale_factor, pars.offset_factor_, pars.range_res, pars.sensor_min_distance);
+    assert(cloud_ != nullptr);
+    
 }
 
 CFEARFeatures::CFEARFeatures(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion )
