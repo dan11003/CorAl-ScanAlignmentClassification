@@ -49,7 +49,7 @@
 #include "eigen_conversions/eigen_msg.h"
 #include "tf_conversions/tf_eigen.h"
 #include <cv_bridge/cv_bridge.h>
-#include "radar_mapping/statistics.h"
+#include "cfear_radarodometry/statistics.h"
 //Coral includes
 #include "alignment_checker/Utils.h"
 #include "alignment_checker/ScanType.h"
@@ -58,7 +58,7 @@
 namespace CorAlignment {
 
 typedef std::pair<Eigen::Affine3d,ros::Time> poseStamped;
-using namespace radar_mapping;
+using namespace CFEAR_Radarodometry;
 
 
 class dataHandler

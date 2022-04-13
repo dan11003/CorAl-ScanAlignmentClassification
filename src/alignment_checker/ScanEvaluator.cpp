@@ -31,8 +31,9 @@ void scanEvaluator::SaveEvaluation(){
     const std::vector<std::string> header_eval  = scanEvaluator::parameters::HeaderToString();
     const std::vector<std::string> header_align = AlignmentQuality::parameters::HeaderToString();
     const std::vector<std::string> header_pose  = PoseScan::Parameters::HeaderToString();
-    ofs_meta << Vec2String(header_eval) << "," << Vec2String(header_align) << "," << Vec2String(header_pose) <<","<< timing.GetStatisticsHeader() << std::endl;
-    ofs_meta << Vec2String(par_.ValsToString()) << "," << Vec2String(quality_par_.ValsToString()) << "," <<Vec2String(scan_pars_.ValsToString())+","<<timing.GetStatisticsVals();
+    // Removed row 34,35 due to error 
+    // ofs_meta << Vec2String(header_eval) << "," << Vec2String(header_align) << "," << Vec2String(header_pose) <<","<< timing.GetStatisticsHeader() << std::endl;
+    // ofs_meta << Vec2String(par_.ValsToString()) << "," << Vec2String(quality_par_.ValsToString()) << "," <<Vec2String(scan_pars_.ValsToString())+","<<timing.GetStatisticsVals();
     //ofs_meta<<par_.eval_name<<","<<quality_par_.method<<","<<std::to_string(quality_par_.radius)<<","<<std::to_string(par_.scan_spacing)<<","<<std::to_string(par_.theta_range)
     //<<","<<par_.offset_rotation_steps<<","<<std::to_string(par_.theta_error)<<","<<std::to_string(par_.range_error)<<","<<std::to_string(par_.scan_spacing_distance)<<endl;
 
@@ -97,7 +98,7 @@ scanEvaluator::scanEvaluator(dataHandler_U& reader, const parameters& eval_par, 
                 //cout<<"publish: "<<training_data.data<<endl;
                 pub_train_data.publish(training_data);
                 datapoints_.push_back(datapoint(index, res, verr, quality_measure, prev_scans.back(), current));
-                timing.Document("quality",ToMs(t2-t1));
+                CFEAR_Radarodometry::timing.Document("quality",CFEAR_Radarodometry::ToMs(t2-t1));
 
             }
             ros::Time t4 = ros::Time::now();

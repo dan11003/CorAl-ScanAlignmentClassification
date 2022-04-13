@@ -20,12 +20,12 @@
 #include "pcl/kdtree/kdtree.h"
 #include "memory.h"
 #include <iomanip>
-#include "radar_mapping/n_scan_normal.h"
+#include "cfear_radarodometry/n_scan_normal.h"
 
 // ROS tf
 #include "tf/transform_broadcaster.h"
 #include "tf_conversions/tf_eigen.h"
-#include "radar_mapping/statistics.h"
+#include "cfear_radarodometry/statistics.h"
 //Coral includes
 #include "alignment_checker/Utils.h"
 #include "alignment_checker/ScanType.h"

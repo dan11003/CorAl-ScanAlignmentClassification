@@ -92,7 +92,7 @@ bool CorAlRadarQuality::ComputeEntropy(const Eigen::Matrix2d& cov_sep, const Eig
 }
 CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset)  : AlignmentQuality(src, ref, par, Toffset)
 {
-    //radar_mapping::Document()
+    //CFEAR_Radarodometry::Document()
 
     ros::Time t0 = ros::Time::now();
     auto src_kstrong_structured = std::dynamic_pointer_cast<kstrongStructuredRadar>(src);
@@ -217,9 +217,9 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
     AlignmentQualityPlot::PublishCloud("/coral_ref",    ref_pcd_entropy, Eigen::Affine3d::Identity(), "coral_world");
     AlignmentQualityPlot::PublishCloud("/coral_merged", merged_entropy,  Eigen::Affine3d::Identity(), "coral_world");
     ros::Time t3 = ros::Time::now();
-    //radar_mapping::timing.Document("coral_init",radar_mapping::ToMs(t1-t0));
-    //radar_mapping::timing.Document("coral_entropy",radar_mapping::ToMs(t2-t1));
-    //radar_mapping::timing.Document("coral_postprocess",radar_mapping::ToMs(t3-t2));
+    //CFEAR_Radarodometry::timing.Document("coral_init",CFEAR_Radarodometry::ToMs(t1-t0));
+    //CFEAR_Radarodometry::timing.Document("coral_entropy",CFEAR_Radarodometry::ToMs(t2-t1));
+    //CFEAR_Radarodometry::timing.Document("coral_postprocess",CFEAR_Radarodometry::ToMs(t3-t2));
 
 }
 
@@ -327,13 +327,13 @@ CFEARQuality::CFEARQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseSc
     auto CFEAR_src = std::dynamic_pointer_cast<CFEARFeatures>(src);
     auto CFEAR_ref = std::dynamic_pointer_cast<CFEARFeatures>(ref);
     assert(CFEAR_src!=NULL && CFEAR_ref!=NULL);
-    radar_mapping::costmetric pnt_cost = radar_mapping::Str2Cost(par.method);
+    CFEAR_Radarodometry::costmetric pnt_cost = CFEAR_Radarodometry::Str2Cost(par.method);
 
-    radar_mapping::n_scan_normal_reg reg(pnt_cost, radar_mapping::losstype::None, 0);
-    std::vector<radar_mapping::MapNormalPtr> feature_vek = {CFEAR_ref->CFEARFeatures_, CFEAR_src->CFEARFeatures_};
+    CFEAR_Radarodometry::n_scan_normal_reg reg(pnt_cost, CFEAR_Radarodometry::losstype::None, 0);
+    std::vector<CFEAR_Radarodometry::MapNormalPtr> feature_vek = {CFEAR_ref->CFEARFeatures_, CFEAR_src->CFEARFeatures_};
     std::vector<Eigen::Affine3d> Tvek = {CFEAR_ref->GetAffine(),CFEAR_src->GetAffine()*Toffset};
-    radar_mapping::MapPointNormal::PublishMap("scan1", feature_vek[0], Tvek[0], "world", 1 );
-    radar_mapping::MapPointNormal::PublishMap("scan2", feature_vek[1], Tvek[1], "world", -1);
+    CFEAR_Radarodometry::MapPointNormal::PublishMap("scan1", feature_vek[0], Tvek[0], "world", 1 );
+    CFEAR_Radarodometry::MapPointNormal::PublishMap("scan2", feature_vek[1], Tvek[1], "world", -1);
     double score = 0;
     reg.GetCost(feature_vek, Tvek, score, residuals_);
     quality_ = {score, (double)residuals_.size(), score/residuals_.size()};
@@ -419,7 +419,7 @@ void AlignmentQualityPlot::PublishPoseScan(const std::string& topic, std::shared
     auto cfear = std::dynamic_pointer_cast<CFEARFeatures>(scan_plot);
     if(cfear  != NULL){
         Eigen::Affine3d Tnc = T;
-        radar_mapping::MapPointNormal::PublishMap("CFEARFatures",cfear->CFEARFeatures_,Tnc,"world",-1);
+        CFEAR_Radarodometry::MapPointNormal::PublishMap("CFEARFatures",cfear->CFEARFeatures_,Tnc,"world",-1);
     }
 }
 

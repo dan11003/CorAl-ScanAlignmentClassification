@@ -34,7 +34,7 @@ find_package(catkin REQUIRED
     genmsg
     cv_bridge
     tf_conversions
-    radar_mapping
+    cfear_radarodometry
     #ndt_map
     #robust_mapping_custom_msgs
     )
@@ -50,7 +50,7 @@ endif()
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS geometry_msgs eigen_conversions pcl_ros roscpp rospy sensor_msgs std_msgs tf_conversions tf genmsg tf_conversions radar_mapping #cmake_modules #ndt_map
+  CATKIN_DEPENDS geometry_msgs eigen_conversions pcl_ros roscpp rospy sensor_msgs std_msgs tf_conversions tf genmsg tf_conversions cfear_radarodometry #cmake_modules #ndt_map
 )
 
 INCLUDE_DIRECTORIES ( $ENV{EIGEN3_INCLUDE_DIR}  ${OpenCV_INCLUDE_DIRS})

@@ -132,8 +132,8 @@ std::shared_ptr<PoseScan> RadarRosbagHandler::Next(){
             AlignmentQualityPlot::PublishPoseScan("test_cart",cart,Tnow,"cart_frame"); */
 
             ros::Time t2 = ros::Time::now();
-            timing.Document("Create scan",radar_mapping::ToMs(t2-t1));
-            //timing.Document("Read rosbag",radar_mapping::ToMs(t1-t0));
+            timing.Document("Create scan",CFEAR_Radarodometry::ToMs(t2-t1));
+            //timing.Document("Read rosbag",CFEAR_Radarodometry::ToMs(t1-t0));
             return scan;
         }
         else

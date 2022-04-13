@@ -19,11 +19,11 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include "pcl/common/transforms.h"
 
-//radar_mapping
-#include "radar_mapping/radar_filters.h"
-#include "radar_mapping/pointnormal.h"
+//cfear_radarodometry
+#include "cfear_radarodometry/radar_filters.h"
+#include "cfear_radarodometry/pointnormal.h"
 #include "pcl/point_types.h"
-#include "radar_mapping/intensity_utils.h"
+#include "cfear_radarodometry/utils.h"
 #include "string"
 
 #include "alignment_checker/Utils.h"
@@ -218,7 +218,7 @@ public:
 
     const std::string ToString(){return "CFEARFeatures";}
 
-    radar_mapping::MapNormalPtr CFEARFeatures_;
+    CFEAR_Radarodometry::MapNormalPtr CFEARFeatures_;
 };
 
 class RawLidar: public PoseScan{
