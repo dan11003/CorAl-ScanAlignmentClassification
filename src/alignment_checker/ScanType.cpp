@@ -45,10 +45,24 @@ PoseScan::PoseScan(const PoseScan::Parameters pars, const Eigen::Affine3d& T, co
 
 }
 
+// New constructor
+PoseScan::PoseScan(const PoseScan::Parameters pars, const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
+    : Test_(T), Tmotion_(Tmotion), pose_id(pose_count++),pars_(pars)
+{
+    // cloud_(cloud)
+}
+
 RawRadar::RawRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
     : PoseScan(pars,T,Tmotion), range_res_(pars.range_res)
 {
     polar_ = polar;
+}
+
+// New constructor
+RawRadar::RawRadar(const PoseScan::Parameters& pars, const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
+    : PoseScan(pars,cloud,T,Tmotion), range_res_(pars.range_res)
+{
+
 }
 
 Cen2018Radar::Cen2018Radar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
@@ -105,6 +119,25 @@ kstrongStructuredRadar::kstrongStructuredRadar(const PoseScan::Parameters& pars,
     CFEAR_Radarodometry::StructuredKStrongest kstrong(polar_, pars.z_min, pars.kstrong, pars.sensor_min_distance, pars.range_res);
     kstrong.getPeaksFilteredPointCloud(kstrong_peaks_, peaks); // get peaks
     //kstrong.getPeaksFilteredPointCloud(kstrong_filtered_, false); // get peaks
+    cloud_ = kstrong_peaks_;
+
+    if(pars.normalize_intensity)
+        NormalizeIntensity(cloud_, pars.z_min);
+
+    if(pars.compensate){
+        CFEAR_Radarodometry::Compensate(*kstrong_peaks_, Tmotion_, pars.ccw); //cout<<"k strongest: "<<cloud_->size()<<endl;
+        //CFEAR_Radarodometry::Compensate(kstrong_filtered_, Tmotion_, pars.ccw); //cout<<"k strongest: "<<cloud_->size()<<endl;
+    }
+}
+
+// Constructor using point cloud
+kstrongStructuredRadar::kstrongStructuredRadar(const PoseScan::Parameters& pars, const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
+    : RawRadar(pars, cloud, T, Tmotion)
+{
+    polar_ = nullptr;
+    
+    kstrong_peaks_ = cloud;
+
     cloud_ = kstrong_peaks_;
 
     if(pars.normalize_intensity)

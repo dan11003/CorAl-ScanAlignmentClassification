@@ -29,7 +29,10 @@
 //Coral includes
 #include "alignment_checker/Utils.h"
 #include "alignment_checker/ScanType.h"
+// #include "alignment_checker/ScanEvaluator.h"
 
+// MSGS
+#include "std_msgs/Float64MultiArray.h"
 
 namespace CorAlignment{
 
@@ -320,7 +323,16 @@ public:
 };
 
 
-
+class AlignmentQualityInterface
+{
+public:
+    AlignmentQualityInterface() {}
+    static void PublishTrainingData(PoseScan_S& scan_current, PoseScan_S& scan_loop);
+    static void PublishQualityMeasure(PoseScan_S& scan_current, PoseScan_S& scan_loop);
+private:
+    static const std::vector<std::vector<double>> CreatePerturbations();
+    static ros::Publisher pub_train_data;
+};
 
 
 }

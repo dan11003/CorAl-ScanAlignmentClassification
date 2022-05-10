@@ -108,6 +108,7 @@ public:
 
 
     PoseScan(const PoseScan::Parameters pars, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion);
+    PoseScan(const PoseScan::Parameters pars, const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion);
 
     virtual ~PoseScan() {}
 
@@ -136,6 +137,7 @@ class RawRadar: public PoseScan{
 public:
 
     RawRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion);
+    RawRadar(const PoseScan::Parameters& pars, const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion);
 
     const std::string ToString(){return "RawRadar";}
 
@@ -191,6 +193,7 @@ class kstrongStructuredRadar: public RawRadar
 public:
 
     kstrongStructuredRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion , bool peaks = true);
+    kstrongStructuredRadar(const PoseScan::Parameters& pars, const pcl::PointCloud<pcl::PointXYZI>::Ptr& cloud_filtered, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion);
 
     const std::string ToString(){return "structuredKstrongRadar";}
 

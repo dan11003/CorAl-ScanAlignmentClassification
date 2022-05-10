@@ -446,5 +446,82 @@ void AlignmentQualityPlot::PublishTransform(const Eigen::Affine3d& T, const std:
     Tbr.sendTransform(trans_vek);
 }
 
+/* INTERFACE */
+
+ ros::Publisher AlignmentQualityInterface::pub_train_data;
+
+void AlignmentQualityInterface::PublishTrainingData(PoseScan_S& scan_current, PoseScan_S& scan_loop)
+{
+    ros::NodeHandle nh_("~");
+    AlignmentQualityInterface::pub_train_data = nh_.advertise<std_msgs::Float64MultiArray>("/coral_training",1000);
+
+    std::vector<std::vector<double>> vek_perturbation = AlignmentQualityInterface::CreatePerturbations();;
+
+    for(auto && verr : vek_perturbation)
+    {
+        AlignmentQuality::parameters quality_par;
+        quality_par.method = "Coral";
+        const Eigen::Affine3d Tperturbation = VectorToAffine3dxyez(verr);
+
+        AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(scan_current, scan_loop, quality_par, Tperturbation); 
+
+        double sum = 0;
+        for(auto && e : verr)
+            sum+=fabs(e);
+        bool aligned = sum < 0.0001;
+
+        std::vector<double> quality_measure = quality->GetQualityMeasure(); 
+        std_msgs::Float64MultiArray training_data;
+        training_data.data = {(double)aligned, quality_measure[0], quality_measure[1], quality_measure[2]};
+        AlignmentQualityInterface::pub_train_data.publish(training_data); 
+    }
+}
+
+void AlignmentQualityInterface::PublishQualityMeasure(PoseScan_S& scan_current, PoseScan_S& scan_loop)
+{
+    ros::NodeHandle nh_("~");
+    AlignmentQualityInterface::pub_train_data = nh_.advertise<std_msgs::Float64MultiArray>("/coral_training",1000);
+
+    AlignmentQuality::parameters quality_par;
+    quality_par.method = "Coral";
+    std::vector<double> verr{0.0, 0.0, 0.0};	
+    const Eigen::Affine3d Tperturbation = VectorToAffine3dxyez(verr);
+
+    AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(scan_current, scan_loop, quality_par, Tperturbation); 
+    
+    std::vector<double> quality_measure = quality->GetQualityMeasure(); 
+    std_msgs::Float64MultiArray training_data;
+
+    double sum = 0;
+    for(auto && e : verr)
+        sum+=fabs(e);
+    bool aligned = sum < 0.0001;
+
+    training_data.data = {((double)aligned), quality_measure[0], quality_measure[1], quality_measure[2]};
+    AlignmentQualityInterface::pub_train_data.publish(training_data); 
+}
+
+const std::vector<std::vector<double>> AlignmentQualityInterface::CreatePerturbations()
+{
+    // Ground truth
+    std::vector<std::vector<double>> vek_perturbation;
+    vek_perturbation.push_back({0,0,0});
+    
+    double range_error = 0.5;
+    double theta_range = 2*M_PI/4.0;
+    int offset_rotation_steps = 2;
+    double theta_error = 0.57*M_PI/180.0;
+
+    // Induce errors
+    for(int i=0 ; i<offset_rotation_steps ; i++){
+        const double fraction = ((double)i) / ((double)offset_rotation_steps);
+        const double pol_error = fraction * theta_range;
+        const double x = range_error*cos(pol_error);
+        const double y = range_error*sin(pol_error);
+        vek_perturbation.push_back({x, y, theta_error});
+    }
+    return vek_perturbation;
+}
+
 }
 
