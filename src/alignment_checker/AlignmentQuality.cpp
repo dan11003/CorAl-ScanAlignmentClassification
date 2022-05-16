@@ -469,12 +469,52 @@ void AlignmentQualityInterface::PublishTrainingData(PoseScan_S& scan_current, Po
         for(auto && e : verr)
             sum+=fabs(e);
         bool aligned = sum < 0.0001;
+        std::cout << aligned << ", " << sum << std::endl;
 
         std::vector<double> quality_measure = quality->GetQualityMeasure(); 
         std_msgs::Float64MultiArray training_data;
         training_data.data = {(double)aligned, quality_measure[0], quality_measure[1], quality_measure[2]};
         AlignmentQualityInterface::pub_train_data.publish(training_data); 
     }
+}
+
+void AlignmentQualityInterface::PublishAndSaveTrainingData(PoseScan_S& scan_current, PoseScan_S& scan_loop, std::string path)
+{
+    std::string training_data_path = std::getenv("BAG_LOCATION") + (std::string)"/place_recognition_eval/training_data/";
+    // Create subdirectory if it doesnt exists
+    if (!boost::filesystem::exists(training_data_path))
+    	boost::filesystem::create_directory(training_data_path);
+
+    // Open csv file
+    std::ofstream result_file;
+    result_file.open(training_data_path + path, std::ofstream::out | std::ofstream::app);
+
+    ros::NodeHandle nh_("~");
+    AlignmentQualityInterface::pub_train_data = nh_.advertise<std_msgs::Float64MultiArray>("/coral_training",1000);
+
+    std::vector<std::vector<double>> vek_perturbation = AlignmentQualityInterface::CreatePerturbations();;
+
+    for(auto && verr : vek_perturbation)
+    {
+        AlignmentQuality::parameters quality_par;
+        quality_par.method = "Coral";
+        const Eigen::Affine3d Tperturbation = VectorToAffine3dxyez(verr);
+ 
+        AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(scan_current, scan_loop, quality_par, Tperturbation); 
+
+        double sum = 0;
+        for(auto && e : verr)
+            sum+=fabs(e);
+        bool aligned = sum < 0.0001;
+
+        std::vector<double> quality_measure = quality->GetQualityMeasure(); 
+        std_msgs::Float64MultiArray training_data;
+        training_data.data = {(double)aligned, quality_measure[0], quality_measure[1], quality_measure[2]};
+        AlignmentQualityInterface::pub_train_data.publish(training_data); 
+
+        result_file << training_data.data[0] << "," << training_data.data[1] << "," << training_data.data[2] << "," << training_data.data[3] << std::endl;
+    }
+    result_file.close();
 }
 
 void AlignmentQualityInterface::PublishQualityMeasure(PoseScan_S& scan_current, PoseScan_S& scan_loop)

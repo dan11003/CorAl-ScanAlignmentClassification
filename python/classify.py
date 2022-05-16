@@ -32,7 +32,7 @@ print(output_directory)
 exit
 #output_directory = args.directory+"/output"
 
-col_names=[' score1','score2','score3']
+col_names=['score1','score2','score3']
 df = pd.read_csv(file_path)
 X = df[col_names]
 y = df.aligned

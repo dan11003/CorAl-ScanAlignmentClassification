@@ -27,7 +27,9 @@ class callback_learner:
         self.thread.start()
     def callback(self,data):
         self.mutex.acquire()
-        self.df = self.df.append({'score1' : data.data[1], 'score2' : data.data[2], 'score3' :data.data[3], 'aligned'  :data.data[0]}, ignore_index = True)
+        # self.df = self.df.append({'score1' : data.data[1], 'score2' : data.data[2], 'score3' :data.data[3], 'aligned'  :data.data[0]}, ignore_index = True)
+        data_dict = [{'score1' : data.data[1], 'score2' : data.data[2], 'score3' :data.data[3], 'aligned'  :data.data[0]}]
+        self.df = pd.concat([self.df, pd.DataFrame(data_dict)], ignore_index=True)
         self.mutex.release()
 
 

@@ -62,6 +62,7 @@ def TrainClassifier(df):
     X = df[col_names]
     y = df.aligned
 
+    y=y.astype('int')
 
     #print(X_train)
     #print(y_train)

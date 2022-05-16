@@ -328,6 +328,7 @@ class AlignmentQualityInterface
 public:
     AlignmentQualityInterface() {}
     static void PublishTrainingData(PoseScan_S& scan_current, PoseScan_S& scan_loop);
+    static void PublishAndSaveTrainingData(PoseScan_S& scan_current, PoseScan_S& scan_loop, std::string path="traning_data.csv");
     static void PublishQualityMeasure(PoseScan_S& scan_current, PoseScan_S& scan_loop);
 private:
     static const std::vector<std::vector<double>> CreatePerturbations();
