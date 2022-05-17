@@ -34,6 +34,10 @@
 // MSGS
 #include "std_msgs/Float64MultiArray.h"
 
+// SRVS
+#include "alignment_checker/AlignmentData.h"
+#include "alignment_checker/AlignmentDataRequest.h"
+
 namespace CorAlignment{
 
 using std::endl;
@@ -328,6 +332,8 @@ class AlignmentQualityInterface
 public:
     AlignmentQualityInterface() {}
     static void PublishTrainingData(PoseScan_S& scan_current, PoseScan_S& scan_loop);
+    static std::vector<bool> TrainingDataService(PoseScan_S& scan_current, PoseScan_S& scan_loop);
+    static bool AlignmentDataService(PoseScan_S& scan_current, PoseScan_S& scan_loop);
     static void PublishAndSaveTrainingData(PoseScan_S& scan_current, PoseScan_S& scan_loop, std::string path="traning_data.csv");
     static void PublishQualityMeasure(PoseScan_S& scan_current, PoseScan_S& scan_loop);
 private:

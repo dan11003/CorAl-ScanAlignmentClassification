@@ -37,7 +37,17 @@ find_package(catkin REQUIRED
     cfear_radarodometry
     #ndt_map
     #robust_mapping_custom_msgs
+    message_generation
     )
+
+add_service_files(
+  FILES
+  AlignmentData.srv
+)
+
+generate_messages(
+  DEPENDENCIES
+)
 
 
 find_package(OpenMP REQUIRED)
@@ -50,7 +60,7 @@ endif()
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS geometry_msgs eigen_conversions pcl_ros roscpp rospy sensor_msgs std_msgs tf_conversions tf genmsg tf_conversions cfear_radarodometry #cmake_modules #ndt_map
+  CATKIN_DEPENDS geometry_msgs eigen_conversions pcl_ros roscpp rospy sensor_msgs std_msgs tf_conversions tf genmsg tf_conversions cfear_radarodometry message_generation #cmake_modules #ndt_map
 )
 
 INCLUDE_DIRECTORIES ( $ENV{EIGEN3_INCLUDE_DIR}  ${OpenCV_INCLUDE_DIRS})

@@ -454,7 +454,6 @@ void AlignmentQualityInterface::PublishTrainingData(PoseScan_S& scan_current, Po
 {
     ros::NodeHandle nh_("~");
     AlignmentQualityInterface::pub_train_data = nh_.advertise<std_msgs::Float64MultiArray>("/coral_training",1000);
-
     std::vector<std::vector<double>> vek_perturbation = AlignmentQualityInterface::CreatePerturbations();;
 
     for(auto && verr : vek_perturbation)
@@ -476,6 +475,69 @@ void AlignmentQualityInterface::PublishTrainingData(PoseScan_S& scan_current, Po
         training_data.data = {(double)aligned, quality_measure[0], quality_measure[1], quality_measure[2]};
         AlignmentQualityInterface::pub_train_data.publish(training_data); 
     }
+}
+
+std::vector<bool> AlignmentQualityInterface::TrainingDataService(PoseScan_S& scan_current, PoseScan_S& scan_loop)
+{
+    ros::NodeHandle nh_("~");
+    ros::ServiceClient client = nh_.serviceClient<alignment_checker::AlignmentData>("/alignment_service");
+    std::vector<std::vector<double>> vek_perturbation = AlignmentQualityInterface::CreatePerturbations();;
+    std::vector<bool> aligned_results;
+
+    for(auto && verr : vek_perturbation)
+    {
+        AlignmentQuality::parameters quality_par;
+        quality_par.method = "Coral";
+        const Eigen::Affine3d Tperturbation = VectorToAffine3dxyez(verr);
+
+        AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(scan_current, scan_loop, quality_par, Tperturbation); 
+
+        double sum = 0;
+        for(auto && e : verr)
+            sum+=fabs(e);
+        bool aligned = sum < 0.0001;
+        std::cout << aligned << ", " << sum << std::endl;
+
+        std::vector<double> quality_measure = quality->GetQualityMeasure(); 
+        std_msgs::Float64MultiArray training_data;
+        training_data.data = {(double)aligned, quality_measure[0], quality_measure[1], quality_measure[2]};
+
+        alignment_checker::AlignmentData srv;
+		srv.request.score = training_data.data;
+
+		if(client.call(srv))
+			aligned_results.push_back((double)srv.response.aligned);
+		else
+			ROS_ERROR("Failed to call service alignment_service");
+    }
+    return aligned_results;
+}
+
+bool AlignmentQualityInterface::AlignmentDataService(PoseScan_S& scan_current, PoseScan_S& scan_loop)
+{
+    ros::NodeHandle nh_("~");
+    ros::ServiceClient client = nh_.serviceClient<alignment_checker::AlignmentData>("/alignment_service");
+    
+    AlignmentQuality::parameters quality_par;
+    quality_par.method = "Coral";
+    const Eigen::Affine3d Tperturbation = Eigen::Affine3d::Identity();
+
+    AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(scan_current, scan_loop, quality_par, Tperturbation); 
+
+    std::vector<double> quality_measure = quality->GetQualityMeasure(); 
+    std_msgs::Float64MultiArray alignment_data;
+    alignment_data.data = {1.0, quality_measure[0], quality_measure[1], quality_measure[2]};
+
+    alignment_checker::AlignmentData srv;
+    srv.request.score = alignment_data.data;
+
+    bool aligned_result;
+    if(client.call(srv))
+        aligned_result = (double)srv.response.aligned;
+    else
+        ROS_ERROR("Failed to call service alignment_service");
+        
+    return aligned_result;
 }
 
 void AlignmentQualityInterface::PublishAndSaveTrainingData(PoseScan_S& scan_current, PoseScan_S& scan_loop, std::string path)
