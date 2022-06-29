@@ -69,10 +69,10 @@ class callback_learner:
             col_names=['score1','score2','score3']
             X = req_df[col_names]
             self.mutex.acquire()
-            y_pred = self.model.predict(X)
-            # print (self.model.predict_proba(X))
+            # y_pred = self.model.predict(X)
+            y_prob = self.model.predict_proba(X)
             self.mutex.release()
-            return AlignmentDataResponse(y_pred)
+            return AlignmentDataResponse(y_prob)
         else:
             print("Wrong service message...")
 

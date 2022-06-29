@@ -333,7 +333,7 @@ public:
     AlignmentQualityInterface() {}
     static void PublishTrainingData(PoseScan_S& scan_current, PoseScan_S& scan_loop);
     static std::vector<bool> TrainingDataService(PoseScan_S& scan_current, PoseScan_S& scan_loop);
-    static bool AlignmentDataService(PoseScan_S& ref, PoseScan_S& strchr);
+    static double AlignmentDataService(PoseScan_S& ref, PoseScan_S& strchr);
     static void PublishAndSaveTrainingData(PoseScan_S& scan_current, PoseScan_S& scan_loop);
     static void SaveTrainingData();
     static void PublishQualityMeasure(PoseScan_S& scan_current, PoseScan_S& scan_loop);

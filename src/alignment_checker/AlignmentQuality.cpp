@@ -516,7 +516,7 @@ std::vector<bool> AlignmentQualityInterface::TrainingDataService(PoseScan_S& sca
     return aligned_results;
 }
 
-bool AlignmentQualityInterface::AlignmentDataService(PoseScan_S& ref, PoseScan_S& src)
+double AlignmentQualityInterface::AlignmentDataService(PoseScan_S& ref, PoseScan_S& src)
 {
     ros::NodeHandle nh("~");
     ros::ServiceClient client = nh.serviceClient<alignment_checker::AlignmentData>("/alignment_service");
@@ -533,7 +533,7 @@ bool AlignmentQualityInterface::AlignmentDataService(PoseScan_S& ref, PoseScan_S
     alignment_checker::AlignmentData srv;
     srv.request.score = alignment_data.data;
 
-    bool aligned_result = false;
+    double aligned_result = 0;
     if(client.call(srv))
         aligned_result = (double)srv.response.aligned;
     else
