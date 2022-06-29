@@ -333,13 +333,18 @@ public:
     AlignmentQualityInterface() {}
     static void PublishTrainingData(PoseScan_S& scan_current, PoseScan_S& scan_loop);
     static std::vector<bool> TrainingDataService(PoseScan_S& scan_current, PoseScan_S& scan_loop);
-    static bool AlignmentDataService(PoseScan_S& scan_current, PoseScan_S& scan_loop);
-    static void PublishAndSaveTrainingData(PoseScan_S& scan_current, PoseScan_S& scan_loop, std::string path="traning_data.csv");
+    static bool AlignmentDataService(PoseScan_S& ref, PoseScan_S& strchr);
+    static void PublishAndSaveTrainingData(PoseScan_S& scan_current, PoseScan_S& scan_loop);
+    static void SaveTrainingData();
     static void PublishQualityMeasure(PoseScan_S& scan_current, PoseScan_S& scan_loop);
-private:
+    static void InitSaveFile(const std::string& path="traning_data.txt");
     static const std::vector<std::vector<double>> CreatePerturbations();
     static ros::Publisher pub_train_data;
+    static std::string path_;
+    static void UpdateTrainingData(PoseScan_S& ref, PoseScan_S& src);
+    static std::vector<std::vector<double>> traning_data_;
+    static std::vector<std::vector<double>> vek_perturbation_;
+private:
 };
-
 
 }

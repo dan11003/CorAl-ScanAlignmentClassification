@@ -19,11 +19,11 @@ from alignment_checker.srv import *
 
 class callback_learner:
 
-    def __init__(self, start = 0, csv_file = os.environ["BAG_LOCATION"] + '/place_recognition_eval/training_data/eval.txt'):
+    def __init__(self, start = 0, csv_file = 'eval.txt'):
         self.lock = threading.Lock()
         self.value = start
         # self.df = pd.DataFrame(columns=['score1', 'score2', 'score3','aligned'])
-        self.df = self.get_df_from_csv(csv_file)
+        self.df = self.get_df_from_csv(os.environ["BAG_LOCATION"] + '/place_recognition_eval/training_data/' + csv_file)
         self.model = None
         self.update_model()
         self.sub = rospy.Subscriber("/coral_training", Float64MultiArray, self.callback)
@@ -31,7 +31,7 @@ class callback_learner:
         self.mutex = Lock()
         self.thread = threading.Thread(target=self.thread_learning, args=("name",))
         self.thread.daemon = True
-        self.thread.start()
+        
         
     def thread_learning(self,name):
         print("Thread starting")
@@ -43,8 +43,8 @@ class callback_learner:
             if( df_copy.shape[0] > 5 ):
                 accuracy,cnf_matrix=TrainClassifier(df_copy)
                 self.update_model()
-                # print("Accuracy: "+str(accuracy)+", Datapoints: "+str(df_copy.shape[0]))
-                # print("confusion: +\n"+str(cnf_matrix))
+                print("Accuracy: "+str(accuracy)+", Datapoints: "+str(df_copy.shape[0]))
+                print("confusion: +\n"+str(cnf_matrix))
             #print(df_copy)
         print("Thread finishing")
 
@@ -70,6 +70,7 @@ class callback_learner:
             X = req_df[col_names]
             self.mutex.acquire()
             y_pred = self.model.predict(X)
+            # print (self.model.predict_proba(X))
             self.mutex.release()
             return AlignmentDataResponse(y_pred)
         else:
@@ -80,6 +81,7 @@ class callback_learner:
             print("Loaded data from", file_path)
             return pd.read_csv(file_path)
         else:
+            print("Traning data file not found...")
             return pd.DataFrame(columns=['score1', 'score2', 'score3','aligned'])
 
 def get_trained_classifier(df : pd.DataFrame) -> LogisticRegression:
@@ -95,7 +97,8 @@ def get_trained_classifier(df : pd.DataFrame) -> LogisticRegression:
 
 def main(args):
     rospy.init_node('alignment_service', anonymous=True)
-    l = callback_learner()
+    l = callback_learner(csv_file="Riverside01_coral2__training_data")
+    # l.thread.start()
     rospy.spin()
 
 if __name__ == '__main__':
