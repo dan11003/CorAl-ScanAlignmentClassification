@@ -449,45 +449,16 @@ void AlignmentQualityPlot::PublishTransform(const Eigen::Affine3d& T, const std:
 /* INTERFACE */
 
  ros::Publisher AlignmentQualityInterface::pub_train_data;
- std::string AlignmentQualityInterface::path_;
- std::vector<std::vector<double>> AlignmentQualityInterface::traning_data_;
+ std::vector<std::vector<double>> AlignmentQualityInterface::training_data_;
  std::vector<std::vector<double>> AlignmentQualityInterface::vek_perturbation_ = AlignmentQualityInterface::CreatePerturbations();
-
-void AlignmentQualityInterface::PublishTrainingData(PoseScan_S& scan_current, PoseScan_S& scan_loop)
-{
-    ros::NodeHandle nh("~");
-    AlignmentQualityInterface::pub_train_data = nh.advertise<std_msgs::Float64MultiArray>("/coral_training",1000);
-    std::vector<std::vector<double>> vek_perturbation = AlignmentQualityInterface::CreatePerturbations();;
-
-    for(auto && verr : vek_perturbation)
-    {
-        AlignmentQuality::parameters quality_par;
-        quality_par.method = "Coral";
-        const Eigen::Affine3d Tperturbation = VectorToAffine3dxyez(verr);
-
-        AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(scan_current, scan_loop, quality_par, Tperturbation); 
-
-        double sum = 0;
-        for(auto && e : verr)
-            sum+=fabs(e);
-        bool aligned = sum < 0.0001;
-        std::cout << aligned << ", " << sum << std::endl;
-
-        std::vector<double> quality_measure = quality->GetQualityMeasure(); 
-        std_msgs::Float64MultiArray training_data;
-        training_data.data = {(double)aligned, quality_measure[0], quality_measure[1], quality_measure[2]};
-        AlignmentQualityInterface::pub_train_data.publish(training_data); 
-    }
-}
 
 std::vector<bool> AlignmentQualityInterface::TrainingDataService(PoseScan_S& scan_current, PoseScan_S& scan_loop)
 {
     ros::NodeHandle nh("~");
     ros::ServiceClient client = nh.serviceClient<alignment_checker::AlignmentData>("/alignment_service");
-    std::vector<std::vector<double>> vek_perturbation = AlignmentQualityInterface::CreatePerturbations();;
     std::vector<bool> aligned_results;
 
-    for(auto && verr : vek_perturbation)
+    for(auto && verr : vek_perturbation_)
     {
         AlignmentQuality::parameters quality_par;
         quality_par.method = "Coral";
@@ -542,91 +513,29 @@ double AlignmentQualityInterface::AlignmentDataService(PoseScan_S& ref, PoseScan
     return aligned_result;
 }
 
-void AlignmentQualityInterface::InitSaveFile(const std::string& path)
-{
-    AlignmentQualityInterface::path_ = path;
-    // Open csv file
+
+void AlignmentQualityInterface::SaveTrainingData(const std::string& training_data_sequence)
+{   
     std::ofstream result_file;
     std::string training_data_path = std::getenv("BAG_LOCATION") + (std::string)"/place_recognition_eval/training_data/";
-    result_file.open(training_data_path + path, std::ofstream::out);
+
+    // Create subdirectory if it doesnt exists
+    if (!boost::filesystem::exists(training_data_path))
+    	boost::filesystem::create_directory(training_data_path);
+
+    result_file.open(training_data_path + training_data_sequence, std::ofstream::out);
     result_file << "aligned,score1,score2,score3" << std::endl;
-    result_file.close();
-}
 
-void AlignmentQualityInterface::PublishAndSaveTrainingData(PoseScan_S& ref, PoseScan_S& src)
-{   
-    if (AlignmentQualityInterface::path_.empty())
+    for(auto && data : AlignmentQualityInterface::training_data_)
     {
-        std::cout << "Error! Please run InitSaveFile(file_name)\n";
-        return;
-    }
-    std::string training_data_path = std::getenv("BAG_LOCATION") + (std::string)"/place_recognition_eval/_training_data/";
-    // Create subdirectory if it doesnt exists
-    if (!boost::filesystem::exists(training_data_path))
-    	boost::filesystem::create_directory(training_data_path);
-
-    // Open csv file
-    std::ofstream result_file;
-    result_file.open(training_data_path + AlignmentQualityInterface::path_, std::ofstream::out | std::ofstream::app);
-
-    ros::NodeHandle nh_("~");
-    AlignmentQualityInterface::pub_train_data = nh_.advertise<std_msgs::Float64MultiArray>("/coral_training",1000);
-
-    std::vector<std::vector<double>> vek_perturbation = AlignmentQualityInterface::CreatePerturbations();;
-
-    for(auto && verr : vek_perturbation)
-    {
-        AlignmentQuality::parameters quality_par;
-        quality_par.method = "Coral";
-        const Eigen::Affine3d Tperturbation = VectorToAffine3dxyez(verr);
- 
-        AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(ref, src, quality_par, Tperturbation); 
-
-        double sum = 0;
-        for(auto && e : verr)
-            sum+=fabs(e);
-        bool aligned = sum < 0.0001;
-
-        std::vector<double> quality_measure = quality->GetQualityMeasure(); 
-        std_msgs::Float64MultiArray training_data;
-        training_data.data = {(double)aligned, quality_measure[0], quality_measure[1], quality_measure[2]};
-        AlignmentQualityInterface::pub_train_data.publish(training_data); 
-
-        result_file << training_data.data[0] << "," << training_data.data[1] << "," << training_data.data[2] << "," << training_data.data[3] << std::endl;
-
-        cout << verr[0] << "," << verr[0] << "," << verr[0] << std::endl;
-        // std::getchar();
-    }
-    result_file.close();
-}
-
-void AlignmentQualityInterface::SaveTrainingData()
-{   
-    if (AlignmentQualityInterface::path_.empty())
-    {
-        std::cout << "Error! Please run InitSaveFile(file_name)\n";
-        return;
-    }
-    std::string training_data_path = std::getenv("BAG_LOCATION") + (std::string)"/place_recognition_eval/training_data/";
-    // Create subdirectory if it doesnt exists
-    if (!boost::filesystem::exists(training_data_path))
-    	boost::filesystem::create_directory(training_data_path);
-
-    // Open csv file
-    std::ofstream result_file;
-    result_file.open(training_data_path + AlignmentQualityInterface::path_, std::ofstream::out | std::ofstream::app);
-
-    std::vector<std::vector<double>> vek_perturbation = AlignmentQualityInterface::CreatePerturbations();;
-
-    for(auto && data : AlignmentQualityInterface::traning_data_)
-    {
-
         result_file << data[3] << "," << data[0] << "," << data[1] << "," << data[2] << std::endl;
     }
     result_file.close();
-}
 
-void AlignmentQualityInterface::UpdateTrainingData(PoseScan_S& ref, PoseScan_S& src)
+    std::cout << "Saved training data in " << training_data_path + training_data_sequence << std::endl;
+ }
+
+void AlignmentQualityInterface::UpdateTrainingData(PoseScan_S& ref, PoseScan_S& src, const bool visualize)
 {   
     for(auto && verr : AlignmentQualityInterface::vek_perturbation_)
     {
@@ -643,34 +552,24 @@ void AlignmentQualityInterface::UpdateTrainingData(PoseScan_S& ref, PoseScan_S& 
 
         std::vector<double> quality_measure = quality->GetQualityMeasure();
         quality_measure.push_back((double)aligned);
-        AlignmentQualityInterface::traning_data_.push_back(quality_measure);
+        AlignmentQualityInterface::training_data_.push_back(quality_measure);
         // cout << aligned << ", " << quality_measure[0] << "," << quality_measure[1] << "," << quality_measure[2] << std::endl;
 
-        // Publish frame for radar
-        tf::TransformBroadcaster br;
-        tf::Transform transform;
-        tf::transformEigenToTF(src->GetAffine() * Tperturbation, transform);
-        br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", "Tperturbation_frame"));
-        getchar();
+        if (visualize)
+        {
+            // Publish frame for radar
+            tf::TransformBroadcaster br;
+            tf::Transform transform;
+            tf::transformEigenToTF(src->GetAffine() * Tperturbation, transform);
+            br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", "Tperturbation_frame"));
+
+            // Publish pertubation point cloud
+            auto src_cloud = src->GetCloudCopy(src->GetAffine() * Tperturbation);
+            CorAlignment::AlignmentQualityPlot::PublishCloud("/point_cloud_source_Tper", src_cloud, Eigen::Affine3d::Identity(), "coral_world");
+        }
     }
 }
 
-void AlignmentQualityInterface::PublishQualityMeasure(PoseScan_S& ref, PoseScan_S& src)
-{
-    ros::NodeHandle nh("~");
-    AlignmentQualityInterface::pub_train_data = nh.advertise<std_msgs::Float64MultiArray>("/coral_training",1000);
-
-    AlignmentQuality::parameters quality_par;
-    quality_par.method = "Coral";
-
-    AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(ref, src, quality_par); 
-    
-    std::vector<double> quality_measure = quality->GetQualityMeasure(); 
-    std_msgs::Float64MultiArray training_data;
-
-    training_data.data = {1.0, quality_measure[0], quality_measure[1], quality_measure[2]};
-    AlignmentQualityInterface::pub_train_data.publish(training_data); 
-}
 
 const std::vector<std::vector<double>> AlignmentQualityInterface::CreatePerturbations()
 {
@@ -679,8 +578,8 @@ const std::vector<std::vector<double>> AlignmentQualityInterface::CreatePerturba
     vek_perturbation.push_back({0,0,0});
     
     double range_error = 0.5;
-    // double theta_range = 2*M_PI/4.0;
-    double theta_range = 2*M_PI;
+    double theta_range = 2*M_PI/4.0;
+    // double theta_range = 2*M_PI;
     int offset_rotation_steps = 4;
     double theta_error = 0.57*M_PI/180.0;
 
