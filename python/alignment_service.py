@@ -71,8 +71,9 @@ class callback_learner:
             self.mutex.acquire()
             # y_pred = self.model.predict(X)
             y_prob = self.model.predict_proba(X)
+            # print(y_prob)
             self.mutex.release()
-            return AlignmentDataResponse(y_prob)
+            return AlignmentDataResponse(y_prob[0][1])
         else:
             print("Wrong service message...")
 
