@@ -78,7 +78,7 @@ class callback_learner:
 
 def get_df_from_csv(file_path : string) -> pd.DataFrame:
     if os.path.exists(file_path):
-        print("Loaded data from", file_path)
+        print("Loaded training data from", file_path)
         return pd.read_csv(file_path)
     else:
         print("Training data file not found...")
@@ -101,9 +101,10 @@ def main(args):
     parser.add_argument('--training_data', default="", type=str, help='training data csv file')
     args = parser.parse_args()
 
+    traning_data_path = os.environ["BAG_LOCATION"] + '/place_recognition_eval/training_data/' + args.training_data
     # If using previous training data
     if (args.training_data):
-        df_training_data = get_df_from_csv(args.training_data)
+        df_training_data = get_df_from_csv(traning_data_path)
     else:
         df_training_data = pd.DataFrame(columns=['score1', 'score2', 'score3','aligned'])
 
