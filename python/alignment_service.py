@@ -62,19 +62,26 @@ class callback_learner:
 
 
     def callback_service(self,req):
-        if (self.model is not None and len(req.score) == 4):
-            req_dict = {'score1' : req.score[1], 'score2' : req.score[2], 'score3' : req.score[3], 'aligned' : req.score[0]}
-            req_df = pd.DataFrame(req_dict, index=[0])
-            col_names=['score1','score2','score3']
-            X = req_df[col_names]
-            self.mutex.acquire()
-            # y_pred = self.model.predict(X)
-            y_prob = self.model.predict_proba(X)
-            # print(y_prob)
-            self.mutex.release()
-            return AlignmentDataResponse(y_prob[0][1])
-        else:
+        if (self.model is None):
+            print("Model not loaded...")
+            return 
+
+        if (len(req.score) != 4):
             print("Wrong service message...")
+            return 
+
+        req_dict = {'score1' : req.score[1], 'score2' : req.score[2], 'score3' : req.score[3], 'aligned' : req.score[0]}
+        req_df = pd.DataFrame(req_dict, index=[0])
+        col_names=['score1','score2','score3']
+        X = req_df[col_names]
+        self.mutex.acquire()
+        # y_pred = self.model.predict(X)
+        y_prob = self.model.predict_proba(X)
+        # print(y_prob)
+        self.mutex.release()
+        return AlignmentDataResponse(y_prob[0][1])
+
+            
 
 def get_df_from_csv(file_path : string) -> pd.DataFrame:
     if os.path.exists(file_path):
@@ -92,6 +99,11 @@ def get_trained_classifier(df : pd.DataFrame) -> LogisticRegression:
     y=y.astype('int')
     logreg = LogisticRegression(class_weight='balanced')
     logreg.fit(X,y)
+    y_pred=logreg.predict(X)
+    accuracy = metrics.balanced_accuracy_score(y,y_pred)
+    cnf_matrix = metrics.confusion_matrix(y, y_pred,normalize=None)
+    print("Accuracy: "+str(accuracy)+", Datapoints: "+str(df.shape[0]))
+    print("confusion: +\n"+str(cnf_matrix))
     return logreg
 
 
