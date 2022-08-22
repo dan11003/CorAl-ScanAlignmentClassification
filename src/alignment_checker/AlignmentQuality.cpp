@@ -542,7 +542,7 @@ void AlignmentQualityInterface::UpdateTrainingData(PoseScan_S& ref, PoseScan_S& 
         AlignmentQuality::parameters quality_par;
         quality_par.method = "Coral";
         const Eigen::Affine3d Tperturbation = VectorToAffine3dxyez(verr);
- 
+        //std::cout << Tperturbation.translation().transpose() << std::endl;
         AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(ref, src, quality_par, Tperturbation); 
 
         double sum = 0;
@@ -578,19 +578,17 @@ const std::vector<std::vector<double>> AlignmentQualityInterface::CreatePerturba
     vek_perturbation.push_back({0,0,0});
     
     double range_error = 0.5;
-    double theta_range = 2*M_PI/4.0;
+    //double theta_range = 2*M_PI;
     // double theta_range = 2*M_PI;
-    int offset_rotation_steps = 4;
-    double theta_error = 0.57*M_PI/180.0;
+    //int offset_rotation_steps = 4;
+    //double theta_error = 0.0; //0.57*M_PI/180.0;
 
     // Induce errors
-    for(int i=0 ; i<offset_rotation_steps ; i++){
-        const double fraction = ((double)i) / ((double)offset_rotation_steps);
-        const double pol_error = fraction * theta_range;
-        const double x = range_error*cos(pol_error);
-        const double y = range_error*sin(pol_error);
-        vek_perturbation.push_back({x, y, theta_error});
-    }
+    vek_perturbation = {
+      {0,0,0}, // Aligned
+      {range_error, 0, 0}, {0, range_error, 0}, {-range_error, 0, 0}, {0, -range_error, 0}  //Missaligned
+    };
+
     return vek_perturbation;
 }
 
