@@ -592,5 +592,106 @@ const std::vector<std::vector<double>> AlignmentQualityInterface::CreatePerturba
     return vek_perturbation;
 }
 
+AlignmentClassifier::AlignmentClassifier()
+{
+    // Print Python version
+    py::module sys = py::module::import("sys");
+    py::print(sys.attr("version"));
+
+    // Finds path to ../alignment_classifier.py
+    py::module rpspkg = py::module::import("rospkg");
+    py::object rospack = rpspkg.attr("RosPack")();
+    py::object rospack_path = rospack.attr("get_path")("alignment_checker");
+    string alignment_checker_path = rospack_path.cast<std::string>();
+    auto path = sys.attr("path");
+
+    // Import alignment_classifier.py
+    path.attr("append")(alignment_checker_path + "/python");
+    auto alignment_classifier = py::module::import("alignment_classifier");
+    this->callback_learner_ = alignment_classifier.attr("AlignmentClassifier")();
+}
+
+AlignmentClassifier::AlignmentClassifier(const std::string& training_data_file)
+{
+    // Print Python version
+    py::module sys = py::module::import("sys");
+    py::print(sys.attr("version"));
+
+    // Finds path to ../alignment_classifier.py
+    py::module rpspkg = py::module::import("rospkg");
+    py::object rospack = rpspkg.attr("RosPack")();
+    py::object rospack_path = rospack.attr("get_path")("alignment_checker");
+    string alignment_checker_path = rospack_path.cast<std::string>();
+    auto path = sys.attr("path");
+
+    // Import alignment_classifier.py
+    path.attr("append")(alignment_checker_path + "/python");
+    auto alignment_classifier = py::module::import("alignment_classifier");
+    this->callback_learner_ = alignment_classifier.attr("AlignmentClassifier")(training_data_file);
+}
+
+double AlignmentClassifier::GetAlignmentProbability(PoseScan_S& ref, PoseScan_S& src)
+{
+    AlignmentQuality::parameters quality_par;
+    quality_par.method = "Coral";
+
+    // Get quality measure values
+    AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(ref, src, quality_par);
+    std::vector<double> quality_measure = quality->GetQualityMeasure();
+
+    // Using pybind11 for classification
+    py::object res = this->callback_learner_.attr("get_prob")(quality_measure[0], quality_measure[1]);
+    double coral_similarity = res.cast<double>();
+    return coral_similarity;
+}
+
+void AlignmentClassifier::UpdateTrainingData(PoseScan_S& ref, PoseScan_S& src)
+{
+    double range_error = 0.5;
+    std::vector<std::vector<double>> vek_perturbation = 
+    {
+        {0,0,0}, // Aligned
+        {range_error, 0, 0}, {0, range_error, 0},   //Missaligned
+        {-range_error, 0, 0}, {0, -range_error, 0}  //Missaligned
+    };
+     for(auto && verr : AlignmentQualityInterface::vek_perturbation_)
+    {
+        AlignmentQuality::parameters quality_par;
+        quality_par.method = "Coral";
+        const Eigen::Affine3d Tperturbation = VectorToAffine3dxyez(verr);
+        AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(ref, src, quality_par, Tperturbation); 
+
+        double sum = 0;
+        for(auto && e : verr)
+            sum+=fabs(e);
+        bool aligned = sum < 0.0001;
+
+        std::vector<double> quality_measure = quality->GetQualityMeasure();
+        quality_measure.push_back((double)aligned);
+        this->training_data_.push_back(quality_measure);
+    }
+}
+
+void AlignmentClassifier::SaveTrainingData(const std::string& training_data_sequence)
+{   
+    std::ofstream result_file;
+    std::string training_data_path = std::getenv("BAG_LOCATION") + (std::string)"/coral_training_data/";
+
+    // Create subdirectory if it doesnt exists
+    if (!boost::filesystem::exists(training_data_path))
+    	boost::filesystem::create_directory(training_data_path);
+
+    result_file.open(training_data_path + training_data_sequence, std::ofstream::out);
+    result_file << "aligned,score1,score2,score3" << std::endl;
+
+    for(auto && data : this->training_data_)
+    {
+        result_file << data[3] << "," << data[0] << "," << data[1] << "," << data[2] << std::endl;
+    }
+    result_file.close();
+
+    std::cout << "Saved training data in " << training_data_path + training_data_sequence << std::endl;
+ }
+
 }
 

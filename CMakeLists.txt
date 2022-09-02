@@ -11,6 +11,9 @@ ENDIF(CMAKE_SIZEOF_VOID_P EQUAL 4)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 
+set(PYBIND11_PYTHON_VERSION 3.8 CACHE STRING "")
+find_package(pybind11 REQUIRED) 
+
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
@@ -83,7 +86,7 @@ set (${PROJECT_NAME}_LIB_SRCS
     #src/alignment_checker/ndtScanComparsion.cpp ##uncomment if ndt libraries are not being used, this is only used for evaluation
     )
 add_library(${PROJECT_NAME} ${${PROJECT_NAME}_LIB_SRCS})
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${PCL_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR}  pcl_common ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${PCL_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR}  pcl_common ${OpenCV_LIBS} pybind11::embed)
 
 ###########
 ## Build ##

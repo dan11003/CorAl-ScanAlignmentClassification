@@ -38,6 +38,10 @@
 #include "alignment_checker/AlignmentData.h"
 #include "alignment_checker/AlignmentDataRequest.h"
 
+// pybind11
+#include <pybind11/embed.h>
+namespace py = pybind11;
+
 namespace CorAlignment{
 
 using std::endl;
@@ -340,6 +344,24 @@ public:
     static std::vector<std::vector<double>> training_data_;
     static std::vector<std::vector<double>> vek_perturbation_;
 private:
+};
+
+class AlignmentClassifier
+{
+public:
+    AlignmentClassifier();
+    AlignmentClassifier(const std::string& training_data_file);
+    double GetAlignmentProbability(PoseScan_S& ref, PoseScan_S& src);
+
+    // Get training data
+    void UpdateTrainingData(PoseScan_S& ref, PoseScan_S& src);
+    void SaveTrainingData(const std::string& training_data_sequence);
+private:
+    std::vector<std::vector<double>> training_data_;
+
+    // pybind11
+    py::scoped_interpreter guard_{};
+    py::object callback_learner_;
 };
 
 }
