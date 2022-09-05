@@ -7,7 +7,7 @@ import os.path
 
 class AlignmentClassifier:
 
-    def __init__(self, training_data = ""):
+    def __init__(self, training_data = "data"):
         print("Created AlignmentClassifier")
         self.df = self.get_df_from_csv(training_data)
         self.model = None
