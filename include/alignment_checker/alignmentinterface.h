@@ -2,6 +2,11 @@
 #include "alignment_checker/AlignmentQuality.h"
 #include "alignment_checker/ScanType.h"
 #include "map"
+#include <pybind11/embed.h>
+#include <pybind11/numpy.h>
+#include <pybind11/eigen.h>
+namespace py = pybind11;
+using namespace pybind11::literals; 
 //!*
 //! Binary classification only, can be used for multiple tasks
 //!*/
@@ -12,8 +17,10 @@ using std::cout; using std::cerr; using std::endl;
 class AlignmentLearningInterface{
 
 protected:
+public:
 
-  PythonClassifierInterface(){}
+  // PythonClassifierInterface(){}
+  AlignmentLearningInterface();
 
   //!*
   //! Interface of binary classification
@@ -21,13 +28,13 @@ protected:
 
   void fit( const std::string& model);
 
-  void Eigen::MatrixXd predict_proba() {return predict_proba(X_);} // X_{n x m}. n rows samples, m quality measures. return y_pred_{n x 1}
+  Eigen::MatrixXd predict_proba() {return predict_proba(X_);} // X_{n x m}. n rows samples, m quality measures. return y_pred_{n x 1}
 
-  void Eigen::MatrixXd predict_proba(Eigen::MatrixXd& X) {} // X_{n x m}. n rows samples, m quality measures. return y_pred_{n x 1}
+  Eigen::MatrixXd predict_proba(const Eigen::MatrixXd& X); // X_{n x m}. n rows samples, m quality measures. return y_pred_{n x 1}
 
-  void predict(){return predict(X_);} // Uses predict proba internally, rahter then reimplementing it
+  Eigen::MatrixXd predict(const Eigen::MatrixXd& X, const Eigen::MatrixXd& y_pred);
 
-  void predict(Eigen::MatrixXd X, Eigen::MatrixXd y_pred);
+  Eigen::MatrixXd predict(){return this->predict(this->X_, this->y_);} // Uses predict proba internally, rahter then reimplementing it
 
   void AddDataPoint(Eigen::MatrixXd X_i, Eigen::MatrixXd y_i); // extends X_ and y_ with an additional datapoint
 
@@ -53,6 +60,10 @@ protected:
 private:
   //Should hold a pybind object
 
+  // pybind11
+  static py::scoped_interpreter guard_;
+  py::module sklearn_;
+  py::object py_clf_;
 };
 
 
@@ -60,8 +71,7 @@ private:
 // Encapsulates CorAl specific tasks
 
 
-  class ScanLearningInterface
-  {
+class ScanLearningInterface{
   public:
 
   typedef struct scan
@@ -99,7 +109,7 @@ private:
 
   AlignmentLearningInterface cfear_class, coral_class;
   s_scan prev_;
-  unsigned int frame_;
+  unsigned int frame_ = 0;
 
 };
 
