@@ -1,9 +1,9 @@
 #include "alignment_checker/alignmentinterface.h"
 namespace CorAlignment {
 
-py::scoped_interpreter AlignmentLearningInterface::guard_;
+py::scoped_interpreter PythonClassifierInterface::guard_;
 
-AlignmentLearningInterface::AlignmentLearningInterface(){
+PythonClassifierInterface::PythonClassifierInterface(){
 	py::module sys = py::module::import("sys");
 	py::print(sys.attr("version"));
 
@@ -12,7 +12,7 @@ AlignmentLearningInterface::AlignmentLearningInterface(){
 }
 
 
-void AlignmentLearningInterface::fit(const std::string& model){
+void PythonClassifierInterface::fit(const std::string& model){
 	auto py_model = sklearn_.attr("LogisticRegression")("class_weight"_a="balanced");
 
 	// auto tuple_y = py::make_tuple(this->y_.rows(), 1);
@@ -29,14 +29,14 @@ void AlignmentLearningInterface::fit(const std::string& model){
 }
 
 
-Eigen::MatrixXd AlignmentLearningInterface::predict_proba(const Eigen::MatrixXd& X){
+Eigen::MatrixXd PythonClassifierInterface::predict_proba(const Eigen::MatrixXd& X){
 	auto np_X = py::cast(X);
 	auto result = this->py_clf_.attr("predict_proba")(np_X);
 	return result.cast<Eigen::MatrixXd>();
 }
 
 
-Eigen::MatrixXd AlignmentLearningInterface::predict(const Eigen::MatrixXd& X, const Eigen::MatrixXd& y_pred){
+Eigen::MatrixXd PythonClassifierInterface::predict(const Eigen::MatrixXd& X, const Eigen::MatrixXd& y_pred){
 	auto np_y = py::cast(y_pred);
 	auto np_X = py::cast(X);
 	auto result = this->py_clf_.attr("predict")(np_X, np_y.attr("ravel")());
@@ -45,7 +45,7 @@ Eigen::MatrixXd AlignmentLearningInterface::predict(const Eigen::MatrixXd& X, co
 }
 
 
-void AlignmentLearningInterface::AddDataPoint(Eigen::MatrixXd X_i, Eigen::MatrixXd y_i){
+void PythonClassifierInterface::AddDataPoint(Eigen::MatrixXd X_i, Eigen::MatrixXd y_i){
 	this->X_.conservativeResize(this->X_.rows()+1, X_i.cols());
 	this->X_.row(this->X_.rows()-1) = X_i;
 
@@ -54,7 +54,7 @@ void AlignmentLearningInterface::AddDataPoint(Eigen::MatrixXd X_i, Eigen::Matrix
 }
 
 
-void AlignmentLearningInterface::LoadData(const std::string& path){
+void PythonClassifierInterface::LoadData(const std::string& path){
 	std::ifstream file;
 	file.open(path);
 	std::string line;
@@ -87,7 +87,7 @@ void AlignmentLearningInterface::LoadData(const std::string& path){
 }
 
 
-void AlignmentLearningInterface::SaveData(const std::string& path){
+void PythonClassifierInterface::SaveData(const std::string& path){
 	std::ofstream result_file;
 	result_file.open(path, std::ofstream::out);
 	result_file << "aligned,score1,score2,score3" << std::endl;

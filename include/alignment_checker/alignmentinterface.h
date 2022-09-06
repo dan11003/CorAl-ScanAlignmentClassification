@@ -14,13 +14,12 @@ namespace CorAlignment{
 using std::cout; using std::cerr; using std::endl;
 
 
-class AlignmentLearningInterface{
+class PythonClassifierInterface{
 
 protected:
 public:
 
-  // PythonClassifierInterface(){}
-  AlignmentLearningInterface();
+  PythonClassifierInterface();
 
   //!*
   //! Interface of binary classification
@@ -107,7 +106,7 @@ class ScanLearningInterface{
 
   private:
 
-  AlignmentLearningInterface cfear_class, coral_class;
+  PythonClassifierInterface cfear_class, coral_class;
   s_scan prev_;
   unsigned int frame_ = 0;
 
