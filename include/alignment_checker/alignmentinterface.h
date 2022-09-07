@@ -3,7 +3,8 @@
 #include "alignment_checker/ScanType.h"
 #include "map"
 #include <pybind11/embed.h>
-
+#include <pybind11/eigen.h>
+#include <pybind11/numpy.h>
 namespace py = pybind11;
 using namespace pybind11::literals; 
 //!*

@@ -13,22 +13,26 @@ PythonClassifierInterface::PythonClassifierInterface(){
 
 
 void PythonClassifierInterface::fit(const std::string& model){
-	// auto tuple_y = py::make_tuple(this->y_.rows(), 1);
-	// auto np_y = py::module::import("numpy").attr("ndarray")("shape"_a=tuple_y,"buffer"_a=this->y_);
-	// auto tuple_y = py::make_tuple(this->X_.rows(), this->X_.cols());
-	// auto np_X = py::module::import("numpy").attr("ndarray")("shape"_a=tuple_X,"buffer"_a=this->X_);
+  // Error checks
+  if(this->X_.rows() != this->y_.rows()){
+    cout << "Number of examples does not match for features and labels!" << endl;
+    return;
+  }else if(1 > this->y_.rows()){
+    cout << "No examples in training data!" << endl;
+    return;
+  }
 
-	// Creating copies, might better to use refrences instead...
+	// Creating copies, might better to use references instead...
 	auto np_y = py::cast(this->y_);
 	auto np_X = py::cast(this->X_);
 
 	if(model == "LogisticRegression"){
 		auto sklearn_ = py::module::import("sklearn.linear_model");
-		this->py_clf_ = sklearn_.attr("LogisticRegression")("class_weight"_a="balanced").attr("fit")(np_X, np_y.attr("ravel")());
+		this->py_clf_ = sklearn_.attr("LogisticRegression")("class_weight"_a="balanced").attr("fit")(np_X, np_y);
 	}
 	else if(model == "DecisionTreeClassifier"){
 		auto sklearn_ = py::module::import("sklearn.tree");
-		this->py_clf_ = sklearn_.attr("DecisionTreeClassifier")("class_weight"_a="balanced").attr("fit")(np_X, np_y.attr("ravel")());
+		this->py_clf_ = sklearn_.attr("DecisionTreeClassifier")("class_weight"_a="balanced").attr("fit")(np_X, np_y);
 	}
 	else{
 		cout << "Error in selected model" << endl;
@@ -48,8 +52,7 @@ Eigen::VectorXd PythonClassifierInterface::predict_proba(const Eigen::MatrixXd& 
 
 Eigen::VectorXd PythonClassifierInterface::predict(const Eigen::MatrixXd& X){
 	auto np_X = py::cast(X);
-	auto result = this->py_clf_.attr("predict")(np_X);
-	auto y_pred = numpy_.attr("delete")(result, 0, 1);
+	auto y_pred = this->py_clf_.attr("predict")(np_X);
 	return y_pred.cast<Eigen::VectorXd>();
 }
 
@@ -83,16 +86,19 @@ void PythonClassifierInterface::LoadData(const std::string& path){
 		++rows;
 	}
 
-	const int cols = X_values.size() / rows;
-	this->X_.resize(rows, cols);
-	this->y_.resize(rows, 1);
-	for (int i = 0; i < rows; i++){
-		this->y_(i,0) = y_values.at(i);
-		for (int j = 0; j < cols; j++)
-			this->X_(i,j) = X_values.at(cols*i+j);
-	}
-
-	std::cout << "Loaded training data from " << path << std::endl;
+  if(rows > 0){
+    const int cols = X_values.size() / rows;
+    this->X_.resize(rows, cols);
+    this->y_.resize(rows, 1);
+    for (int i = 0; i < rows; i++){
+      this->y_(i) = y_values.at(i);
+      for (int j = 0; j < cols; j++)
+        this->X_(i,j) = X_values.at(cols*i+j);
+    }
+    std::cout << "Loaded training data from " << path << std::endl;
+  }
+  else
+    std::cout << "No training data in " << path << std::endl;
 }
 
 
