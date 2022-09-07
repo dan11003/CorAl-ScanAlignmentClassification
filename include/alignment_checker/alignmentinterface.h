@@ -3,8 +3,7 @@
 #include "alignment_checker/ScanType.h"
 #include "map"
 #include <pybind11/embed.h>
-#include <pybind11/numpy.h>
-#include <pybind11/eigen.h>
+
 namespace py = pybind11;
 using namespace pybind11::literals; 
 //!*
@@ -27,15 +26,15 @@ public:
 
   void fit( const std::string& model);
 
-  Eigen::MatrixXd predict_proba() {return predict_proba(X_);} // X_{n x m}. n rows samples, m quality measures. return y_pred_{n x 1}
+  Eigen::VectorXd predict_proba() {return predict_proba(X_);} // X_{n x m}. n rows samples, m quality measures. return y_pred_{n x 1}
 
-  Eigen::MatrixXd predict_proba(const Eigen::MatrixXd& X); // X_{n x m}. n rows samples, m quality measures. return y_pred_{n x 1}
+  Eigen::VectorXd predict_proba(const Eigen::MatrixXd& X); // X_{n x m}. n rows samples, m quality measures. return y_pred_{n x 1}
 
-  Eigen::MatrixXd predict(const Eigen::MatrixXd& X, const Eigen::MatrixXd& y_pred);
+  Eigen::VectorXd predict(const Eigen::MatrixXd& X);
 
-  Eigen::MatrixXd predict(){return this->predict(this->X_, this->y_);} // Uses predict proba internally, rahter then reimplementing it
+  Eigen::VectorXd predict(){return this->predict(this->X_);} // Uses predict proba internally, rahter then reimplementing it
 
-  void AddDataPoint(Eigen::MatrixXd X_i, Eigen::MatrixXd y_i); // extends X_ and y_ with an additional datapoint
+  void AddDataPoint(Eigen::MatrixXd X_i, Eigen::VectorXd y_i); // extends X_ and y_ with an additional datapoint
 
 
   //! INPUT /OUTPUT
@@ -54,14 +53,14 @@ public:
   //! Members
 
   Eigen::MatrixXd X_; // training data
-  Eigen::MatrixXd y_; // training labels
+  Eigen::VectorXd y_; // training labels
 
 private:
   //Should hold a pybind object
 
   // pybind11
   static py::scoped_interpreter guard_;
-  py::module sklearn_;
+  py::module numpy_;
   py::object py_clf_;
 };
 
@@ -93,6 +92,8 @@ class ScanLearningInterface{
   void AddTrainingData(s_scan& current); // is this too similar to AlignmentQualityInterface, Reuse some of the code? Incremental interface, update for every frame, make sure to use and update prev_
 
   void PredAlignment(s_scan& current, s_scan& prev, std::map<std::string,double>& quality);
+
+  void FitModels(const std::string& model);
 
   // e.g. 2 text files of data. starts training
 

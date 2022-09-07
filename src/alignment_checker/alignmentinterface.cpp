@@ -8,13 +8,11 @@ PythonClassifierInterface::PythonClassifierInterface(){
 	py::print(sys.attr("version"));
 
 	// Import sklearn.linear_model
-	this->sklearn_ = py::module::import("sklearn.linear_model");
+	this->numpy_ = py::module::import("numpy");
 }
 
 
 void PythonClassifierInterface::fit(const std::string& model){
-	auto py_model = sklearn_.attr("LogisticRegression")("class_weight"_a="balanced");
-
 	// auto tuple_y = py::make_tuple(this->y_.rows(), 1);
 	// auto np_y = py::module::import("numpy").attr("ndarray")("shape"_a=tuple_y,"buffer"_a=this->y_);
 	// auto tuple_y = py::make_tuple(this->X_.rows(), this->X_.cols());
@@ -24,32 +22,43 @@ void PythonClassifierInterface::fit(const std::string& model){
 	auto np_y = py::cast(this->y_);
 	auto np_X = py::cast(this->X_);
 
-	this->py_clf_ = py_model.attr("fit")(np_X, np_y.attr("ravel")());
-	std::cout << "Fitted model after training data" << std::endl;
+	if(model == "LogisticRegression"){
+		auto sklearn_ = py::module::import("sklearn.linear_model");
+		this->py_clf_ = sklearn_.attr("LogisticRegression")("class_weight"_a="balanced").attr("fit")(np_X, np_y.attr("ravel")());
+	}
+	else if(model == "DecisionTreeClassifier"){
+		auto sklearn_ = py::module::import("sklearn.tree");
+		this->py_clf_ = sklearn_.attr("DecisionTreeClassifier")("class_weight"_a="balanced").attr("fit")(np_X, np_y.attr("ravel")());
+	}
+	else{
+		cout << "Error in selected model" << endl;
+		return;
+	}
+	std::cout << "Fitted " << model << " model after training data" << std::endl;
 }
 
 
-Eigen::MatrixXd PythonClassifierInterface::predict_proba(const Eigen::MatrixXd& X){
+Eigen::VectorXd PythonClassifierInterface::predict_proba(const Eigen::MatrixXd& X){
 	auto np_X = py::cast(X);
 	auto result = this->py_clf_.attr("predict_proba")(np_X);
-	return result.cast<Eigen::MatrixXd>();
+	auto y_prob = numpy_.attr("delete")(result, 0, 1);
+	return y_prob.cast<Eigen::VectorXd>();
 }
 
 
-Eigen::MatrixXd PythonClassifierInterface::predict(const Eigen::MatrixXd& X, const Eigen::MatrixXd& y_pred){
-	auto np_y = py::cast(y_pred);
+Eigen::VectorXd PythonClassifierInterface::predict(const Eigen::MatrixXd& X){
 	auto np_X = py::cast(X);
-	auto result = this->py_clf_.attr("predict")(np_X, np_y.attr("ravel")());
-
-	return result.cast<Eigen::MatrixXd>();
+	auto result = this->py_clf_.attr("predict")(np_X);
+	auto y_pred = numpy_.attr("delete")(result, 0, 1);
+	return y_pred.cast<Eigen::VectorXd>();
 }
 
 
-void PythonClassifierInterface::AddDataPoint(Eigen::MatrixXd X_i, Eigen::MatrixXd y_i){
+void PythonClassifierInterface::AddDataPoint(Eigen::MatrixXd X_i, Eigen::VectorXd y_i){
 	this->X_.conservativeResize(this->X_.rows()+1, X_i.cols());
 	this->X_.row(this->X_.rows()-1) = X_i;
 
-	this->y_.conservativeResize(this->y_.rows()+1, y_i.cols());
+	this->y_.conservativeResize(this->y_.rows()+1, 1);
 	this->y_.row(this->y_.rows()-1) = y_i;
 }
 
@@ -110,7 +119,15 @@ void ScanLearningInterface::AddTrainingData(s_scan& current){
 		return;
 	}
 
-	double range_error = 0.5;
+	// If below minimum distance to previous scan
+	const double min_dist_btw_scans = 0.5;
+	const double distance_btw_scans = (current.T.translation() - prev_.T.translation()).norm();
+	if (distance_btw_scans < min_dist_btw_scans){
+		this->prev_ = current;
+		return;
+	}
+
+	const double range_error = 0.5;
 	std::vector<std::vector<double>> vek_perturbation = {
 		{0, 0, 0}, // Aligned
 		{range_error, 0, 0}, {0, range_error, 0},   //Missaligned
@@ -137,7 +154,7 @@ void ScanLearningInterface::AddTrainingData(s_scan& current){
 		bool aligned = sum < 0.0001;
 
 		Eigen::MatrixXd X = Eigen::Map<Eigen::Matrix<double, 1, 3> >(quality->GetQualityMeasure().data());
-		Eigen::MatrixXd y = Eigen::Matrix<double, 1, 1>{aligned}; // y(0,0) = aligned;
+		Eigen::VectorXd y(1);	y(0) = aligned;
 		this->coral_class.AddDataPoint(X, y);
 	}
 	this->prev_ = current;
@@ -155,24 +172,25 @@ void ScanLearningInterface::PredAlignment(scan& current, s_scan& prev, std::map<
 	AlignmentQuality_S quality_type = AlignmentQualityFactory::CreateQualityType(scan_curr, scan_prev, quality_par); 
 	
 	Eigen::MatrixXd X = Eigen::Map<Eigen::Matrix<double, 1, 3> >(quality_type->GetQualityMeasure().data());
-	Eigen::MatrixXd proba = this->coral_class.predict_proba(X);
-
-	quality.insert(std::pair<std::string,double>("Coral", proba(0,1)));
+	Eigen::VectorXd y_prob = this->coral_class.predict_proba(X);
+	quality.insert(std::pair<std::string,double>("Coral", y_prob(0)));
 }
 
 
 void ScanLearningInterface::LoadData(const std::string& dir){
 	this->coral_class.LoadData(dir + "/CorAl.txt");
 	this->cfear_class.LoadData(dir + "/CFEAR.txt");
-
-	this->coral_class.fit("LogisticRegression");
-	this->cfear_class.fit("LogisticRegression");
 }
 
 
 void ScanLearningInterface::SaveData(const std::string& dir){
 	this->coral_class.SaveData(dir + "/CorAl.txt");
 	this->cfear_class.SaveData(dir + "/CFEAR.txt");
+}
+
+void ScanLearningInterface::FitModels(const std::string& model){
+	this->coral_class.fit(model);
+	this->cfear_class.fit(model);
 }
 
 } 
