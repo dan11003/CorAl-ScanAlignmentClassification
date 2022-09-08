@@ -182,6 +182,7 @@ class kstrongRadar: public RawRadar
 public:
 
     kstrongRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion );
+    kstrongRadar(const PoseScan::Parameters& pars, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion );
 
     const std::string ToString(){return "kstrongRadar";}
 
@@ -218,7 +219,7 @@ class CFEARFeatures: public kstrongRadar
 public:
 
     CFEARFeatures(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion);
-
+    CFEARFeatures(const PoseScan::Parameters& pars, CFEAR_Radarodometry::MapNormalPtr& CFEARFeatures, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion );
     const std::string ToString(){return "CFEARFeatures";}
 
     CFEAR_Radarodometry::MapNormalPtr CFEARFeatures_;

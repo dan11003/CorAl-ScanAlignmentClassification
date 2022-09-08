@@ -25,7 +25,7 @@ public:
   //! Interface of binary classification
   //*
 
-  void fit( const std::string& model);
+  void fit( const std::string& model = "LogisticRegression");
 
   Eigen::VectorXd predict_proba() {return predict_proba(X_);} // X_{n x m}. n rows samples, m quality measures. return y_pred_{n x 1}
 
@@ -94,7 +94,7 @@ class ScanLearningInterface{
 
   void PredAlignment(s_scan& current, s_scan& prev, std::map<std::string,double>& quality);
 
-  void FitModels(const std::string& model);
+  void FitModels(const std::string& model = "LogisticRegression");
 
   // e.g. 2 text files of data. starts training
 
@@ -107,6 +107,11 @@ class ScanLearningInterface{
   void SaveData(const std::string& dir);
 
   private:
+  const double range_error_ = 0.5;
+  const double min_dist_btw_scans_ = 0.5;
+  
+  Eigen::VectorXd getCorAlQualityMeasure(s_scan& current, s_scan& prev, Eigen::Affine3d Tperturbation = Eigen::Affine3d::Identity());
+  Eigen::VectorXd getCFEARQualityMeasure(s_scan& current, s_scan& prev, Eigen::Affine3d Tperturbation = Eigen::Affine3d::Identity());
 
   PythonClassifierInterface cfear_class, coral_class;
   s_scan prev_;
