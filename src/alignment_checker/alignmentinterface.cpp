@@ -123,7 +123,6 @@ void ScanLearningInterface::AddTrainingData(s_scan& current){
 	// If no previous scan
 	if (this->frame_++ == 0){
 		this->prev_ = current;
-		this->frame_++;
 		return;
 	}
 
@@ -152,11 +151,11 @@ void ScanLearningInterface::AddTrainingData(s_scan& current){
 		y(0) = aligned;
 
 		/* CorAl */
-		Eigen::VectorXd X_CorAl = this->getCorAlQualityMeasure(current, prev_,Tperturbation);
+		Eigen::VectorXd X_CorAl = this->getCorAlQualityMeasure(current, prev_, Tperturbation);
 		this->coral_class.AddDataPoint(X_CorAl, y);
 
 		/* CFEAR */
-		Eigen::VectorXd X_CFEAR = this->getCFEARQualityMeasure(current, prev_,Tperturbation);
+		Eigen::VectorXd X_CFEAR = this->getCFEARQualityMeasure(current, prev_, Tperturbation);
 		this->coral_class.AddDataPoint(X_CFEAR, y);
 	}
 	this->prev_ = current;
@@ -166,12 +165,12 @@ void ScanLearningInterface::AddTrainingData(s_scan& current){
 void ScanLearningInterface::PredAlignment(scan& current, s_scan& prev, std::map<std::string,double>& quality){
 	/* CorAl */
 	Eigen::VectorXd X_CorAl = this->getCorAlQualityMeasure(current, prev);
-	Eigen::VectorXd y_CorAl = this->coral_class.predict_proba(X_CorAl);
+	Eigen::VectorXd y_CorAl = this->coral_class.predict_proba(X_CorAl.transpose());
 	quality["Coral"] = y_CorAl(0);
 	
 	/* CFEAR */
 	Eigen::MatrixXd X_CFEAR = this->getCFEARQualityMeasure(current, prev);
-	Eigen::VectorXd y_CFEAR = this->coral_class.predict_proba(X_CFEAR);
+	Eigen::VectorXd y_CFEAR = this->cfear_class.predict_proba(X_CFEAR.transpose());
 	quality["CFEAR"] = y_CFEAR(0);
 }
 
