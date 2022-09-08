@@ -58,11 +58,13 @@ Eigen::VectorXd PythonClassifierInterface::predict(const Eigen::MatrixXd& X){
 
 
 void PythonClassifierInterface::AddDataPoint(Eigen::MatrixXd X_i, Eigen::VectorXd y_i){
-	this->X_.conservativeResize(this->X_.rows()+1, X_i.cols());
-	this->X_.row(this->X_.rows()-1) = X_i;
+	Eigen::MatrixXd X_temp = X_;
+	this->X_.conservativeResize(this->X_.rows() + X_i.rows(), X_i.cols());
+	this->X_<< X_temp, X_i;
 
-	this->y_.conservativeResize(this->y_.rows()+1, 1);
-	this->y_.row(this->y_.rows()-1) = y_i;
+	Eigen::MatrixXd y_temp = y_;
+	this->y_.conservativeResize(this->y_.rows() + y_i.rows(), 1);
+	this->y_<< y_temp, y_i;
 }
 
 
@@ -118,7 +120,7 @@ void PythonClassifierInterface::SaveData(const std::string& path){
 	std::cout << "Saved training data in " << path << std::endl;
 }
 
-// add min_dist_btw_scans, range_error to class
+
 void ScanLearningInterface::AddTrainingData(s_scan& current){
 	// If no previous scan
 	if (this->frame_++ == 0){
@@ -151,12 +153,12 @@ void ScanLearningInterface::AddTrainingData(s_scan& current){
 		y(0) = aligned;
 
 		/* CorAl */
-		Eigen::VectorXd X_CorAl = this->getCorAlQualityMeasure(current, prev_, Tperturbation);
+		Eigen::MatrixXd X_CorAl = this->getCorAlQualityMeasure(current, prev_, Tperturbation);
 		this->coral_class.AddDataPoint(X_CorAl, y);
 
 		/* CFEAR */
-		Eigen::VectorXd X_CFEAR = this->getCFEARQualityMeasure(current, prev_, Tperturbation);
-		this->coral_class.AddDataPoint(X_CFEAR, y);
+		Eigen::MatrixXd X_CFEAR = this->getCFEARQualityMeasure(current, prev_, Tperturbation);
+		this->cfear_class.AddDataPoint(X_CFEAR, y);
 	}
 	this->prev_ = current;
 }
@@ -164,13 +166,13 @@ void ScanLearningInterface::AddTrainingData(s_scan& current){
 
 void ScanLearningInterface::PredAlignment(scan& current, s_scan& prev, std::map<std::string,double>& quality){
 	/* CorAl */
-	Eigen::VectorXd X_CorAl = this->getCorAlQualityMeasure(current, prev);
-	Eigen::VectorXd y_CorAl = this->coral_class.predict_proba(X_CorAl.transpose());
+	Eigen::MatrixXd X_CorAl = this->getCorAlQualityMeasure(current, prev);
+	Eigen::VectorXd y_CorAl = this->coral_class.predict_proba(X_CorAl);
 	quality["Coral"] = y_CorAl(0);
 	
 	/* CFEAR */
 	Eigen::MatrixXd X_CFEAR = this->getCFEARQualityMeasure(current, prev);
-	Eigen::VectorXd y_CFEAR = this->cfear_class.predict_proba(X_CFEAR.transpose());
+	Eigen::VectorXd y_CFEAR = this->cfear_class.predict_proba(X_CFEAR);
 	quality["CFEAR"] = y_CFEAR(0);
 }
 
@@ -192,7 +194,7 @@ void ScanLearningInterface::FitModels(const std::string& model){
 }
 
 
-Eigen::VectorXd ScanLearningInterface::getCorAlQualityMeasure(s_scan& current, s_scan& prev, Eigen::Affine3d Toffset){
+Eigen::Matrix<double, 1, 2> ScanLearningInterface::getCorAlQualityMeasure(s_scan& current, s_scan& prev, Eigen::Affine3d Toffset){
 	CorAlignment::PoseScan::Parameters posescan_par; posescan_par.scan_type = CorAlignment::scan_type::kstrongStructured; posescan_par.compensate = false;
 	CorAlignment::PoseScan_S scan_curr = CorAlignment::PoseScan_S(new CorAlignment::kstrongStructuredRadar(posescan_par, current.cldPeaks, current.T, Eigen::Affine3d::Identity()));
 	CorAlignment::PoseScan_S scan_prev = CorAlignment::PoseScan_S(new CorAlignment::kstrongStructuredRadar(posescan_par, prev.cldPeaks, prev.T, Eigen::Affine3d::Identity()));
@@ -201,13 +203,13 @@ Eigen::VectorXd ScanLearningInterface::getCorAlQualityMeasure(s_scan& current, s
 	// quality_par.weight_res_intensity = true
   	AlignmentQuality_S quality_type = AlignmentQualityFactory::CreateQualityType(scan_curr, scan_prev, quality_par, Toffset); 
 
-	Eigen::VectorXd quality_measure = Eigen::Map<Eigen::Matrix<double, 1, 3> >(quality_type->GetQualityMeasure().data()).block<1,2>(0,0);
+	Eigen::Matrix<double, 1, 2> quality_measure = Eigen::Map<Eigen::Matrix<double, 1, 2> >(quality_type->GetQualityMeasure().data());
 	cout<<"CorAl quality measure: \n"<<quality_measure<<endl<<endl;
 	return quality_measure;
 }
 
 
-Eigen::VectorXd ScanLearningInterface::getCFEARQualityMeasure(s_scan& current, s_scan& prev, Eigen::Affine3d Toffset){
+Eigen::Matrix<double, 1, 3> ScanLearningInterface::getCFEARQualityMeasure(s_scan& current, s_scan& prev, Eigen::Affine3d Toffset){
 	CorAlignment::PoseScan::Parameters posescan_par; posescan_par.scan_type = CorAlignment::scan_type::cfear; posescan_par.compensate = false;
 	CorAlignment::PoseScan_S scan_curr = CorAlignment::PoseScan_S(new CorAlignment::CFEARFeatures(posescan_par, current.CFEAR, current.T, Eigen::Affine3d::Identity()));
 	CorAlignment::PoseScan_S scan_prev = CorAlignment::PoseScan_S(new CorAlignment::CFEARFeatures(posescan_par, prev.CFEAR, prev.T, Eigen::Affine3d::Identity()));
@@ -216,7 +218,7 @@ Eigen::VectorXd ScanLearningInterface::getCFEARQualityMeasure(s_scan& current, s
 	// quality_par.weight_res_intensity = true
 	AlignmentQuality_S quality_type = AlignmentQualityFactory::CreateQualityType(scan_curr, scan_prev, quality_par, Toffset); 
 
-	Eigen::VectorXd quality_measure = Eigen::Map<Eigen::Matrix<double, 1, 3> >(quality_type->GetQualityMeasure().data());
+	Eigen::Matrix<double, 1, 3> quality_measure = Eigen::Map<Eigen::Matrix<double, 1, 3> >(quality_type->GetQualityMeasure().data());
 	cout<<"CFEAR quality measure: \n"<<quality_measure<<endl<<endl;
 	return quality_measure;
 }

@@ -110,8 +110,8 @@ class ScanLearningInterface{
   const double range_error_ = 0.5;
   const double min_dist_btw_scans_ = 0.5;
   
-  Eigen::VectorXd getCorAlQualityMeasure(s_scan& current, s_scan& prev, Eigen::Affine3d Tperturbation = Eigen::Affine3d::Identity());
-  Eigen::VectorXd getCFEARQualityMeasure(s_scan& current, s_scan& prev, Eigen::Affine3d Tperturbation = Eigen::Affine3d::Identity());
+  Eigen::Matrix<double, 1, 2> getCorAlQualityMeasure(s_scan& current, s_scan& prev, Eigen::Affine3d Tperturbation = Eigen::Affine3d::Identity());
+  Eigen::Matrix<double, 1, 3> getCFEARQualityMeasure(s_scan& current, s_scan& prev, Eigen::Affine3d Tperturbation = Eigen::Affine3d::Identity());
 
   PythonClassifierInterface cfear_class, coral_class;
   s_scan prev_;
