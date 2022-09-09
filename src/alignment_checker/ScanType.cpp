@@ -104,10 +104,10 @@ Cen2019Radar::Cen2019Radar(const PoseScan::Parameters& pars, cv_bridge::CvImageP
 kstrongRadar::kstrongRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
     : RawRadar(pars, polar, T, Tmotion)
 {
-    assert(polar !=NULL);
+    //assert(polar !=NULL);
 
     CFEAR_Radarodometry::k_strongest_filter(polar, cloud_, pars.kstrong, pars.z_min, pars.range_res, pars.sensor_min_distance);
-    assert(cloud_ != nullptr);
+    //assert(cloud_ != nullptr);
     if(pars.compensate){
         CFEAR_Radarodometry::Compensate(*cloud_, Tmotion_, pars.ccw); //cout<<"k strongest: "<<cloud_->size()<<endl;
     }
@@ -117,7 +117,7 @@ kstrongRadar::kstrongRadar(const PoseScan::Parameters& pars, cv_bridge::CvImageP
 kstrongRadar::kstrongRadar(const PoseScan::Parameters& pars, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
     : RawRadar(pars, nullptr, T, Tmotion)
 {
-    assert(cloud_ != nullptr);
+    //assert(cloud_ != nullptr);
     if(pars.compensate){
         CFEAR_Radarodometry::Compensate(*cloud_, Tmotion_, pars.ccw); //cout<<"k strongest: "<<cloud_->size()<<endl;
     }
@@ -126,7 +126,7 @@ kstrongRadar::kstrongRadar(const PoseScan::Parameters& pars, const Eigen::Affine
 kstrongStructuredRadar::kstrongStructuredRadar(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion, bool peaks)
     : RawRadar(pars, polar, T, Tmotion)
 {
-    assert(polar !=NULL);
+    //assert(polar !=NULL);
     CFEAR_Radarodometry::StructuredKStrongest kstrong(polar_, pars.z_min, pars.kstrong, pars.sensor_min_distance, pars.range_res);
     kstrong.getPeaksFilteredPointCloud(kstrong_peaks_, peaks); // get peaks
     //kstrong.getPeaksFilteredPointCloud(kstrong_filtered_, false); // get peaks
@@ -163,10 +163,10 @@ kstrongStructuredRadar::kstrongStructuredRadar(const PoseScan::Parameters& pars,
 BFARScan::BFARScan(const PoseScan::Parameters& pars, cv_bridge::CvImagePtr& polar, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion)
     : RawRadar(pars, polar, T, Tmotion)
 {
-    assert(polar !=NULL);
+    //assert(polar !=NULL);
     
     // CFEAR_Radarodometry::BFAR_filter(polar, cloud_, pars.window_size_, pars.scale_factor, pars.offset_factor_, pars.range_res, pars.sensor_min_distance);
-    assert(cloud_ != nullptr);
+    //assert(cloud_ != nullptr);
     
 }
 
