@@ -25,6 +25,7 @@ class ScanLearninigInterfaceTest : public ::testing::Test {
 
       scan_learner.AddTrainingData(current);
     }
+    scan_learner.FitModels("LogisticRegression");
     
   }
   CorAlignment::ScanLearningInterface::s_scan current, prev;
@@ -32,31 +33,17 @@ class ScanLearninigInterfaceTest : public ::testing::Test {
 };
 
 
-TEST_F(ScanLearninigInterfaceTest, logisticRegressionPPredAlignmentTest){
-  scan_learner.FitModels("LogisticRegression");
-
-  std::map<std::string,double> quality;
+TEST_F(ScanLearninigInterfaceTest, predAlignmentTest){
+  std::map<std::string,double> quality, quality_offset;
   scan_learner.PredAlignment(current, prev, quality);
 
-  const double coral_pred = quality["CorAl"];
-  const double cfear_pred = quality["CFEAR"];
+  current.T.translate(Eigen::Vector3d(1,1,0));
+  scan_learner.PredAlignment(current, prev, quality_offset);
 
-  EXPECT_TRUE((quality["CorAl"] >= 0) && (quality["CorAl"] <= 1));
-  EXPECT_TRUE((quality["CFEAR"] >= 0) && (quality["CFEAR"] <= 1));
+  EXPECT_GT(quality["Coral"], quality_offset["Coral"]);
+  EXPECT_GT(quality["CFEAR"], quality_offset["CFEAR"]);
 }
 
-TEST_F(ScanLearninigInterfaceTest, decisionTreePPredAlignmentTest){
-  scan_learner.FitModels("DecisionTreeClassifier");
-  
-  std::map<std::string,double> quality;
-  scan_learner.PredAlignment(current, prev, quality);
-
-  const double coral_pred = quality["CorAl"];
-  const double cfear_pred = quality["CFEAR"];
-
-  EXPECT_TRUE((quality["CorAl"] >= 0) && (quality["CorAl"] <= 1));
-  EXPECT_TRUE((quality["CFEAR"] >= 0) && (quality["CFEAR"] <= 1));
-}
 
 TEST_F(ScanLearninigInterfaceTest, saveAndLoadDataTest)
 {
@@ -70,10 +57,9 @@ TEST_F(ScanLearninigInterfaceTest, saveAndLoadDataTest)
   scan_learner.FitModels("LogisticRegression");
   scan_learner_loaded.FitModels("LogisticRegression");
   
-  std::map<std::string,double> quality;
-  scan_learner.PredAlignment(current, prev, quality);
+  std::map<std::string,double> quality, quality_loaded;
 
-  std::map<std::string,double> quality_loaded;
+  scan_learner.PredAlignment(current, prev, quality);
   scan_learner_loaded.PredAlignment(current, prev, quality_loaded);
 
   EXPECT_FLOAT_EQ(quality_loaded["CorAl"], quality["CorAl"]);
