@@ -45,8 +45,7 @@ TEST_F(ScanLearninigInterfaceTest, predAlignmentTest){
 }
 
 
-TEST_F(ScanLearninigInterfaceTest, saveAndLoadDataTest)
-{
+TEST_F(ScanLearninigInterfaceTest, saveAndLoadDataTest){
   const std::string data_path = ros::package::getPath("alignment_checker") + "/data/";
 
   scan_learner.SaveData(data_path);

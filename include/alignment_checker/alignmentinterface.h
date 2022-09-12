@@ -35,7 +35,7 @@ public:
 
   Eigen::VectorXd predict(){return this->predict(this->X_);} // Uses predict proba internally, rahter then reimplementing it
 
-  void AddDataPoint(Eigen::MatrixXd X_i, Eigen::VectorXd y_i); // extends X_ and y_ with an additional datapoint
+  void AddDataPoint(Eigen::MatrixXd X_i, Eigen::VectorXd y_i); // extends X_ and y_ with an additional datapoint(s)
 
 
   //! INPUT /OUTPUT
@@ -57,9 +57,9 @@ public:
   Eigen::VectorXd y_; // training labels
 
 private:
-  //Should hold a pybind object
+  bool is_fit_ = false;
 
-  // pybind11
+  //Pybind11 objects
   static py::scoped_interpreter guard_;
   py::module numpy_;
   py::object py_clf_;
@@ -90,14 +90,26 @@ class ScanLearningInterface{
   //! \param cloud_peaks peaks in current point cloud
   //! \param CFEARScan CFEAR features
   //!
-  void AddTrainingData(s_scan& current); // is this too similar to AlignmentQualityInterface, Reuse some of the code? Incremental interface, update for every frame, make sure to use and update prev_
+  void AddTrainingData(s_scan& current);
 
+  //!
+  //! \brief PredAlignment produce probability values for alignment for current and prev scans 
+  //! \param current Current scan
+  //! \param prev Previous scan
+  //! \param quality Return parameter, result given by quality["CFEAR"] and quality["CorAl"]
+  //!
   void PredAlignment(s_scan& current, s_scan& prev, std::map<std::string,double>& quality);
 
+  //!
+  //! \brief FitModels fits models using given model type
+  //! \param model classification model (currently supported: LogisticRegression, DecisionTreeClassifier)
+  //!
   void FitModels(const std::string& model = "LogisticRegression");
 
-  // e.g. 2 text files of data. starts training
-
+  //!
+  //! \brief LoadData loads data from dir/CFEAR.txt and dir/CorAL.txt
+  //! \param dir
+  //!  
   void LoadData(const std::string& dir);
 
   //!
@@ -113,6 +125,7 @@ class ScanLearningInterface{
   Eigen::Matrix<double, 1, 2> getCorAlQualityMeasure(s_scan& current, s_scan& prev, Eigen::Affine3d Tperturbation = Eigen::Affine3d::Identity());
   Eigen::Matrix<double, 1, 3> getCFEARQualityMeasure(s_scan& current, s_scan& prev, Eigen::Affine3d Tperturbation = Eigen::Affine3d::Identity());
 
+  // Python classifiers for CFEAR and CorAl data
   PythonClassifierInterface cfear_class, coral_class;
   s_scan prev_;
   unsigned int frame_ = 0;

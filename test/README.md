@@ -11,7 +11,7 @@ In [python_classifier_interface_tests.cpp](scan_learning_interface_tests.cpp) ar
 - decisionTreePredictProbaTest
     - Testing __predict_proba()__ using Decision Trees with some dummy training data.
 - saveAndLoadDataTest
-    - Testing __SaveData()__ and __LoadData()__ by first saving data (*test_data.txt*) into [/data](../data), and then loading from saved file. 
+    - Testing __SaveData()__ and __LoadData()__ by first saving data (*training_data.txt*) into [/data](../data), and then loading from saved file. 
 
 
 In [scan_learning_interface_tests.cpp](scan_learning_interface_tests.cpp) are tests for __ScanLearningInterface__.

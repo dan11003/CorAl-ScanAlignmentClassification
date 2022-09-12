@@ -38,11 +38,19 @@ void PythonClassifierInterface::fit(const std::string& model){
     cout << "Error in selected model" << endl;
     return;
   }
+  this->is_fit_ = true;
   std::cout << "Fitted " << model << " model after training data" << std::endl;
 }
 
 
 Eigen::VectorXd PythonClassifierInterface::predict_proba(const Eigen::MatrixXd& X){
+  // If model is not fitted (must run fit() before)
+  if(!is_fit_){
+    std::cout << "Warning! Model is not fitted yet. Return probability as zero(s)" << std::endl;
+    Eigen::VectorXd y_prob(X.rows());
+    y_prob.setZero();
+    return y_prob;
+  }
   auto np_X = py::cast(X);
   auto result = this->py_clf_.attr("predict_proba")(np_X);
   auto y_prob = numpy_.attr("delete")(result, 0, 1);
@@ -51,6 +59,13 @@ Eigen::VectorXd PythonClassifierInterface::predict_proba(const Eigen::MatrixXd& 
 
 
 Eigen::VectorXd PythonClassifierInterface::predict(const Eigen::MatrixXd& X){
+  // If model is not fitted (must run fit() before)
+  if(!is_fit_){
+    std::cout << "Warning! Model is not fitted yet. Return probability as zero(s)" << std::endl;
+    Eigen::VectorXd y_prob(X.rows());
+    y_prob.setZero();
+    return y_prob;
+  }
   auto np_X = py::cast(X);
   auto y_pred = this->py_clf_.attr("predict")(np_X);
   return y_pred.cast<Eigen::VectorXd>();
@@ -58,10 +73,10 @@ Eigen::VectorXd PythonClassifierInterface::predict(const Eigen::MatrixXd& X){
 
 
 void PythonClassifierInterface::AddDataPoint(Eigen::MatrixXd X_i, Eigen::VectorXd y_i){
-  Eigen::MatrixXd X_temp = X_;
-  if(X_.rows() == 0)
+  if(X_.rows() == 0){
     X_ = X_i;
-  else{
+  }else{
+    Eigen::MatrixXd X_temp = X_;
     this->X_.conservativeResize(this->X_.rows() + X_i.rows(), X_i.cols());
     this->X_<< X_temp, X_i;
   }
@@ -73,7 +88,6 @@ void PythonClassifierInterface::AddDataPoint(Eigen::MatrixXd X_i, Eigen::VectorX
     this->y_.conservativeResize(this->y_.rows() + y_i.rows(), 1);
     this->y_<< y_temp, y_i;
   }
-
 }
 
 void PythonClassifierInterface::LoadData(const std::string& path){
@@ -84,6 +98,7 @@ void PythonClassifierInterface::LoadData(const std::string& path){
   std::vector<double> y_values;
   unsigned int rows = 0;
 
+  // Load vectors with values from file
   while (std::getline(file, line)){
     std::stringstream line_stream(line);
     std::string value;
@@ -95,6 +110,7 @@ void PythonClassifierInterface::LoadData(const std::string& path){
     ++rows;
   }
 
+  // Load matrices with values from vectors
   if(rows > 0){
     const int cols = X_values.size() / rows;
     this->X_.resize(rows, cols);
@@ -115,6 +131,12 @@ void PythonClassifierInterface::SaveData(const std::string& path){
   std::ofstream result_file;
   result_file.open(path, std::ofstream::out);
 
+  if(!result_file.is_open()){
+    std::cout << "Could not save training data in " << path << std::endl;
+    return;
+  }
+
+  // Loop over rows and columns in saved data X_ and y_
   const int cols = X_.cols();
   for(int i = 0; i < this->y_.rows(); i++){
     result_file << y_(i);

@@ -26,19 +26,20 @@ TEST_F(PythonClassifierInterfaceTest, logisticRegressionPredictTest){
   Eigen::VectorXd X_test(2,1);
   X_test << 3,4;
 
+  // Get prediction class (0 or 1)
   Eigen::VectorXd y_pred = python_classifier.predict(X_test);
 
   EXPECT_EQ(y_pred(0), 0);
   EXPECT_EQ(y_pred(1), 1);
 }
 
-TEST_F(PythonClassifierInterfaceTest, logisticRegressionPredictProbaTest)
-{
+TEST_F(PythonClassifierInterfaceTest, logisticRegressionPredictProbaTest){
   python_classifier.fit("LogisticRegression");
 
   Eigen::VectorXd X_test(2,1);
   X_test << 3,4;
 
+  // Get probability value [0,1]
   Eigen::VectorXd y_prob = python_classifier.predict_proba(X_test);
 
   EXPECT_LT(y_prob(0), 0.5);
@@ -51,36 +52,50 @@ TEST_F(PythonClassifierInterfaceTest, decisionTreePredictTest){
   Eigen::VectorXd X_test(2,1);
   X_test << 3,4;
 
+  // Get prediction class (0 or 1)
   Eigen::VectorXd y_pred = python_classifier.predict(X_test);
-
+  
   EXPECT_EQ(y_pred(0), 0);
   EXPECT_EQ(y_pred(1), 1);
 }
 
-TEST_F(PythonClassifierInterfaceTest, decisionTreePredictProbaTest)
-{
+TEST_F(PythonClassifierInterfaceTest, decisionTreePredictProbaTest){
   python_classifier.fit("DecisionTreeClassifier");
-  
+
   Eigen::VectorXd X_test(2,1);
   X_test << 3,4;
 
+  // Get probability value [0,1]
   Eigen::VectorXd y_prob = python_classifier.predict_proba(X_test);
 
   EXPECT_LT(y_prob(0), 0.5);
   EXPECT_GT(y_prob(1), 0.5);
 }
 
-TEST_F(PythonClassifierInterfaceTest, saveAndLoadDataTest)
-{
+TEST_F(PythonClassifierInterfaceTest, saveAndLoadDataTest){
   const std::string data_path = ros::package::getPath("alignment_checker") + "/data/";
 
-  python_classifier.SaveData(data_path + "test_data.txt");
+  // Save training data
+  python_classifier.SaveData(data_path + "training_data.txt");
 
+  // Load training data in new classifier
   CorAlignment::PythonClassifierInterface python_classifier_loaded;
-  python_classifier_loaded.LoadData(data_path + "python_test_data.txt");
+  python_classifier_loaded.LoadData(data_path + "training_data.txt");
 
-  EXPECT_EQ(python_classifier.X_, python_classifier_loaded.X_);
-  EXPECT_EQ(python_classifier.y_, python_classifier_loaded.y_);
+  // Fit models
+  python_classifier.fit("LogisticRegression");
+  python_classifier_loaded.fit("LogisticRegression");
+
+  // Test data
+  Eigen::VectorXd X_test(1);
+  X_test(0) = 3;
+
+  // Get probability for original and loaded classifier
+  Eigen::VectorXd y_pred = python_classifier.predict_proba(X_test);
+  Eigen::VectorXd y_pred_loaded = python_classifier_loaded.predict_proba(X_test);
+
+  // Compare results
+  EXPECT_FLOAT_EQ(y_pred(0), y_pred_loaded(0));
 }
 
 // Run all the tests that were declared with TEST()
