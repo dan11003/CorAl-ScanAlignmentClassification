@@ -108,6 +108,17 @@ catkin_install_python(PROGRAMS python/alignment_service.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
+catkin_add_gtest(${PROJECT_NAME}_python_classifier_test test/python_classifier_interface_tests.cpp)
+catkin_add_gtest(${PROJECT_NAME}_scan_learning_test test/scan_learning_interface_tests.cpp)
+
+if(TARGET ${PROJECT_NAME}_python_classifier_test)
+  target_link_libraries(${PROJECT_NAME}_python_classifier_test ${PROJECT_NAME})
+endif()
+
+if(TARGET ${PROJECT_NAME}_scan_learning_test)
+  target_link_libraries(${PROJECT_NAME}_scan_learning_test ${PROJECT_NAME})
+endif()
+
 
 #add_executable(test_align src/test_alignment.cpp )
 #target_link_libraries(test_align ${catkin_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR} ${PROJECT_NAME} ${PCL_LIBRARIES})

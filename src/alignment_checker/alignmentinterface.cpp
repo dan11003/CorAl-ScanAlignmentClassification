@@ -212,7 +212,7 @@ Eigen::Matrix<double, 1, 2> ScanLearningInterface::getCorAlQualityMeasure(s_scan
   AlignmentQuality_S quality_type = AlignmentQualityFactory::CreateQualityType(scan_curr, scan_prev, quality_par, Toffset);
 
   Eigen::Matrix<double, 1, 2> quality_measure = Eigen::Map<Eigen::Matrix<double, 1, 2> >(quality_type->GetQualityMeasure().data());
-  cout<<"CorAl quality measure: \n"<<quality_measure<<endl<<endl;
+  // cout<<"CorAl quality measure: \n"<<quality_measure<<endl<<endl;
   return quality_measure;
 }
 
@@ -227,7 +227,7 @@ Eigen::Matrix<double, 1, 3> ScanLearningInterface::getCFEARQualityMeasure(s_scan
   AlignmentQuality_S quality_type = AlignmentQualityFactory::CreateQualityType(scan_curr, scan_prev, quality_par, Toffset);
 
   Eigen::Matrix<double, 1, 3> quality_measure = Eigen::Map<Eigen::Matrix<double, 1, 3> >(quality_type->GetQualityMeasure().data());
-  cout<<"CFEAR quality measure: \n"<<quality_measure<<endl<<endl;
+  // cout<<"CFEAR quality measure: \n"<<quality_measure<<endl<<endl;
   return quality_measure;
 }
 

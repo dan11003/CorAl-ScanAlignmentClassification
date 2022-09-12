@@ -1,0 +1,92 @@
+#include "alignment_checker/alignmentinterface.h"
+#include <gtest/gtest.h>
+#include <ros/package.h>
+
+/* PythonClassifierInterface tests */
+
+class PythonClassifierInterfaceTest : public ::testing::Test {
+ protected:
+
+  void SetUp() override {
+    Eigen::MatrixXd X_training(6,1);
+    X_training << 1,2,3,4,5,6;
+
+    Eigen::VectorXd y(6);
+    y << 0,0,0,1,1,1;
+
+    python_classifier.AddDataPoint(X_training, y);
+  }
+
+  CorAlignment::PythonClassifierInterface python_classifier;
+};
+
+TEST_F(PythonClassifierInterfaceTest, logisticRegressionPredictTest){
+  python_classifier.fit("LogisticRegression");
+
+  Eigen::VectorXd X_test(2,1);
+  X_test << 3,4;
+
+  Eigen::VectorXd y_pred = python_classifier.predict(X_test);
+
+  EXPECT_EQ(y_pred(0), 0);
+  EXPECT_EQ(y_pred(1), 1);
+}
+
+TEST_F(PythonClassifierInterfaceTest, logisticRegressionPredictProbaTest)
+{
+  python_classifier.fit("LogisticRegression");
+
+  Eigen::VectorXd X_test(2,1);
+  X_test << 3,4;
+
+  Eigen::VectorXd y_prob = python_classifier.predict_proba(X_test);
+
+  EXPECT_LT(y_prob(0), 0.5);
+  EXPECT_GT(y_prob(1), 0.5);
+}
+
+TEST_F(PythonClassifierInterfaceTest, decisionTreePredictTest){
+  python_classifier.fit("DecisionTreeClassifier");
+
+  Eigen::VectorXd X_test(2,1);
+  X_test << 3,4;
+
+  Eigen::VectorXd y_pred = python_classifier.predict(X_test);
+
+  EXPECT_EQ(y_pred(0), 0);
+  EXPECT_EQ(y_pred(1), 1);
+}
+
+TEST_F(PythonClassifierInterfaceTest, decisionTreePredictProbaTest)
+{
+  python_classifier.fit("DecisionTreeClassifier");
+  
+  Eigen::VectorXd X_test(2,1);
+  X_test << 3,4;
+
+  Eigen::VectorXd y_prob = python_classifier.predict_proba(X_test);
+
+  EXPECT_LT(y_prob(0), 0.5);
+  EXPECT_GT(y_prob(1), 0.5);
+}
+
+TEST_F(PythonClassifierInterfaceTest, saveAndLoadDataTest)
+{
+  const std::string data_path = ros::package::getPath("alignment_checker") + "/data/";
+
+  python_classifier.SaveData(data_path + "test_data.txt");
+
+  CorAlignment::PythonClassifierInterface python_classifier_loaded;
+  python_classifier_loaded.LoadData(data_path + "python_test_data.txt");
+
+  EXPECT_EQ(python_classifier.X_, python_classifier_loaded.X_);
+  EXPECT_EQ(python_classifier.y_, python_classifier_loaded.y_);
+}
+
+// Run all the tests that were declared with TEST()
+int main(int argc, char **argv){
+  testing::InitGoogleTest(&argc, argv);
+  ros::init(argc, argv, "test_python_classifier_interface");
+  ros::NodeHandle nh;
+  return RUN_ALL_TESTS();
+}
