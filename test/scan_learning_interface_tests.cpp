@@ -9,6 +9,8 @@ class ScanLearninigInterfaceTest : public ::testing::Test {
  protected:
 
   void SetUp() override {
+    if (!boost::filesystem::exists(data_path))
+      boost::filesystem::create_directory(data_path);
 
     const std::string simple_graph_path = ros::package::getPath("alignment_checker") + "/data/simple_graph.sgh";
 
@@ -28,6 +30,7 @@ class ScanLearninigInterfaceTest : public ::testing::Test {
     scan_learner.FitModels("LogisticRegression");
     
   }
+  const std::string data_path = ros::package::getPath("alignment_checker") + "/data/test_data/";
   CorAlignment::ScanLearningInterface::s_scan current, prev;
   CorAlignment::ScanLearningInterface scan_learner;
 };
@@ -46,8 +49,6 @@ TEST_F(ScanLearninigInterfaceTest, predAlignmentTest){
 
 
 TEST_F(ScanLearninigInterfaceTest, saveAndLoadDataTest){
-  const std::string data_path = ros::package::getPath("alignment_checker") + "/data/";
-
   scan_learner.SaveData(data_path);
 
   CorAlignment::ScanLearningInterface scan_learner_loaded;
@@ -63,6 +64,16 @@ TEST_F(ScanLearninigInterfaceTest, saveAndLoadDataTest){
 
   EXPECT_FLOAT_EQ(quality_loaded["CorAl"], quality["CorAl"]);
   EXPECT_FLOAT_EQ(quality_loaded["CFEAR"], quality["CFEAR"]);
+}
+
+TEST_F(ScanLearninigInterfaceTest, saveROCCurvesTest){
+  scan_learner.SaveROCCurves(data_path);
+
+  EXPECT_TRUE(boost::filesystem::exists(data_path + "/CorAl/ROC.pdf"));
+  EXPECT_TRUE(boost::filesystem::exists(data_path + "/CorAl/ROC.png"));
+
+  EXPECT_TRUE(boost::filesystem::exists(data_path + "/CFEAR/ROC.pdf"));
+  EXPECT_TRUE(boost::filesystem::exists(data_path + "/CFEAR/ROC.png"));
 }
 
 // Run all the tests that were declared with TEST()

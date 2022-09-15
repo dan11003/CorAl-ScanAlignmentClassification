@@ -40,6 +40,7 @@ void PythonClassifierInterface::fit(const std::string& model){
   }
   this->is_fit_ = true;
   std::cout << "Fitted " << model << " model after training data" << std::endl;
+  std::cout << "Accuracy:\n" << Accuracy() << std::endl << "Confusion matrix:\n" << ConfusionMatrix() << std::endl;
 }
 
 
@@ -90,6 +91,34 @@ void PythonClassifierInterface::AddDataPoint(Eigen::MatrixXd X_i, Eigen::VectorX
   }
 }
 
+
+double PythonClassifierInterface::Accuracy(const Eigen::VectorXd& y_true, const Eigen::VectorXd& y_pred){
+  if(y_true.rows() != y_pred.rows()){
+    std::cout << "y_true and y_pred must be equal length!" << std::endl;
+    return -1;
+  }else if(y_true.rows() == 0){
+    std::cout << "Input vectors length can't be zero!" << std::endl;
+    return -1;
+  }
+  auto sklearn_ = py::module::import("sklearn.metrics");
+  auto results = sklearn_.attr("balanced_accuracy_score")(py::cast(y_true), py::cast(y_pred));
+  return results.cast<double>();
+}
+
+
+Eigen::MatrixXd PythonClassifierInterface::ConfusionMatrix(const Eigen::VectorXd& y_true, const Eigen::VectorXd& y_pred){
+  if(y_true.rows() != y_pred.rows()){
+    std::cout << "y_true and y_pred must be equal length!" << std::endl;
+    return Eigen::Matrix2d::Zero();
+  }else if(y_true.rows() == 0){
+    std::cout << "Input vectors length can't be zero!" << std::endl;
+    return Eigen::Matrix2d::Zero();
+  }
+  auto sklearn_ = py::module::import("sklearn.metrics");
+  auto results = sklearn_.attr("confusion_matrix")(py::cast(y_true), py::cast(y_pred));
+  return results.cast<Eigen::MatrixXd>();
+}
+
 void PythonClassifierInterface::LoadData(const std::string& path){
   std::ifstream file;
   file.open(path);
@@ -124,6 +153,22 @@ void PythonClassifierInterface::LoadData(const std::string& path){
   }
   else
     std::cout << "No training data in " << path << std::endl;
+}
+
+
+void PythonClassifierInterface::SaveROCCurve(const std::string& save_path){
+  if(X_.rows()==0 && y_.rows()==0){
+    std::cout << "No training data..." << std::endl;
+    return;
+  }
+  // Finds path to ../python/utils.py
+  std::string python_path = ros::package::getPath("alignment_checker") + "/python";
+
+  // Import utils.py
+  auto path = py::module::import("sys").attr("path").attr("append")(python_path);
+  auto utils = py::module::import("utils");
+
+  utils.attr("SaveROC")(py::cast(X_), py::cast(y_), save_path);
 }
 
 
@@ -216,6 +261,11 @@ void ScanLearningInterface::LoadData(const std::string& dir){
 void ScanLearningInterface::SaveData(const std::string& dir){
   this->coral_class.SaveData(dir + "/CorAl.txt");
   this->cfear_class.SaveData(dir + "/CFEAR.txt");
+}
+
+void ScanLearningInterface::SaveROCCurves(const std::string& save_path){
+  this->coral_class.SaveROCCurve(save_path + "/CorAl");
+  this->cfear_class.SaveROCCurve(save_path + "/CFEAR");
 }
 
 void ScanLearningInterface::FitModels(const std::string& model){

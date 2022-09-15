@@ -5,6 +5,7 @@
 #include <pybind11/embed.h>
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
+#include <ros/package.h>
 namespace py = pybind11;
 using namespace pybind11::literals; 
 //!*
@@ -37,6 +38,13 @@ public:
 
   void AddDataPoint(Eigen::MatrixXd X_i, Eigen::VectorXd y_i); // extends X_ and y_ with an additional datapoint(s)
 
+  double Accuracy() {return Accuracy(this->y_, predict());};
+
+  double Accuracy(const Eigen::VectorXd& y_true, const Eigen::VectorXd& y_pred);
+
+  Eigen::MatrixXd ConfusionMatrix() {return ConfusionMatrix(this->y_, predict());};
+
+  Eigen::MatrixXd ConfusionMatrix(const Eigen::VectorXd& y_true, const Eigen::VectorXd& y_pred);
 
   //! INPUT /OUTPUT
   //! \brief LoadData containing rows of [x_{i,:} y_i]
@@ -50,6 +58,8 @@ public:
   //! \param path
   //!
   void SaveData(const std::string& path); // Containing rows of [x_{i,:} y_i]
+
+  void SaveROCCurve(const std::string& path);
 
   //! Members
 
@@ -117,6 +127,12 @@ class ScanLearningInterface{
   //! \param dir
   //!
   void SaveData(const std::string& dir);
+
+  //!
+  //! \brief SaveROCCurves Generate and save ROC-curves in dir/CFEAR and dir/CorAl
+  //! \param dir
+  //!
+  void SaveROCCurves(const std::string& dir);
 
   private:
   const double range_error_ = 0.5;

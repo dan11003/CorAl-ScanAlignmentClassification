@@ -10,8 +10,12 @@ In [python_classifier_interface_tests.cpp](scan_learning_interface_tests.cpp) ar
     - Testing __predict()__ using Decision Trees with some dummy training data.
 - decisionTreePredictProbaTest
     - Testing __predict_proba()__ using Decision Trees with some dummy training data.
+- accuracyTest
+    - Testing __Accuracy()__ after adding some more training data. Expect that accurcy is between [0.5,1].
 - saveAndLoadDataTest
-    - Testing __SaveData()__ and __LoadData()__ by first saving data (*training_data.txt*) into [/data](../data), and then loading from saved file. 
+    - Testing __SaveData()__ and __LoadData()__ by first saving data (*/data/test_data/training_data.txt*), and then loading it and compare results from loaded and original classifier.
+- saveROCCurveTest
+    - Testing __SaveROCCurve()__ by first saving ROC-curve images (*/data/test_data/ROC.pdf*), and then checking if the images exists.
 
 
 In [scan_learning_interface_tests.cpp](scan_learning_interface_tests.cpp) are tests for __ScanLearningInterface__.
@@ -19,7 +23,9 @@ In [scan_learning_interface_tests.cpp](scan_learning_interface_tests.cpp) are te
 - predAlignmentTest
     - Testing __PredAlignment()__ using Logistic Regression with training data loaded from [/data/simple_graph.sgh](../data/simple_graph.sgh).
 - saveAndLoadDataTest
-    - Testing __SaveData()__ and __LoadData()__ by first saving data (*CFEAR.txt* & *CorAl.txt*) into [/data](../data), and then loading from saved files. 
+    - Testing __SaveData()__ and __LoadData()__ by first saving data (*/data/test_data/CFEAR.txt* & */data/test_data/CorAl.txt*), and then loading from saved files. 
+- saveROCCurvesTest
+    - Testing __SaveROCCurves()__ by first saving ROC-curve images (*/data/test_data/CFEAR/ROC.pdf*, */data/test_data/CorAl/ROC.pdf*), and then checking if the images exists.
 
 
 

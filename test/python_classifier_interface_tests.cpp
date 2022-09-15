@@ -8,6 +8,9 @@ class PythonClassifierInterfaceTest : public ::testing::Test {
  protected:
 
   void SetUp() override {
+    if (!boost::filesystem::exists(data_path))
+      boost::filesystem::create_directory(data_path);
+
     Eigen::MatrixXd X_training(6,1);
     X_training << 1,2,3,4,5,6;
 
@@ -16,7 +19,7 @@ class PythonClassifierInterfaceTest : public ::testing::Test {
 
     python_classifier.AddDataPoint(X_training, y);
   }
-
+  const std::string data_path = ros::package::getPath("alignment_checker") + "/data/test_data/";
   CorAlignment::PythonClassifierInterface python_classifier;
 };
 
@@ -72,9 +75,19 @@ TEST_F(PythonClassifierInterfaceTest, decisionTreePredictProbaTest){
   EXPECT_GT(y_prob(1), 0.5);
 }
 
-TEST_F(PythonClassifierInterfaceTest, saveAndLoadDataTest){
-  const std::string data_path = ros::package::getPath("alignment_checker") + "/data/";
+TEST_F(PythonClassifierInterfaceTest, accuracyTest){
+  Eigen::MatrixXd X_train(2,1);
+  X_train << 2,5;
+  Eigen::VectorXd y_train(2);
+  y_train << 1,0;
+  python_classifier.AddDataPoint(X_train, y_train);
 
+  python_classifier.fit("LogisticRegression");
+  EXPECT_LT(python_classifier.Accuracy(), 1);
+  EXPECT_GT(python_classifier.Accuracy(), 0.5);
+}
+
+TEST_F(PythonClassifierInterfaceTest, saveAndLoadDataTest){
   // Save training data
   python_classifier.SaveData(data_path + "training_data.txt");
 
@@ -96,6 +109,13 @@ TEST_F(PythonClassifierInterfaceTest, saveAndLoadDataTest){
 
   // Compare results
   EXPECT_FLOAT_EQ(y_pred(0), y_pred_loaded(0));
+}
+
+TEST_F(PythonClassifierInterfaceTest, saveROCCurveTest){
+  python_classifier.SaveROCCurve(data_path);
+
+  EXPECT_TRUE(boost::filesystem::exists(data_path + "ROC.pdf"));
+  EXPECT_TRUE(boost::filesystem::exists(data_path + "ROC.png"));
 }
 
 // Run all the tests that were declared with TEST()
