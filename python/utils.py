@@ -39,7 +39,7 @@ def PrintConfusionMatric(cnf_matrix, cnf_matrix_un, directory):
     accuracy = (cnf_matrix_un[0][0]+cnf_matrix_un[1][1])/(cnf_matrix_un[0][0]+cnf_matrix_un[0][1]+cnf_matrix_un[1][0]+cnf_matrix_un[1][1])
     return accuracy
 
-def SaveROC(X,y,directory):
+def SaveROC(X,y,directory, name = "ROC"):
     if not os.path.exists(directory):
         os.mkdir(directory)
     
@@ -58,7 +58,7 @@ def SaveROC(X,y,directory):
     plt.xlabel('False Positive Rate', labelpad=0)
     plt.title("ROC", pad=0)
 
-    path = os.path.join(directory,"ROC")
+    path = os.path.join(directory, name)
     plt.savefig(path+".png")
     plt.savefig(path+".pdf", bbox_inches='tight')
 
