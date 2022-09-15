@@ -39,6 +39,29 @@ def PrintConfusionMatric(cnf_matrix, cnf_matrix_un, directory):
     accuracy = (cnf_matrix_un[0][0]+cnf_matrix_un[1][1])/(cnf_matrix_un[0][0]+cnf_matrix_un[0][1]+cnf_matrix_un[1][0]+cnf_matrix_un[1][1])
     return accuracy
 
+def SaveROC(X,y,directory):
+    if not os.path.exists(directory):
+        os.mkdir(directory)
+    
+    plt.clf()
+    logreg = LogisticRegression(class_weight='balanced')
+    logreg.fit(X,y)
+    y_pred_proba = logreg.predict_proba(X)[::,1]
+    fpr, tpr, _ = metrics.roc_curve(y,  y_pred_proba, drop_intermediate=True)
+    roc_auc = metrics.roc_auc_score(y, y_pred_proba)
+    plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc, marker='.')
+    plt.legend(loc = 'lower right')
+    plt.plot([0, 1], [0, 1],'r--')
+    plt.xlim([0, 1])
+    plt.ylim([0, 1])
+    plt.ylabel('True Positive Rate', labelpad=0)
+    plt.xlabel('False Positive Rate', labelpad=0)
+    plt.title("ROC", pad=0)
+
+    path = os.path.join(directory,"ROC")
+    plt.savefig(path+".png")
+    plt.savefig(path+".pdf", bbox_inches='tight')
+
 def PrintROC(logreg,X_test,y_test,directory):
     if not os.path.exists(directory):
         os.mkdir(directory)
