@@ -13,6 +13,11 @@ using namespace pybind11::literals;
 namespace CorAlignment{
 using std::cout; using std::cerr; using std::endl;
 
+template<typename Derived>
+inline bool is_finite(const Eigen::MatrixBase<Derived>& x)
+{
+  return ( (x - x).array() == (x - x).array()).all();
+}
 
 class PythonClassifierInterface{
 
@@ -90,7 +95,7 @@ class ScanLearningInterface{
   //! \param cloud_peaks peaks in current point cloud
   //! \param CFEARScan CFEAR features
   //!
-  void AddTrainingData(s_scan& current);
+  void AddTrainingData(const s_scan& current);
 
   //!
   //! \brief PredAlignment produce probability values for alignment for current and prev scans 
@@ -122,8 +127,8 @@ class ScanLearningInterface{
   const double range_error_ = 0.5;
   const double min_dist_btw_scans_ = 0.5;
   
-  Eigen::Matrix<double, 1, 2> getCorAlQualityMeasure(s_scan& current, s_scan& prev, Eigen::Affine3d Tperturbation = Eigen::Affine3d::Identity());
-  Eigen::Matrix<double, 1, 3> getCFEARQualityMeasure(s_scan& current, s_scan& prev, Eigen::Affine3d Tperturbation = Eigen::Affine3d::Identity());
+  Eigen::Matrix<double, 1, 2> getCorAlQualityMeasure(const s_scan& current, const s_scan& prev, const Eigen::Affine3d Tperturbation = Eigen::Affine3d::Identity());
+  Eigen::Matrix<double, 1, 3> getCFEARQualityMeasure(const s_scan& current, const s_scan& prev, const Eigen::Affine3d Tperturbation = Eigen::Affine3d::Identity());
 
   // Python classifiers for CFEAR and CorAl data
   PythonClassifierInterface cfear_class, coral_class;

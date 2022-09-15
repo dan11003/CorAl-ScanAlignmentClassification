@@ -179,7 +179,7 @@ CFEARFeatures::CFEARFeatures(const PoseScan::Parameters& pars, cv_bridge::CvImag
 }
 
 // Contructor without polar image input
-CFEARFeatures::CFEARFeatures(const PoseScan::Parameters& pars, CFEAR_Radarodometry::MapNormalPtr& CFEARFeatures, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion )
+CFEARFeatures::CFEARFeatures(const PoseScan::Parameters& pars, const CFEAR_Radarodometry::MapNormalPtr& CFEARFeatures, const Eigen::Affine3d& T, const Eigen::Affine3d& Tmotion )
     : kstrongRadar(pars, T, Tmotion)
 {
 

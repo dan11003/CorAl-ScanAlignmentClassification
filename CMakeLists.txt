@@ -1,14 +1,15 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(alignment_checker)
 set (CMAKE_CXX_STANDARD 14)
-set(CMAKE_BUILD_TYPE release)
+set(CMAKE_BUILD_TYPE debug)
 
 IF(CMAKE_SIZEOF_VOID_P EQUAL 4)
     SET(LIB_SUFFIX "")
 ELSE(CMAKE_SIZEOF_VOID_P EQUAL 4)
     SET(LIB_SUFFIX 64)
 ENDIF(CMAKE_SIZEOF_VOID_P EQUAL 4)
-
+SET(CMAKE_CXX_FLAGS_DEBUG "-O0")
+SET(CMAKE_C_FLAGS_DEBUG "-O0")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
 
 set(PYBIND11_PYTHON_VERSION 3.8 CACHE STRING "")
@@ -111,13 +112,13 @@ catkin_install_python(PROGRAMS python/alignment_service.py
 catkin_add_gtest(${PROJECT_NAME}_python_classifier_test test/python_classifier_interface_tests.cpp)
 catkin_add_gtest(${PROJECT_NAME}_scan_learning_test test/scan_learning_interface_tests.cpp)
 
-if(TARGET ${PROJECT_NAME}_python_classifier_test)
-  target_link_libraries(${PROJECT_NAME}_python_classifier_test ${PROJECT_NAME})
-endif()
+#if(TARGET ${PROJECT_NAME}_python_classifier_test)
+  target_link_libraries(${PROJECT_NAME}_python_classifier_test ${catkin_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR} ${PROJECT_NAME} ${PCL_LIBRARIES})
+#endif()
 
-if(TARGET ${PROJECT_NAME}_scan_learning_test)
-  target_link_libraries(${PROJECT_NAME}_scan_learning_test ${PROJECT_NAME})
-endif()
+#if(TARGET ${PROJECT_NAME}_scan_learning_test)
+  target_link_libraries(${PROJECT_NAME}_scan_learning_test ${catkin_LIBRARIES}  ${Boost_LIBRARIES}  $ENV{EIGEN3_INCLUDE_DIR} ${PROJECT_NAME} ${PCL_LIBRARIES})
+#endif()
 
 
 #add_executable(test_align src/test_alignment.cpp )

@@ -17,6 +17,14 @@ void PythonClassifierInterface::fit(const std::string& model){
   if(this->X_.rows() != this->y_.rows()){
     cout << "Number of examples does not match for features and labels!" << endl;
     return;
+  }
+  else if(!is_finite(X_) || !is_finite(y_)){
+    cout << "Matrix not finite: " << endl;
+    /*if(!is_finite(X_)){
+      cout << X_ << endl;
+    }else{
+      cout << y_ << endl;
+    }*/
   }else if(1 > this->y_.rows()){
     cout << "No examples in training data!" << endl;
     return;
@@ -29,6 +37,7 @@ void PythonClassifierInterface::fit(const std::string& model){
   if(model == "LogisticRegression"){
     auto sklearn_ = py::module::import("sklearn.linear_model");
     this->py_clf_ = sklearn_.attr("LogisticRegression")("class_weight"_a="balanced").attr("fit")(np_X, np_y);
+
   }
   else if(model == "DecisionTreeClassifier"){
     auto sklearn_ = py::module::import("sklearn.tree");
@@ -151,7 +160,7 @@ void PythonClassifierInterface::SaveData(const std::string& path){
 }
 
 
-void ScanLearningInterface::AddTrainingData(s_scan& current){
+void ScanLearningInterface::AddTrainingData(const s_scan& current){
   // If no previous scan
   if (this->frame_++ == 0){
     this->prev_ = current;
@@ -184,10 +193,12 @@ void ScanLearningInterface::AddTrainingData(s_scan& current){
 
     /* CorAl */
     Eigen::MatrixXd X_CorAl = this->getCorAlQualityMeasure(current, prev_, Tperturbation);
+    //cout << X_CorAl << ", " << y(0) << endl;
     this->coral_class.AddDataPoint(X_CorAl, y);
 
     /* CFEAR */
     Eigen::MatrixXd X_CFEAR = this->getCFEARQualityMeasure(current, prev_, Tperturbation);
+    //cout << X_CFEAR << ", " << y(0) << endl;
     this->cfear_class.AddDataPoint(X_CFEAR, y);
   }
   this->prev_ = current;
@@ -219,18 +230,20 @@ void ScanLearningInterface::SaveData(const std::string& dir){
 }
 
 void ScanLearningInterface::FitModels(const std::string& model){
+  cout << "Fit CorAl model" << endl;
   this->coral_class.fit(model);
+  cout << "Fit CFEAR model" << endl;
   this->cfear_class.fit(model);
 }
 
 
-Eigen::Matrix<double, 1, 2> ScanLearningInterface::getCorAlQualityMeasure(s_scan& current, s_scan& prev, Eigen::Affine3d Toffset){
+Eigen::Matrix<double, 1, 2> ScanLearningInterface::getCorAlQualityMeasure(const s_scan& current, const s_scan& prev, const Eigen::Affine3d Toffset){
   CorAlignment::PoseScan::Parameters posescan_par; posescan_par.scan_type = CorAlignment::scan_type::kstrongStructured; posescan_par.compensate = false;
   CorAlignment::PoseScan_S scan_curr = CorAlignment::PoseScan_S(new CorAlignment::kstrongStructuredRadar(posescan_par, current.cldPeaks, current.T, Eigen::Affine3d::Identity()));
   CorAlignment::PoseScan_S scan_prev = CorAlignment::PoseScan_S(new CorAlignment::kstrongStructuredRadar(posescan_par, prev.cldPeaks, prev.T, Eigen::Affine3d::Identity()));
 
-  AlignmentQuality::parameters quality_par; quality_par.method = "Coral";
-  // quality_par.weight_res_intensity = true
+  AlignmentQuality::parameters quality_par; quality_par.method = "Coral"; quality_par.radius = 1.0; quality_par.weight_res_intensity = false;
+
   AlignmentQuality_S quality_type = AlignmentQualityFactory::CreateQualityType(scan_curr, scan_prev, quality_par, Toffset);
 
   Eigen::Matrix<double, 1, 2> quality_measure = Eigen::Map<Eigen::Matrix<double, 1, 2> >(quality_type->GetQualityMeasure().data());
@@ -239,7 +252,7 @@ Eigen::Matrix<double, 1, 2> ScanLearningInterface::getCorAlQualityMeasure(s_scan
 }
 
 
-Eigen::Matrix<double, 1, 3> ScanLearningInterface::getCFEARQualityMeasure(s_scan& current, s_scan& prev, Eigen::Affine3d Toffset){
+Eigen::Matrix<double, 1, 3> ScanLearningInterface::getCFEARQualityMeasure(const s_scan& current, const s_scan& prev, const Eigen::Affine3d Toffset){
   CorAlignment::PoseScan::Parameters posescan_par; posescan_par.scan_type = CorAlignment::scan_type::cfear; posescan_par.compensate = false;
   CorAlignment::PoseScan_S scan_curr = CorAlignment::PoseScan_S(new CorAlignment::CFEARFeatures(posescan_par, current.CFEAR, current.T, Eigen::Affine3d::Identity()));
   CorAlignment::PoseScan_S scan_prev = CorAlignment::PoseScan_S(new CorAlignment::CFEARFeatures(posescan_par, prev.CFEAR, prev.T, Eigen::Affine3d::Identity()));
