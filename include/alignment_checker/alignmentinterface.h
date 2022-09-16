@@ -6,8 +6,14 @@
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
 #include <ros/package.h>
+
+#define CFEAR_COST "CFEAR"
+#define CORAL_COST "coral"
+
 namespace py = pybind11;
 using namespace pybind11::literals; 
+
+
 //!*
 //! Binary classification only, can be used for multiple tasks
 //!*/
@@ -94,6 +100,16 @@ class ScanLearningInterface{
     pcl::PointCloud<pcl::PointXYZI>::Ptr cld;
     pcl::PointCloud<pcl::PointXYZI>::Ptr cldPeaks;
     CFEAR_Radarodometry::MapNormalPtr CFEAR;
+
+    void Print(){
+      std::string scld   = (cld==nullptr) ? "Null" : std::to_string(cld->size());
+      std::string speak  = (cldPeaks==nullptr) ? "Null" : std::to_string((int)cldPeaks->size());
+      std::string scfear = (CFEAR==nullptr) ? "Null" : std::to_string(CFEAR->GetSize());
+
+      cout << "Cld:   " << scld << endl;
+      cout << "Peak:  " << speak << endl;
+      cout << "CFEAR: " << scfear << endl;
+    }
   }s_scan;
 
   ScanLearningInterface() {}
@@ -113,7 +129,7 @@ class ScanLearningInterface{
   //! \param prev Previous scan
   //! \param quality Return parameter, result given by quality["CFEAR"] and quality["CorAl"]
   //!
-  void PredAlignment(s_scan& current, s_scan& prev, std::map<std::string,double>& quality);
+  void PredAlignment(const s_scan& current, const s_scan& prev, std::map<std::string,double>& quality);
 
   //!
   //! \brief FitModels fits models using given model type

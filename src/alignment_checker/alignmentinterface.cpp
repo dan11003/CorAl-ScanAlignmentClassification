@@ -20,11 +20,6 @@ void PythonClassifierInterface::fit(const std::string& model){
   }
   else if(!is_finite(X_) || !is_finite(y_)){
     cout << "Matrix not finite: " << endl;
-    /*if(!is_finite(X_)){
-      cout << X_ << endl;
-    }else{
-      cout << y_ << endl;
-    }*/
   }else if(1 > this->y_.rows()){
     cout << "No examples in training data!" << endl;
     return;
@@ -203,6 +198,14 @@ void PythonClassifierInterface::SaveData(const std::string& path){
 
   std::cout << "Saved training data in " << path << std::endl;
 }
+/******************* END PythonClassifierInterface *************************/
+
+
+
+
+
+
+/******************* ScanLearningInterface *************************/
 
 
 void ScanLearningInterface::AddTrainingData(const s_scan& current){
@@ -250,16 +253,20 @@ void ScanLearningInterface::AddTrainingData(const s_scan& current){
 }
 
 
-void ScanLearningInterface::PredAlignment(scan& current, s_scan& prev, std::map<std::string,double>& quality){
+void ScanLearningInterface::PredAlignment(const scan& current, const s_scan& prev, std::map<std::string,double>& quality){
   /* CorAl */
-  Eigen::MatrixXd X_CorAl = this->getCorAlQualityMeasure(current, prev);
+  cout << "coral" << endl;
+  Eigen::MatrixXd X_CorAl = this->getCorAlQualityMeasure(current, prev, Eigen::Affine3d::Identity());
+  cout << "X_CorAl\n" << X_CorAl << endl;
   Eigen::VectorXd y_CorAl = this->coral_class.predict_proba(X_CorAl);
-  quality["Coral"] = y_CorAl(0);
+  quality[CORAL_COST] = y_CorAl(0);
+  cout << "Coral: " << quality[CORAL_COST];
 
   /* CFEAR */
-  Eigen::MatrixXd X_CFEAR = this->getCFEARQualityMeasure(current, prev);
+  Eigen::MatrixXd X_CFEAR = this->getCFEARQualityMeasure(current, prev, Eigen::Affine3d::Identity());
   Eigen::VectorXd y_CFEAR = this->cfear_class.predict_proba(X_CFEAR);
-  quality["CFEAR"] = y_CFEAR(0);
+  quality[CFEAR_COST] = y_CFEAR(0);
+  cout << "CFEAR: " << quality[CFEAR_COST];
 }
 
 
@@ -289,10 +296,20 @@ void ScanLearningInterface::FitModels(const std::string& model){
 
 Eigen::Matrix<double, 1, 2> ScanLearningInterface::getCorAlQualityMeasure(const s_scan& current, const s_scan& prev, const Eigen::Affine3d Toffset){
   CorAlignment::PoseScan::Parameters posescan_par; posescan_par.scan_type = CorAlignment::scan_type::kstrongStructured; posescan_par.compensate = false;
+  cout << current.cldPeaks->size() << endl;
+  cout << prev.cldPeaks->size() << endl;
+  cout << current.T.matrix();
+  cout << prev.T.matrix();
+  for (auto && p : current.cldPeaks->points)
+    cout << p.x << "," << p.y << " | ";
+  for (auto && p : prev.cldPeaks->points)
+    cout << p.x << "," << p.y << " | ";
   CorAlignment::PoseScan_S scan_curr = CorAlignment::PoseScan_S(new CorAlignment::kstrongStructuredRadar(posescan_par, current.cldPeaks, current.T, Eigen::Affine3d::Identity()));
   CorAlignment::PoseScan_S scan_prev = CorAlignment::PoseScan_S(new CorAlignment::kstrongStructuredRadar(posescan_par, prev.cldPeaks, prev.T, Eigen::Affine3d::Identity()));
 
-  AlignmentQuality::parameters quality_par; quality_par.method = "Coral"; quality_par.radius = 1.0; quality_par.weight_res_intensity = false;
+  AlignmentQuality::parameters quality_par;
+
+  quality_par.method = "Coral"; quality_par.radius = 1.0; quality_par.weight_res_intensity = false;
 
   AlignmentQuality_S quality_type = AlignmentQualityFactory::CreateQualityType(scan_curr, scan_prev, quality_par, Toffset);
 
@@ -307,7 +324,8 @@ Eigen::Matrix<double, 1, 3> ScanLearningInterface::getCFEARQualityMeasure(const 
   CorAlignment::PoseScan_S scan_curr = CorAlignment::PoseScan_S(new CorAlignment::CFEARFeatures(posescan_par, current.CFEAR, current.T, Eigen::Affine3d::Identity()));
   CorAlignment::PoseScan_S scan_prev = CorAlignment::PoseScan_S(new CorAlignment::CFEARFeatures(posescan_par, prev.CFEAR, prev.T, Eigen::Affine3d::Identity()));
 
-  AlignmentQuality::parameters quality_par; quality_par.method = "P2L";
+  AlignmentQuality::parameters quality_par;
+  quality_par.method = "P2L";
   // quality_par.weight_res_intensity = true
   AlignmentQuality_S quality_type = AlignmentQualityFactory::CreateQualityType(scan_curr, scan_prev, quality_par, Toffset);
 

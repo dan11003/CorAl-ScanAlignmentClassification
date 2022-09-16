@@ -101,6 +101,7 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
     auto src_pcd_entropy = src->GetCloudCopy(src->GetAffine()*Toffset);
     auto ref_pcd_entropy = ref->GetCloudCopy(ref->GetAffine());
 
+
     assert(ref_pcd_entropy != NULL && src_pcd_entropy !=NULL);
 
     std::vector<double> src_i,ref_i;
@@ -112,6 +113,7 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
 
     kd_src.setInputCloud(src_pcd);
     kd_ref.setInputCloud(ref_pcd);
+    cout <<"created kd" <<  endl;
     const size_t merged_size = src_pcd->size() + ref_pcd->size();
     assert(src_pcd->size() > 0 && ref_pcd->size()>0);
 
@@ -220,7 +222,7 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
     //CFEAR_Radarodometry::timing.Document("coral_init",CFEAR_Radarodometry::ToMs(t1-t0));
     //CFEAR_Radarodometry::timing.Document("coral_entropy",CFEAR_Radarodometry::ToMs(t2-t1));
     //CFEAR_Radarodometry::timing.Document("coral_postprocess",CFEAR_Radarodometry::ToMs(t3-t2));
-
+    cout <<"created kd" <<  endl;
 }
 
 
