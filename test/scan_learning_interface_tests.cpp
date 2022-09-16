@@ -69,11 +69,11 @@ TEST_F(ScanLearninigInterfaceTest, saveAndLoadDataTest){
 TEST_F(ScanLearninigInterfaceTest, saveROCCurvesTest){
   scan_learner.SaveROCCurves(data_path);
 
-  EXPECT_TRUE(boost::filesystem::exists(data_path + "/CorAl/ROC.pdf"));
-  EXPECT_TRUE(boost::filesystem::exists(data_path + "/CorAl/ROC.png"));
+  EXPECT_TRUE(boost::filesystem::exists(data_path + "/CorAl_ROC.pdf"));
+  EXPECT_TRUE(boost::filesystem::exists(data_path + "/CorAl_ROC.png"));
 
-  EXPECT_TRUE(boost::filesystem::exists(data_path + "/CFEAR/ROC.pdf"));
-  EXPECT_TRUE(boost::filesystem::exists(data_path + "/CFEAR/ROC.png"));
+  EXPECT_TRUE(boost::filesystem::exists(data_path + "/CFEAR_ROC.pdf"));
+  EXPECT_TRUE(boost::filesystem::exists(data_path + "/CFEAR_ROC.png"));
 }
 
 // Run all the tests that were declared with TEST()

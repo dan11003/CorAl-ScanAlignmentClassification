@@ -70,7 +70,7 @@ public:
   //!
   void SaveData(const std::string& path); // Containing rows of [x_{i,:} y_i]
 
-  void SaveROCCurve(const std::string& path);
+  void SaveROCCurve(const std::string& path, const std::string& file_name = "ROC");
 
   //! Members
 

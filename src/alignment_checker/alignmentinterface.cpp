@@ -160,7 +160,7 @@ void PythonClassifierInterface::LoadData(const std::string& path){
 }
 
 
-void PythonClassifierInterface::SaveROCCurve(const std::string& save_path){
+void PythonClassifierInterface::SaveROCCurve(const std::string& save_path, const std::string& file_name){
   if(X_.rows()==0 && y_.rows()==0){
     std::cout << "No training data..." << std::endl;
     return;
@@ -172,7 +172,7 @@ void PythonClassifierInterface::SaveROCCurve(const std::string& save_path){
   auto path = py::module::import("sys").attr("path").attr("append")(python_path);
   auto utils = py::module::import("utils");
 
-  utils.attr("SaveROC")(py::cast(X_), py::cast(y_), save_path);
+  utils.attr("SaveROC")(py::cast(X_), py::cast(y_), save_path, file_name);
 }
 
 
@@ -282,8 +282,8 @@ void ScanLearningInterface::SaveData(const std::string& dir){
 }
 
 void ScanLearningInterface::SaveROCCurves(const std::string& save_path){
-  this->coral_class.SaveROCCurve(save_path + "/CorAl");
-  this->cfear_class.SaveROCCurve(save_path + "/CFEAR");
+  this->coral_class.SaveROCCurve(save_path, "CorAl_ROC");
+  this->cfear_class.SaveROCCurve(save_path, "CFEAR_ROC");
 }
 
 void ScanLearningInterface::FitModels(const std::string& model){
