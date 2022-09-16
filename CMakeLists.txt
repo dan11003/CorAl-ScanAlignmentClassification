@@ -9,9 +9,10 @@ ELSE(CMAKE_SIZEOF_VOID_P EQUAL 4)
     SET(LIB_SUFFIX 64)
 ENDIF(CMAKE_SIZEOF_VOID_P EQUAL 4)
 
-
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
 set(PYBIND11_PYTHON_VERSION 3.8 CACHE STRING "")
 find_package(pybind11 REQUIRED) 
+
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
