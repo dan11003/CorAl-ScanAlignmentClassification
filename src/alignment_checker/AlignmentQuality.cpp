@@ -113,7 +113,7 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
 
     kd_src.setInputCloud(src_pcd);
     kd_ref.setInputCloud(ref_pcd);
-    cout <<"created kd" <<  endl;
+
     const size_t merged_size = src_pcd->size() + ref_pcd->size();
     assert(src_pcd->size() > 0 && ref_pcd->size()>0);
 
@@ -183,19 +183,27 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
         }
     }
 
+
     if(count_valid > 0){
         sep_ /=w_sum_;
         joint_ /=w_sum_;
+        diff_ = joint_ - sep_;
     }
-    diff_ = joint_ - sep_;
-    //cout<<"joint: "<<joint_<<", sep: "<<sep_<<", diff_"<<diff_<<", N: "<<count_valid<<endl;
-    double overlap = par_.output_overlap ? count_valid/((double)merged_size) : 0.0;
-    quality_ = {joint_, sep_, overlap};
-    //cout<<"quality: "<<quality_ <<endl;
-    //cout<<quality_<<endl;
 
-    // Create merged point cloud
+    const double overlap  = count_valid/((double)merged_size);
+    if (overlap < 0.1){
+        quality_ = {100, -100, -1};
+        valid_ = false;
+    }
+    else {
+        quality_ = {joint_, sep_, (par.output_overlap ? overlap : 0.0) };
+        valid_ = true;
+    }
 
+    //cout << "sep: "  << sep_ << endl;
+    //cout << "joint_: " << joint_ << endl;
+    //cout << "w_sum_: " << w_sum_ << endl;
+    //cout << "overlap: " << overlap << endl;
 
     //Assign entrpy values
     index = 0;
@@ -211,18 +219,10 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
     for (int i = 0; i < merged_entropy->size();i++)
         merged_entropy->points[i].intensity = diff_res_[i]; // set intensity
 
-    //for(int i=0 ; i<joint_res_.size() ; i++){
-    //   cout<<joint_res_[i]<<", "<<sep_res_[i]<<","<<sep_valid[i]<<endl;
-    //}
-
     AlignmentQualityPlot::PublishCloud("/coral_src",    src_pcd_entropy, Eigen::Affine3d::Identity(), "coral_world");
     AlignmentQualityPlot::PublishCloud("/coral_ref",    ref_pcd_entropy, Eigen::Affine3d::Identity(), "coral_world");
     AlignmentQualityPlot::PublishCloud("/coral_merged", merged_entropy,  Eigen::Affine3d::Identity(), "coral_world");
     ros::Time t3 = ros::Time::now();
-    //CFEAR_Radarodometry::timing.Document("coral_init",CFEAR_Radarodometry::ToMs(t1-t0));
-    //CFEAR_Radarodometry::timing.Document("coral_entropy",CFEAR_Radarodometry::ToMs(t2-t1));
-    //CFEAR_Radarodometry::timing.Document("coral_postprocess",CFEAR_Radarodometry::ToMs(t3-t2));
-    cout <<"created kd" <<  endl;
 }
 
 
@@ -336,12 +336,14 @@ CFEARQuality::CFEARQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseSc
     CFEAR_Radarodometry::MapPointNormal::PublishMap("scan1", feature_vek[0], Tvek[0], "world", 1 );
     CFEAR_Radarodometry::MapPointNormal::PublishMap("scan2", feature_vek[1], Tvek[1], "world", -1);
     double score = 0;
-    if(reg.GetCost(feature_vek, Tvek, score, residuals_))
-    {
-      quality_ = {score, (double)residuals_.size(), score/residuals_.size()};
+    if(reg.GetCost(feature_vek, Tvek, score, residuals_)){
+        quality_ = {score, (double)residuals_.size(), score/(std::max((int)residuals_.size(),1) )};
+        valid_ = true;
+    }else{
+        quality_ = {100000, 0, 1000000};
+        valid_ = true;
     }
-
-
+    //cout << quality_ << endl;
 }
 
 CorAlCartQuality::CorAlCartQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseScan> src,  const AlignmentQuality::parameters& par, const Eigen::Affine3d Toffset)  : AlignmentQuality(src, ref, par, Toffset){
@@ -452,9 +454,9 @@ void AlignmentQualityPlot::PublishTransform(const Eigen::Affine3d& T, const std:
 
 /* INTERFACE */
 
- ros::Publisher AlignmentQualityInterface::pub_train_data;
- std::vector<std::vector<double>> AlignmentQualityInterface::training_data_;
- std::vector<std::vector<double>> AlignmentQualityInterface::vek_perturbation_ = AlignmentQualityInterface::CreatePerturbations();
+ros::Publisher AlignmentQualityInterface::pub_train_data;
+std::vector<std::vector<double>> AlignmentQualityInterface::training_data_;
+std::vector<std::vector<double>> AlignmentQualityInterface::vek_perturbation_ = AlignmentQualityInterface::CreatePerturbations();
 
 std::vector<bool> AlignmentQualityInterface::TrainingDataService(PoseScan_S& scan_current, PoseScan_S& scan_loop)
 {
@@ -468,7 +470,7 @@ std::vector<bool> AlignmentQualityInterface::TrainingDataService(PoseScan_S& sca
         quality_par.method = "Coral";
         const Eigen::Affine3d Tperturbation = VectorToAffine3dxyez(verr);
 
-        AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(scan_current, scan_loop, quality_par, Tperturbation); 
+        AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(scan_current, scan_loop, quality_par, Tperturbation);
 
         double sum = 0;
         for(auto && e : verr)
@@ -476,17 +478,17 @@ std::vector<bool> AlignmentQualityInterface::TrainingDataService(PoseScan_S& sca
         bool aligned = sum < 0.0001;
         std::cout << aligned << ", " << sum << std::endl;
 
-        std::vector<double> quality_measure = quality->GetQualityMeasure(); 
+        std::vector<double> quality_measure = quality->GetQualityMeasure();
         std_msgs::Float64MultiArray training_data;
         training_data.data = {(double)aligned, quality_measure[0], quality_measure[1], quality_measure[2]};
 
         alignment_checker::AlignmentData srv;
-		srv.request.score = training_data.data;
+        srv.request.score = training_data.data;
 
-		if(client.call(srv))
-			aligned_results.push_back((double)srv.response.aligned);
-		else
-			ROS_ERROR("Failed to call service alignment_service");
+        if(client.call(srv))
+            aligned_results.push_back((double)srv.response.aligned);
+        else
+            ROS_ERROR("Failed to call service alignment_service");
     }
     return aligned_results;
 }
@@ -499,9 +501,9 @@ double AlignmentQualityInterface::AlignmentDataService(PoseScan_S& ref, PoseScan
     AlignmentQuality::parameters quality_par;
     quality_par.method = "Coral";
 
-    AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(ref, src, quality_par); 
+    AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(ref, src, quality_par);
 
-    std::vector<double> quality_measure = quality->GetQualityMeasure(); 
+    std::vector<double> quality_measure = quality->GetQualityMeasure();
     std_msgs::Float64MultiArray alignment_data;
     alignment_data.data = {1.0, quality_measure[0], quality_measure[1], quality_measure[2]};
 
@@ -513,7 +515,7 @@ double AlignmentQualityInterface::AlignmentDataService(PoseScan_S& ref, PoseScan
         aligned_result = (double)srv.response.aligned;
     else
         ROS_ERROR("Failed to call service alignment_service");
-        
+
     return aligned_result;
 }
 
@@ -525,7 +527,7 @@ void AlignmentQualityInterface::SaveTrainingData(const std::string& training_dat
 
     // Create subdirectory if it doesnt exists
     if (!boost::filesystem::exists(training_data_path))
-    	boost::filesystem::create_directory(training_data_path);
+        boost::filesystem::create_directory(training_data_path);
 
     result_file.open(training_data_path + training_data_sequence, std::ofstream::out);
     result_file << "aligned,score1,score2,score3" << std::endl;
@@ -537,7 +539,7 @@ void AlignmentQualityInterface::SaveTrainingData(const std::string& training_dat
     result_file.close();
 
     std::cout << "Saved training data in " << training_data_path + training_data_sequence << std::endl;
- }
+}
 
 void AlignmentQualityInterface::UpdateTrainingData(PoseScan_S& ref, PoseScan_S& src, const bool visualize)
 {   
@@ -547,7 +549,7 @@ void AlignmentQualityInterface::UpdateTrainingData(PoseScan_S& ref, PoseScan_S& 
         quality_par.method = "Coral";
         const Eigen::Affine3d Tperturbation = VectorToAffine3dxyez(verr);
         //std::cout << Tperturbation.translation().transpose() << std::endl;
-        AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(ref, src, quality_par, Tperturbation); 
+        AlignmentQuality_S quality = AlignmentQualityFactory::CreateQualityType(ref, src, quality_par, Tperturbation);
 
         double sum = 0;
         for(auto && e : verr)
@@ -589,8 +591,8 @@ const std::vector<std::vector<double>> AlignmentQualityInterface::CreatePerturba
 
     // Induce errors
     vek_perturbation = {
-      {0,0,0}, // Aligned
-      {range_error, 0, 0}, {0, range_error, 0}, {-range_error, 0, 0}, {0, -range_error, 0}  //Missaligned
+        {0,0,0}, // Aligned
+        {range_error, 0, 0}, {0, range_error, 0}, {-range_error, 0, 0}, {0, -range_error, 0}  //Missaligned
     };
 
     return vek_perturbation;

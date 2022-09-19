@@ -240,33 +240,38 @@ void ScanLearningInterface::AddTrainingData(const s_scan& current){
     y(0) = aligned;
 
     /* CorAl */
-    Eigen::MatrixXd X_CorAl = this->getCorAlQualityMeasure(current, prev_, Tperturbation);
+    bool valid1 = false;
+    Eigen::MatrixXd X_CorAl = this->getCorAlQualityMeasure(current, prev_, valid1, Tperturbation);
     //cout << X_CorAl << ", " << y(0) << endl;
     this->coral_class.AddDataPoint(X_CorAl, y);
 
     /* CFEAR */
-    Eigen::MatrixXd X_CFEAR = this->getCFEARQualityMeasure(current, prev_, Tperturbation);
+    bool valid2 = false;
+    Eigen::MatrixXd X_CFEAR = this->getCFEARQualityMeasure(current, prev_, valid2, Tperturbation);
     //cout << X_CFEAR << ", " << y(0) << endl;
     this->cfear_class.AddDataPoint(X_CFEAR, y);
   }
   this->prev_ = current;
 }
 
+void ScanLearningInterface::PredAlignment(const scan& current, const s_scan& prev, std::map<std::string,double>& quality, Eigen::MatrixXd& X_CorAl, Eigen::MatrixXd& X_CFEAR, bool& valid){
 
-void ScanLearningInterface::PredAlignment(const scan& current, const s_scan& prev, std::map<std::string,double>& quality){
-  /* CorAl */
-  cout << "coral" << endl;
-  Eigen::MatrixXd X_CorAl = this->getCorAlQualityMeasure(current, prev, Eigen::Affine3d::Identity());
-  cout << "X_CorAl\n" << X_CorAl << endl;
+  bool valid1 = false;
+  X_CorAl = this->getCorAlQualityMeasure(current, prev, valid, Eigen::Affine3d::Identity());
   Eigen::VectorXd y_CorAl = this->coral_class.predict_proba(X_CorAl);
   quality[CORAL_COST] = y_CorAl(0);
-  cout << "Coral: " << quality[CORAL_COST];
 
-  /* CFEAR */
-  Eigen::MatrixXd X_CFEAR = this->getCFEARQualityMeasure(current, prev, Eigen::Affine3d::Identity());
+  bool valid2 = false;
+  X_CFEAR = this->getCFEARQualityMeasure(current, prev, valid, Eigen::Affine3d::Identity());
   Eigen::VectorXd y_CFEAR = this->cfear_class.predict_proba(X_CFEAR);
   quality[CFEAR_COST] = y_CFEAR(0);
-  cout << "CFEAR: " << quality[CFEAR_COST];
+  valid = valid1 && valid2;
+}
+void ScanLearningInterface::PredAlignment(const scan& current, const s_scan& prev, std::map<std::string,double>& quality){
+  Eigen::MatrixXd X_CorAl;
+  Eigen::MatrixXd X_CFEAR;
+  bool valid;
+  PredAlignment(current, prev, quality, X_CorAl, X_CFEAR, valid);
 }
 
 
@@ -294,16 +299,8 @@ void ScanLearningInterface::FitModels(const std::string& model){
 }
 
 
-Eigen::Matrix<double, 1, 2> ScanLearningInterface::getCorAlQualityMeasure(const s_scan& current, const s_scan& prev, const Eigen::Affine3d Toffset){
+Eigen::Matrix<double, 1, 2> ScanLearningInterface::getCorAlQualityMeasure(const s_scan& current, const s_scan& prev, bool& valid, const Eigen::Affine3d Toffset){
   CorAlignment::PoseScan::Parameters posescan_par; posescan_par.scan_type = CorAlignment::scan_type::kstrongStructured; posescan_par.compensate = false;
-  cout << current.cldPeaks->size() << endl;
-  cout << prev.cldPeaks->size() << endl;
-  cout << current.T.matrix();
-  cout << prev.T.matrix();
-  for (auto && p : current.cldPeaks->points)
-    cout << p.x << "," << p.y << " | ";
-  for (auto && p : prev.cldPeaks->points)
-    cout << p.x << "," << p.y << " | ";
   CorAlignment::PoseScan_S scan_curr = CorAlignment::PoseScan_S(new CorAlignment::kstrongStructuredRadar(posescan_par, current.cldPeaks, current.T, Eigen::Affine3d::Identity()));
   CorAlignment::PoseScan_S scan_prev = CorAlignment::PoseScan_S(new CorAlignment::kstrongStructuredRadar(posescan_par, prev.cldPeaks, prev.T, Eigen::Affine3d::Identity()));
 
@@ -314,12 +311,15 @@ Eigen::Matrix<double, 1, 2> ScanLearningInterface::getCorAlQualityMeasure(const 
   AlignmentQuality_S quality_type = AlignmentQualityFactory::CreateQualityType(scan_curr, scan_prev, quality_par, Toffset);
 
   Eigen::Matrix<double, 1, 2> quality_measure = Eigen::Map<Eigen::Matrix<double, 1, 2> >(quality_type->GetQualityMeasure().data());
-  // cout<<"CorAl quality measure: \n"<<quality_measure<<endl<<endl;
+  valid = quality_type->valid_;
+  //cout << "CorAl - quality" << valid << endl;
+  //cout << quality_measure << endl;
+
   return quality_measure;
 }
 
 
-Eigen::Matrix<double, 1, 3> ScanLearningInterface::getCFEARQualityMeasure(const s_scan& current, const s_scan& prev, const Eigen::Affine3d Toffset){
+Eigen::Matrix<double, 1, 3> ScanLearningInterface::getCFEARQualityMeasure(const s_scan& current, const s_scan& prev, bool& valid, const Eigen::Affine3d Toffset){
   CorAlignment::PoseScan::Parameters posescan_par; posescan_par.scan_type = CorAlignment::scan_type::cfear; posescan_par.compensate = false;
   CorAlignment::PoseScan_S scan_curr = CorAlignment::PoseScan_S(new CorAlignment::CFEARFeatures(posescan_par, current.CFEAR, current.T, Eigen::Affine3d::Identity()));
   CorAlignment::PoseScan_S scan_prev = CorAlignment::PoseScan_S(new CorAlignment::CFEARFeatures(posescan_par, prev.CFEAR, prev.T, Eigen::Affine3d::Identity()));
@@ -330,7 +330,9 @@ Eigen::Matrix<double, 1, 3> ScanLearningInterface::getCFEARQualityMeasure(const 
   AlignmentQuality_S quality_type = AlignmentQualityFactory::CreateQualityType(scan_curr, scan_prev, quality_par, Toffset);
 
   Eigen::Matrix<double, 1, 3> quality_measure = Eigen::Map<Eigen::Matrix<double, 1, 3> >(quality_type->GetQualityMeasure().data());
-  // cout<<"CFEAR quality measure: \n"<<quality_measure<<endl<<endl;
+  valid = quality_type->valid_;
+  //cout << "CFEAR - quality: " <<valid<< endl;
+  //cout << quality_measure << endl;
   return quality_measure;
 }
 

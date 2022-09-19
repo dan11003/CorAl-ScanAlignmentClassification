@@ -106,6 +106,7 @@ public:
     const Eigen::Affine3d Toffset_;
     std::vector<double> quality_;
     std::vector<double> residuals_;
+    bool valid_ = false;
 
 
 
@@ -233,7 +234,7 @@ protected:
     std::vector<bool> sep_valid; // length  ref + src
     std::vector<double> joint_res_; // length ref + src
     std::vector<double> diff_res_; // length ref + src
-    double sep_ = 0, joint_ = 0, diff_ = 0, w_sum_;
+    double sep_ = 0, joint_ = 0, diff_ = 0, w_sum_ = 0;
     int count_valid = 0;
 
     pcl::PointCloud<pcl::PointXYZI>::Ptr ref_pcd_entropy, src_pcd_entropy, merged_entropy;

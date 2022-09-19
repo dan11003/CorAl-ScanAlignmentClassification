@@ -131,6 +131,8 @@ class ScanLearningInterface{
   //!
   void PredAlignment(const s_scan& current, const s_scan& prev, std::map<std::string,double>& quality);
 
+  void PredAlignment(const scan& current, const s_scan& prev, std::map<std::string,double>& quality, Eigen::MatrixXd& X_CorAl, Eigen::MatrixXd& X_CFEAR, bool& valid);
+
   //!
   //! \brief FitModels fits models using given model type
   //! \param model classification model (currently supported: LogisticRegression, DecisionTreeClassifier)
@@ -159,8 +161,8 @@ class ScanLearningInterface{
   const double range_error_ = 0.5;
   const double min_dist_btw_scans_ = 0.5;
   
-  Eigen::Matrix<double, 1, 2> getCorAlQualityMeasure(const s_scan& current, const s_scan& prev, const Eigen::Affine3d Tperturbation = Eigen::Affine3d::Identity());
-  Eigen::Matrix<double, 1, 3> getCFEARQualityMeasure(const s_scan& current, const s_scan& prev, const Eigen::Affine3d Tperturbation = Eigen::Affine3d::Identity());
+  Eigen::Matrix<double, 1, 2> getCorAlQualityMeasure(const s_scan& current, const s_scan& prev, bool& valid, const Eigen::Affine3d Tperturbation = Eigen::Affine3d::Identity());
+  Eigen::Matrix<double, 1, 3> getCFEARQualityMeasure(const s_scan& current, const s_scan& prev, bool& valid, const Eigen::Affine3d Tperturbation = Eigen::Affine3d::Identity());
 
   // Python classifiers for CFEAR and CorAl data
   PythonClassifierInterface cfear_class, coral_class;
