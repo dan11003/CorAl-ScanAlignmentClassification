@@ -218,10 +218,11 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
 
     for (int i = 0; i < merged_entropy->size();i++)
         merged_entropy->points[i].intensity = diff_res_[i]; // set intensity
-
-    AlignmentQualityPlot::PublishCloud("/coral_src",    src_pcd_entropy, Eigen::Affine3d::Identity(), "coral_world");
-    AlignmentQualityPlot::PublishCloud("/coral_ref",    ref_pcd_entropy, Eigen::Affine3d::Identity(), "coral_world");
-    AlignmentQualityPlot::PublishCloud("/coral_merged", merged_entropy,  Eigen::Affine3d::Identity(), "coral_world");
+    if(par_.visualize){
+        AlignmentQualityPlot::PublishCloud("/coral_src",    src_pcd_entropy, Eigen::Affine3d::Identity(), "coral_world");
+        AlignmentQualityPlot::PublishCloud("/coral_ref",    ref_pcd_entropy, Eigen::Affine3d::Identity(), "coral_world");
+        AlignmentQualityPlot::PublishCloud("/coral_merged", merged_entropy,  Eigen::Affine3d::Identity(), "coral_world");
+    }
     ros::Time t3 = ros::Time::now();
 }
 
@@ -333,8 +334,10 @@ CFEARQuality::CFEARQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseSc
     CFEAR_Radarodometry::n_scan_normal_reg reg(pnt_cost, CFEAR_Radarodometry::losstype::Cauchy, 0.3);
     std::vector<CFEAR_Radarodometry::MapNormalPtr> feature_vek = {CFEAR_ref->CFEARFeatures_, CFEAR_src->CFEARFeatures_};
     std::vector<Eigen::Affine3d> Tvek = {CFEAR_ref->GetAffine(),CFEAR_src->GetAffine()*Toffset};
-    CFEAR_Radarodometry::MapPointNormal::PublishMap("scan1", feature_vek[0], Tvek[0], "world", 1 );
-    CFEAR_Radarodometry::MapPointNormal::PublishMap("scan2", feature_vek[1], Tvek[1], "world", -1);
+    if(par_.visualize){
+        CFEAR_Radarodometry::MapPointNormal::PublishMap("scan1", feature_vek[0], Tvek[0], "world", 1 );
+        CFEAR_Radarodometry::MapPointNormal::PublishMap("scan2", feature_vek[1], Tvek[1], "world", -1);
+    }
     double score = 0;
     if(reg.GetCost(feature_vek, Tvek, score, residuals_)){
         quality_ = {score, (double)residuals_.size(), score/(std::max((int)residuals_.size(),1) )};
@@ -363,17 +366,19 @@ CorAlCartQuality::CorAlCartQuality(std::shared_ptr<PoseScan> ref, std::shared_pt
 
     cv_bridge::CvImagePtr Absdiff = CreateImage(rad_cart_src->cart_);
     cv::absdiff(cart_src_transformed->image, rad_cart_ref->cart_->image, Absdiff->image);
-
-    AlignmentQualityPlot::PublishRadar("/cart_transformed", cart_src_transformed);
-    AlignmentQualityPlot::PublishRadar("/cart_transformed", cart_src_transformed);
-    AlignmentQualityPlot::PublishRadar("/image_diff", Absdiff);
+    if(par_.visualize){
+        AlignmentQualityPlot::PublishRadar("/cart_transformed", cart_src_transformed);
+        AlignmentQualityPlot::PublishRadar("/cart_transformed", cart_src_transformed);
+        AlignmentQualityPlot::PublishRadar("/image_diff", Absdiff);
+    }
     const double abs_diff = cv::sum(Absdiff->image)[0];
     quality_ = {abs_diff, 0,0};
     cout<<"abs_diff: "<<abs_diff<<endl;
 
-
-    AlignmentQualityPlot::PublishPoseScan("/radar_src", src, src->GetAffine()*Toffset, "/src_link");
-    AlignmentQualityPlot::PublishPoseScan("/radar_ref", ref, ref->GetAffine()*Toffset, "/ref_link");
+    if(par_.visualize){
+        AlignmentQualityPlot::PublishPoseScan("/radar_src", src, src->GetAffine()*Toffset, "/src_link");
+        AlignmentQualityPlot::PublishPoseScan("/radar_ref", ref, ref->GetAffine()*Toffset, "/ref_link");
+    }
 }
 
 
@@ -571,7 +576,9 @@ void AlignmentQualityInterface::UpdateTrainingData(PoseScan_S& ref, PoseScan_S& 
 
             // Publish pertubation point cloud
             auto src_cloud = src->GetCloudCopy(src->GetAffine() * Tperturbation);
+
             CorAlignment::AlignmentQualityPlot::PublishCloud("/point_cloud_source_Tper", src_cloud, Eigen::Affine3d::Identity(), "coral_world");
+
         }
     }
 }

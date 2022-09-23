@@ -63,6 +63,7 @@ public:
         entropy_cfg ent_cfg = any;
         bool weight_res_intensity = false;
         bool output_overlap = false;
+        bool visualize = false;
 
         static const std::vector<std::string> HeaderToString(){
             return { "method" , "radius" , "entropy_setting" };
