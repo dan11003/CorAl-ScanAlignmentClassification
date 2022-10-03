@@ -133,7 +133,7 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
         index++;
         Eigen::MatrixXd msrc, mref, mjoint;
         GetNearby(searchPoint, msrc, mref, mjoint);
-        if(mref.cols() < overlap_req_)
+        if(mref.rows() < overlap_req_)
             continue;
 
         if( Covariance(msrc, covs_sep_[index], means_sep_[index]) && Covariance(mjoint, cov_joint_[index], means_joint_[index]) ){
@@ -155,7 +155,7 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
         index++;
         Eigen::MatrixXd msrc, mref, mjoint;
         GetNearby(searchPoint, msrc, mref, mjoint);
-        if(msrc.cols() < overlap_req_){
+        if(msrc.rows() < overlap_req_){
             continue;
         }
 
@@ -190,15 +190,17 @@ CorAlRadarQuality::CorAlRadarQuality(std::shared_ptr<PoseScan> ref, std::shared_
         diff_ = joint_ - sep_;
     }
 
-    const double overlap  = count_valid/((double)merged_size);
-    if (overlap < 0.1){
-        quality_ = {100, -100, -1};
+    overlap_  = count_valid/((double)merged_size);
+    //cout  << "overlap : " << overlap_ << ", merged size: " << merged_size << ", count_valid: " << count_valid <<  endl;
+    if (overlap_ < 0.1){
+        quality_ = {joint_, sep_, (par.output_overlap ? overlap_ : 0.0)}; //
         valid_ = false;
     }
     else {
-        quality_ = {joint_, sep_, (par.output_overlap ? overlap : 0.0) };
+        quality_ = {joint_, sep_,  (par.output_overlap ? overlap_ : 0.0)}; // (par.output_overlap ? overlap_ : 0.0)
         valid_ = true;
     }
+    //cout << "Q: " << quality_ << endl;
 
     //cout << "sep: "  << sep_ << endl;
     //cout << "joint_: " << joint_ << endl;
@@ -331,7 +333,7 @@ CFEARQuality::CFEARQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseSc
     assert(CFEAR_src!=NULL && CFEAR_ref!=NULL);
     CFEAR_Radarodometry::costmetric pnt_cost = CFEAR_Radarodometry::Str2Cost(par.method);
 
-    CFEAR_Radarodometry::n_scan_normal_reg reg(pnt_cost, CFEAR_Radarodometry::losstype::Cauchy, 0.3);
+    CFEAR_Radarodometry::n_scan_normal_reg reg(pnt_cost, CFEAR_Radarodometry::losstype::Huber, 0.3);
     std::vector<CFEAR_Radarodometry::MapNormalPtr> feature_vek = {CFEAR_ref->CFEARFeatures_, CFEAR_src->CFEARFeatures_};
     std::vector<Eigen::Affine3d> Tvek = {CFEAR_ref->GetAffine(),CFEAR_src->GetAffine()*Toffset};
     if(par_.visualize){
@@ -340,10 +342,12 @@ CFEARQuality::CFEARQuality(std::shared_ptr<PoseScan> ref, std::shared_ptr<PoseSc
     }
     double score = 0;
     if(reg.GetCost(feature_vek, Tvek, score, residuals_)){
-        quality_ = {score, (double)residuals_.size(), score/(std::max((int)residuals_.size(),1) )};
+        const double tot_size = (CFEAR_src->CFEARFeatures_->GetSize() + CFEAR_ref->CFEARFeatures_->GetSize()) / 2.0;
+        const double overlap = (double)residuals_.size();
+        quality_ = {score, (double)residuals_.size(), tot_size};
         valid_ = true;
     }else{
-        quality_ = {100000, 0, 1000000};
+        quality_ = {0, 0, 0};
         valid_ = true;
     }
     //cout << quality_ << endl;
@@ -601,6 +605,7 @@ const std::vector<std::vector<double>> AlignmentQualityInterface::CreatePerturba
         {0,0,0}, // Aligned
         {range_error, 0, 0}, {0, range_error, 0}, {-range_error, 0, 0}, {0, -range_error, 0}  //Missaligned
     };
+
 
     return vek_perturbation;
 }

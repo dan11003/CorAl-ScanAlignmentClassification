@@ -62,7 +62,7 @@ public:
         double radius = 3;
         entropy_cfg ent_cfg = any;
         bool weight_res_intensity = false;
-        bool output_overlap = false;
+        bool output_overlap = true;
         bool visualize = false;
 
         static const std::vector<std::string> HeaderToString(){
@@ -211,7 +211,7 @@ public:
 
     ~CorAlRadarQuality(){}
 
-    std::vector<double> GetQualityMeasure(){return {sep_, joint_, 0};}
+    //std::vector<double> GetQualityMeasure(){return {sep_, joint_, 0};}
 
 protected:
 
@@ -237,6 +237,7 @@ protected:
     std::vector<double> diff_res_; // length ref + src
     double sep_ = 0, joint_ = 0, diff_ = 0, w_sum_ = 0;
     int count_valid = 0;
+    double overlap_ = 0;
 
     pcl::PointCloud<pcl::PointXYZI>::Ptr ref_pcd_entropy, src_pcd_entropy, merged_entropy;
 

@@ -118,11 +118,11 @@ def main(args):
     if (args.training_data):
         df_training_data = get_df_from_csv(traning_data_path)
     else:
-        df_training_data = pd.DataFrame(columns=['score1', 'score2', 'score3','aligned'])
+        df_training_data = pd.DataFrame(columns=['aligned','score1', 'score2', 'score3'])
 
     rospy.init_node('alignment_service', anonymous=True)
     l = callback_learner(df_td=df_training_data)
-    # l.thread.start()
+    l.thread.start()
     rospy.spin()
 
 if __name__ == '__main__':
