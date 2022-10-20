@@ -208,13 +208,13 @@ void LogisticRegression::fit(){
     std::cout << "Fitted logistic regression model after training data" << std::endl;
     std::cout << "Accuracy:\n" << Accuracy() << std::endl << "Confusion matrix:\n" << ConfusionMatrix() << std::endl;
 
-    cout << this->X_.block(0,0,13,X_.cols()) << endl;
+    // cout << this->X_.block(0,0,13,X_.cols()) << endl;
     auto c_result = this->py_clf_.attr("coef_");
     coef_ =  c_result.cast<Eigen::MatrixXd>().row(0).transpose();
     auto i_result = this->py_clf_.attr("intercept_");
     intercept_ = i_result.cast<Eigen::MatrixXd>()(0,0);
-    //cout <<"intercept: " << intercept_ << endl;
-    //cout <<"coef: " <<  coef_ << endl;
+    cout <<"intercept: " << intercept_ << endl;
+    cout <<"coef: " <<  coef_ << endl;
     //Eigen::VectorXd  score = predict_linear(this->X_);
     //cout <<"scores: " << score << endl;
 }

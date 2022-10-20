@@ -81,6 +81,8 @@ public:
   Eigen::MatrixXd X_; // training data
   Eigen::VectorXd y_; // training labels
 
+  bool IsFit(){ return is_fit_; }
+
   protected:
   bool is_fit_ = false;
 
