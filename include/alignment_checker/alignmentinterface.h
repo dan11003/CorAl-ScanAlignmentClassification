@@ -203,6 +203,8 @@ class ScanLearningInterface{
   const double large_th_err = 15*M_PI/180.0;
   std::vector< std::vector<double> >vek_perturbation_;
 
+  const bool visualize_ = false;
+
 };
 
 

@@ -257,7 +257,7 @@ void ScanLearningInterface::AddTrainingData(const s_scan& current){
         return;
     }
 
-
+    ros::Time t0 = ros::Time::now();
     for(auto && verr : vek_perturbation_)
     {
         const Eigen::Affine3d Tperturbation = VectorToAffine3dxyez(verr);
@@ -283,8 +283,18 @@ void ScanLearningInterface::AddTrainingData(const s_scan& current){
             this->coral_class->AddDataPoint(X_CorAl, y);
             this->cfear_class->AddDataPoint(X_CFEAR, y);
         }
+
+        // Visualize training data (point clouds with and without perturbations)
+        if(visualize_){
+            auto temp_cloud = current.cldPeaks;
+            AlignmentQualityPlot::PublishCloud("demo/pertubation_cloud", prev_.cldPeaks, prev_.T * Tperturbation, "prev");
+            AlignmentQualityPlot::PublishCloud("demo/current_cloud", temp_cloud, current.T, "curr");
+            ros::Duration(0.25).sleep();
+        }
     }
     this->prev_ = current;
+    ros::Time t1 = ros::Time::now();
+    CFEAR_Radarodometry::timing.Document("Add training data",CFEAR_Radarodometry::ToMs(t1-t0));
 }
 
 void ScanLearningInterface::PredAlignment(const scan& current, const s_scan& prev, std::map<std::string,double>& quality, Eigen::MatrixXd& X_CorAl, Eigen::MatrixXd& X_CFEAR, bool& valid){
