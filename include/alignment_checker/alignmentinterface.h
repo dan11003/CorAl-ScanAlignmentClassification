@@ -3,6 +3,7 @@
 #include "alignment_checker/ScanType.h"
 #include "map"
 #include <memory.h>
+#include <Eigen/Dense>
 #include <pybind11/embed.h>
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
@@ -66,11 +67,15 @@ public:
 
   void LoadData(const std::string& path); //
 
+  virtual void LoadCoefficients(const std::string& path) = 0;
+
   //!
   //! \brief SaveData
   //! \param path
   //!
   void SaveData(const std::string& path); // Containing rows of [x_{i,:} y_i]
+
+  virtual void SaveCoefficients(const std::string& path) = 0; // to avoid learning of the model
 
   bool DataValid();
 
@@ -101,6 +106,9 @@ public:
     LogisticRegression();
 
     void fit();
+
+    void LoadCoefficients(const std::string& path); 
+    void SaveCoefficients(const std::string& path); 
 
     Eigen::VectorXd predict_linear(const Eigen::MatrixXd& X);
 
@@ -169,12 +177,14 @@ class ScanLearningInterface{
   //! \param dir
   //!  
   void LoadData(const std::string& dir);
+  void LoadCoefficients(const std::string& dir); 
 
   //!
   //! \brief SaveData Stores dir/CFEAR.txt and dir/CorAL.txt
   //! \param dir
   //!
   void SaveData(const std::string& dir);
+  void SaveCoefficients(const std::string& dir); 
 
   //!
   //! \brief SaveROCCurves Generate and save ROC-curves in dir/CFEAR and dir/CorAl

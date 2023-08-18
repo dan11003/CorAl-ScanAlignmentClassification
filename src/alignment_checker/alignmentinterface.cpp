@@ -15,6 +15,8 @@ PythonClassifierInterface::PythonClassifierInterface(){
 void PythonClassifierInterface::fit(){
 }
 
+void PythonClassifierInterface::LoadCoefficients(const std::string& path){}
+void PythonClassifierInterface::SaveCoefficients(const std::string& path){}
 
 Eigen::VectorXd PythonClassifierInterface::predict_proba(const Eigen::MatrixXd& X){
     // If model is not fitted (must run fit() before)
@@ -219,6 +221,53 @@ void LogisticRegression::fit(){
     //cout <<"scores: " << score << endl;
 }
 
+void LogisticRegression::LoadCoefficients(const std::string& path) {
+    auto sklearn_ = py::module::import("sklearn.linear_model");
+    this->py_clf_ = sklearn_.attr("LogisticRegression")("class_weight"_a="balanced", "max_iter"_a=1000);
+    std::ifstream file;
+    try {
+        file.open(path);
+    }
+    catch (std::ios_base::failure& e) {
+        std::cerr << e.what() << '\n';
+    }
+    std::string line;
+    std::vector<double> coefs;
+    unsigned int rows = 0;
+
+    // Load vectors with values from file
+    while (std::getline(file, line)){
+        std::stringstream line_stream(line);
+        std::string value;
+
+        std::getline(line_stream, value, ',');
+        intercept_ = std::stod(value);
+        while (std::getline(line_stream, value, ',')) {
+            coefs.push_back(std::stod(value));
+        }
+    }
+    coef_ = Eigen::Map<Eigen::VectorXd>(coefs.data(), coefs.size());
+    this->py_clf_.attr("coef_") = coef_;
+    this->py_clf_.attr("intercept_") = intercept_;
+    is_fit_ = true;
+}
+
+void LogisticRegression::SaveCoefficients(const std::string& path){
+    std::cout << "Save coefficients!"<<std::endl;
+    std::ofstream file(path);
+    if (file.is_open())
+    {
+        file << intercept_ << ",";
+        for (int i = 0; i < coef_.size(); i++) {
+            file << coef_(i);
+            if (i+1 != coef_.size()) {
+                file<< ",";
+            }
+        }
+        file << "\n";
+    }
+}
+
 Eigen::VectorXd LogisticRegression::predict_linear(const Eigen::MatrixXd& X){
 
     Eigen::VectorXd score(X.rows());
@@ -341,6 +390,24 @@ void ScanLearningInterface::SaveData(const std::string& dir){
     }else {
         this->coral_class->SaveData(dir + "/CorAl.txt");
         this->cfear_class->SaveData(dir + "/CFEAR.txt");
+    }
+}
+
+void ScanLearningInterface::LoadCoefficients(const std::string& dir){
+    if(combined_){
+        this->combined_class->LoadCoefficients(dir + "coefficients_combined.txt");
+    }else{
+        this->coral_class->LoadCoefficients(dir + "coefficients_CorAl.txt");
+        this->cfear_class->LoadCoefficients(dir + "coefficients_CFEAR.txt");
+    }
+}
+
+void ScanLearningInterface::SaveCoefficients(const std::string& dir){
+    if(combined_){
+        this->combined_class->SaveCoefficients(dir + "/coefficients_combined.txt");
+    }else {
+        this->coral_class->SaveCoefficients(dir + "/coefficients_CorAl.txt");
+        this->cfear_class->SaveCoefficients(dir + "/coefficients_CFEAR.txt");
     }
 }
 
