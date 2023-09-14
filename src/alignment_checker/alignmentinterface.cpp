@@ -395,19 +395,19 @@ void ScanLearningInterface::SaveData(const std::string& dir){
 
 void ScanLearningInterface::LoadCoefficients(const std::string& dir){
     if(combined_){
-        this->combined_class->LoadCoefficients(dir + "coefficients_combined.txt");
+        this->combined_class->LoadCoefficients(dir + "trained_alignment_classifier.txt");
     }else{
-        this->coral_class->LoadCoefficients(dir + "coefficients_CorAl.txt");
-        this->cfear_class->LoadCoefficients(dir + "coefficients_CFEAR.txt");
+        this->coral_class->LoadCoefficients(dir + "trained_alignment_classifier_CorAl.txt");
+        this->cfear_class->LoadCoefficients(dir + "trained_alignment_classifier_CFEAR.txt");
     }
 }
 
 void ScanLearningInterface::SaveCoefficients(const std::string& dir){
     if(combined_){
-        this->combined_class->SaveCoefficients(dir + "/coefficients_combined.txt");
+        this->combined_class->SaveCoefficients(dir + "/trained_alignment_classifier.txt");
     }else {
-        this->coral_class->SaveCoefficients(dir + "/coefficients_CorAl.txt");
-        this->cfear_class->SaveCoefficients(dir + "/coefficients_CFEAR.txt");
+        this->coral_class->SaveCoefficients(dir + "/trained_alignment_classifier_CorAl.txt");
+        this->cfear_class->SaveCoefficients(dir + "/trained_alignment_classifier_CFEAR.txt");
     }
 }
 
