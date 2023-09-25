@@ -1,1 +1,3 @@
 *.map
+__pycache__
+/data/test_data

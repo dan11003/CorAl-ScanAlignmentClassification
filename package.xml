@@ -48,9 +48,8 @@
   <!--   <test_depend>gtest</test_depend> -->
   <!-- Use doc_depend for packages you need only for building documentation: -->
   <!--   <doc_depend>doxygen</doc_depend> -->
-  <build_depend>graph_map</build_depend>
-  <build_depend>ndt_map</build_depend>
-  <build_depend>ndt_generic</build_depend>
+  <!--build_depend>ndt_map</build_depend>
+  <build_depend>ndt_generic</build_depend-->
   <build_depend>geometry_msgs</build_depend>
   <build_depend>cmake_modules</build_depend>
   <build_depend>eigen_conversions</build_depend>
@@ -62,15 +61,15 @@
   <build_depend>tf_conversions</build_depend>
   <build_depend>tf</build_depend>
   <build_depend>genmsg</build_depend>
+  <build_depend>cv_bridge</build_depend>
   <build_depend>tf_conversions</build_depend>
-  <build_depend>robust_mapping_custom_msgs</build_depend>
-
+  <build_depend>cfear_radarodometry</build_depend>
+  <build_depend>message_generation</build_depend>
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <exec_depend>graph_map</exec_depend>
-  <exec_depend>ndt_map</exec_depend>
-  <exec_depend>ndt_generic</exec_depend>
+  <!--exec_depend>ndt_map</exec_depend>
+  <exec_depend>ndt_generic</exec_depend-->
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>cmake_modules</exec_depend>
   <exec_depend>eigen_conversions</exec_depend>
@@ -83,10 +82,12 @@
   <exec_depend>tf</exec_depend>
   <exec_depend>genmsg</exec_depend>
   <exec_depend>tf_conversions</exec_depend>
-  <exec_depend>robust_mapping_custom_msgs</exec_depend>
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>cfear_radarodometry</exec_depend>
+  <exec_depend>message_runtime</exec_depend>
 
-
-
+  <build_export_depend>message_runtime</build_export_depend>
+  <exec_depend>message_generation</exec_depend>
 
 
 
